@@ -15,6 +15,9 @@ from app.api.v1.publico.router import router as publico_router
 from app.api.v1.portfolio.router import router as portfolio_router
 from app.api.v1.documentos.router import router as documentos_router
 from app.api.v1.estudio.router import router as estudio_router
+from app.api.v1.busca.router import router as busca_router
+from app.api.v1.agenda.router import router as agenda_router
+from app.api.v1.relatorios.router import router as relatorios_router
 
 
 @asynccontextmanager
@@ -71,6 +74,9 @@ app.include_router(publico_router, prefix="/api/v1")
 app.include_router(portfolio_router, prefix="/api/v1")
 app.include_router(documentos_router, prefix="/api/v1")
 app.include_router(estudio_router, prefix="/api/v1")
+app.include_router(busca_router, prefix="/api/v1")
+app.include_router(agenda_router, prefix="/api/v1")
+app.include_router(relatorios_router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["health"])

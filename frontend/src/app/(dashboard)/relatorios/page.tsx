@@ -1,0 +1,292 @@
+"use client";
+
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  BarChart, TrendingUp, TrendingDown, DollarSign,
+  ClipboardList, CheckCircle, Users, ArrowUp, ArrowDown,
+  Minus,
+} from "lucide-react";
+import { api } from "@/lib/api/client";
+import { cn } from "@/lib/utils";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface ResumoFinanceiro {
+  periodo_dias: number;
+  receita_total: number;
+  receita_periodo: number;
+  variacao_percentual: number | null;
+  total_atendimentos: number;
+  atendimentos_confirmados: number;
+  atendimentos_finalizados: number;
+  ticket_medio: number | null;
+  sinais_recebidos: number;
+}
+
+interface StatusCount {
+  status: string;
+  label: string;
+  total: number;
+  cor: string;
+}
+
+interface RelatorioStatus {
+  total_ativos: number;
+  por_status: StatusCount[];
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function formatBRL(v: number) {
+  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function VariacaoChip({ v }: { v: number | null }) {
+  if (v === null) return <span className="text-xs text-[#87938F]">—</span>;
+  const positivo = v >= 0;
+  return (
+    <div className={cn(
+      "flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-[6px]",
+      positivo ? "bg-[#2F9285]/10 text-[#2F9285]" : "bg-[#E35D5B]/10 text-[#E35D5B]"
+    )}>
+      {positivo ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
+      {Math.abs(v).toFixed(1)}%
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Componente principal
+// ---------------------------------------------------------------------------
+
+export default function RelatoriosPage() {
+  const [periodo, setPeriodo] = useState(30);
+
+  const { data: resumo, isLoading: loadResumo } = useQuery({
+    queryKey: ["relatorios-resumo", periodo],
+    queryFn: () => api.get<ResumoFinanceiro>(`/api/v1/relatorios/resumo?periodo=${periodo}`),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: porStatus, isLoading: loadStatus } = useQuery({
+    queryKey: ["relatorios-status"],
+    queryFn: () => api.get<RelatorioStatus>("/api/v1/relatorios/por-status"),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const PERIODOS = [
+    { label: "7 dias", value: 7 },
+    { label: "30 dias", value: 30 },
+    { label: "90 dias", value: 90 },
+    { label: "1 ano", value: 365 },
+  ];
+
+  const maxTotal = Math.max(...(porStatus?.por_status.map(s => s.total) ?? [1]));
+
+  return (
+    <div className="p-6 max-w-5xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-[#F0EADD]">Relatórios</h1>
+          <p className="text-sm text-[#87938F] mt-1">Métricas financeiras e operacionais</p>
+        </div>
+        {/* Selector de período */}
+        <div className="flex items-center gap-1 bg-[#0B171C] border border-[#243337] rounded-[12px] p-1">
+          {PERIODOS.map(p => (
+            <button
+              key={p.value}
+              onClick={() => setPeriodo(p.value)}
+              className={cn(
+                "px-3 py-1.5 rounded-[8px] text-xs font-medium transition-all",
+                periodo === p.value
+                  ? "bg-[#2F9285] text-[#050B12]"
+                  : "text-[#87938F] hover:text-[#F0EADD]"
+              )}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Cards de métricas principais */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {/* Receita no período */}
+        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="p-2 bg-[#2F9285]/10 rounded-[10px]">
+              <DollarSign size={16} className="text-[#2F9285]" />
+            </div>
+            {!loadResumo && <VariacaoChip v={resumo?.variacao_percentual ?? null} />}
+          </div>
+          <p className="text-2xl font-bold text-[#F0EADD]">
+            {loadResumo ? "—" : formatBRL(resumo?.receita_periodo ?? 0)}
+          </p>
+          <p className="text-xs text-[#87938F] mt-1">Receita nos últimos {periodo} dias</p>
+        </div>
+
+        {/* Receita total */}
+        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="p-2 bg-[#C36B3F]/10 rounded-[10px]">
+              <TrendingUp size={16} className="text-[#C36B3F]" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-[#F0EADD]">
+            {loadResumo ? "—" : formatBRL(resumo?.receita_total ?? 0)}
+          </p>
+          <p className="text-xs text-[#87938F] mt-1">Receita total histórica</p>
+        </div>
+
+        {/* Ticket médio */}
+        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="p-2 bg-[#87938F]/10 rounded-[10px]">
+              <BarChart size={16} className="text-[#87938F]" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-[#F0EADD]">
+            {loadResumo ? "—" : resumo?.ticket_medio ? formatBRL(resumo.ticket_medio) : "—"}
+          </p>
+          <p className="text-xs text-[#87938F] mt-1">Ticket médio (finalizados)</p>
+        </div>
+
+        {/* Total de atendimentos */}
+        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="p-2 bg-[#2F9285]/10 rounded-[10px]">
+              <ClipboardList size={16} className="text-[#2F9285]" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-[#F0EADD]">
+            {loadResumo ? "—" : resumo?.total_atendimentos ?? 0}
+          </p>
+          <p className="text-xs text-[#87938F] mt-1">Atendimentos totais</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Status dos atendimentos (gráfico de barras CSS) */}
+        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-sm font-semibold text-[#F0EADD]">Atendimentos por Status</h2>
+            {porStatus && (
+              <span className="text-xs text-[#87938F] bg-[#050B12] border border-[#243337] px-2 py-0.5 rounded-[6px]">
+                {porStatus.total_ativos} ativos
+              </span>
+            )}
+          </div>
+
+          {loadStatus ? (
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-8 bg-[#102128] rounded-[8px] animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {(porStatus?.por_status ?? []).map(s => {
+                const pct = maxTotal > 0 ? (s.total / maxTotal) * 100 : 0;
+                return (
+                  <div key={s.status}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-[#87938F]">{s.label}</span>
+                      <span className="text-xs font-medium text-[#F0EADD]">{s.total}</span>
+                    </div>
+                    <div className="h-2 bg-[#050B12] rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${pct}%`, backgroundColor: s.cor }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+              {!porStatus?.por_status.length && (
+                <p className="text-xs text-[#87938F] text-center py-4">Nenhum atendimento encontrado</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Resumo operacional */}
+        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5">
+          <h2 className="text-sm font-semibold text-[#F0EADD] mb-5">Resumo Operacional</h2>
+
+          {loadResumo ? (
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => <div key={i} className="h-10 bg-[#102128] rounded-[8px] animate-pulse" />)}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {[
+                {
+                  label: "Confirmados",
+                  valor: resumo?.atendimentos_confirmados ?? 0,
+                  icon: CheckCircle,
+                  cor: "text-[#2F9285]",
+                  bg: "bg-[#2F9285]/10",
+                },
+                {
+                  label: "Finalizados",
+                  valor: resumo?.atendimentos_finalizados ?? 0,
+                  icon: CheckCircle,
+                  cor: "text-[#4CAF82]",
+                  bg: "bg-[#4CAF82]/10",
+                },
+                {
+                  label: "Sinais recebidos",
+                  valor: formatBRL(resumo?.sinais_recebidos ?? 0),
+                  icon: DollarSign,
+                  cor: "text-[#C36B3F]",
+                  bg: "bg-[#C36B3F]/10",
+                },
+                {
+                  label: "Total de atendimentos",
+                  valor: resumo?.total_atendimentos ?? 0,
+                  icon: ClipboardList,
+                  cor: "text-[#87938F]",
+                  bg: "bg-[#87938F]/10",
+                },
+              ].map(item => {
+                const Icon = item.icon;
+                return (
+                  <div key={item.label} className="flex items-center gap-3 p-3 bg-[#050B12] border border-[#243337] rounded-[10px]">
+                    <div className={cn("p-2 rounded-[8px] shrink-0", item.bg)}>
+                      <Icon size={14} className={item.cor} />
+                    </div>
+                    <span className="text-sm text-[#87938F] flex-1">{item.label}</span>
+                    <span className="text-sm font-semibold text-[#F0EADD]">{item.valor}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Nota de comparação */}
+      {resumo?.variacao_percentual !== null && resumo?.variacao_percentual !== undefined && (
+        <div className={cn(
+          "mt-5 flex items-center gap-3 p-4 rounded-[14px] border text-sm",
+          resumo.variacao_percentual >= 0
+            ? "bg-[#2F9285]/5 border-[#2F9285]/20 text-[#2F9285]"
+            : "bg-[#E35D5B]/5 border-[#E35D5B]/20 text-[#E35D5B]"
+        )}>
+          {resumo.variacao_percentual >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+          <span className="text-[#F0EADD]">
+            Receita {resumo.variacao_percentual >= 0 ? "aumentou" : "caiu"}{" "}
+            <strong>{Math.abs(resumo.variacao_percentual).toFixed(1)}%</strong>{" "}
+            em relação ao período anterior de {periodo} dias.
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}

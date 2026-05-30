@@ -4,6 +4,9 @@
 app = 'sessaoink-api'
 primary_region = 'gru'      # São Paulo — menor latência para o Brasil
 
+[deploy]
+  release_command = "alembic upgrade head"
+
 [build]
   dockerfile = 'Dockerfile'
 

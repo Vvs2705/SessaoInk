@@ -34,6 +34,7 @@ from app.api.v1.estudio.router import router as estudio_router
 from app.api.v1.busca.router import router as busca_router
 from app.api.v1.agenda.router import router as agenda_router
 from app.api.v1.relatorios.router import router as relatorios_router
+from app.api.v1.usuarios.router import router as usuarios_router
 
 
 @asynccontextmanager
@@ -93,6 +94,7 @@ app.include_router(estudio_router, prefix="/api/v1")
 app.include_router(busca_router, prefix="/api/v1")
 app.include_router(agenda_router, prefix="/api/v1")
 app.include_router(relatorios_router, prefix="/api/v1")
+app.include_router(usuarios_router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["health"])

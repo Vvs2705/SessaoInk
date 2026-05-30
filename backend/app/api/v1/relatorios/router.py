@@ -226,3 +226,46 @@ async def relatorio_por_status(
     ]
 
     return RelatorioStatusResponse(total_ativos=total_ativos, por_status=por_status)
+
+
+@router.get("/temporal", response_model=RelatorioTemporalResponse)
+async def relatorio_temporal(
+    periodo: int = Query(default=30, ge=1, le=365, description="Período em dias"),
+    session: AsyncSession = Depends(get_session),
+    usuario: Usuario = Depends(get_usuario_atual),
+):
+    """Receita agrupada por dia nos últimos N dias."""
+    from datetime import date
+
+    agora = datetime.now(timezone.utc)
+    inicio = agora - timedelta(days=periodo)
+    estudio_id = usuario.estudio_id
+
+    result = await session.execute(
+        select(
+            func.date(Lancamento.data_realizada).label("dia"),
+            func.coalesce(func.sum(Lancamento.valor), 0).label("receita"),
+            func.count().label("atendimentos"),
+        )
+        .where(
+            Lancamento.estudio_id == estudio_id,
+            Lancamento.status == StatusLancamento.PAGO,
+            Lancamento.tipo.in_([TipoLancamento.ENTRADA, TipoLancamento.SINAL, TipoLancamento.COMISSAO]),
+            Lancamento.data_realizada >= inicio,
+        )
+        .group_by(func.date(Lancamento.data_realizada))
+        .order_by(func.date(Lancamento.data_realizada))
+    )
+    rows = result.all()
+
+    dados = [
+        ReceitaPorDia(
+            data=str(row.dia),
+            receita=float(row.receita),
+            atendimentos=row.atendimentos,
+        )
+        for row in rows
+    ]
+
+    return RelatorioTemporalResponse(periodo_dias=periodo, dados=dados)
+

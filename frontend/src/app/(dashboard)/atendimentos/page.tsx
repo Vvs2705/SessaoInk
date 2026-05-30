@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import DetalhesAtendimentoModal from "./DetalhesAtendimentoModal";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ClipboardList, Plus, Search, X } from "lucide-react";
@@ -289,16 +290,27 @@ function NovoAtendimentoModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-export default function AtendimentosPage() {
+function AtendimentosPageContent() {
   const [view, setView] = useState<"lista" | "kanban">("lista");
   const [busca, setBusca] = useState("");
   const [modalAberto, setModalAberto] = useState(false);
   const [atendimentoSelecionado, setAtendimentoSelecionado] = useState<Atendimento | null>(null);
+  const searchParams = useSearchParams();
+  const destaqueId = searchParams.get("destaque");
 
   const { data = [], isLoading } = useQuery<Atendimento[]>({
     queryKey: ["atendimentos"],
     queryFn: () => api.get("/api/v1/atendimentos/"),
   });
+
+  useEffect(() => {
+    if (destaqueId && data.length > 0) {
+      const atend = data.find(a => a.id === destaqueId);
+      if (atend) {
+        setAtendimentoSelecionado(atend);
+      }
+    }
+  }, [destaqueId, data]);
 
   const filtrado = data.filter(a =>
     !busca ||
@@ -489,5 +501,13 @@ export default function AtendimentosPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function AtendimentosPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-[#87938F]">Carregando...</div>}>
+      <AtendimentosPageContent />
+    </Suspense>
   );
 }

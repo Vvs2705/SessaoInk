@@ -9,10 +9,11 @@ from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.auth.dependencies import get_usuario_atual
+from app.api.v1.auth.dependencies import get_usuario_atual, verificar_tenant
 from app.core.database import get_session
 from app.models.financeiro import Lancamento, TipoLancamento, StatusLancamento, FormaPagamentoFin
 from app.models.usuario import Usuario
+from app.models.atendimento import Atendimento
 
 router = APIRouter(prefix="/financeiro", tags=["financeiro"])
 
@@ -21,6 +22,17 @@ class LancamentoCreate(BaseModel):
     tipo: TipoLancamento
     descricao: Optional[str] = None
     valor: float
+    status: Optional[StatusLancamento] = None
+    forma_pagamento: Optional[FormaPagamentoFin] = None
+    data_prevista: Optional[datetime] = None
+    atendimento_id: Optional[uuid.UUID] = None
+    artista_id: Optional[uuid.UUID] = None
+
+
+class LancamentoUpdate(BaseModel):
+    tipo: Optional[TipoLancamento] = None
+    descricao: Optional[str] = None
+    valor: Optional[float] = None
     status: Optional[StatusLancamento] = None
     forma_pagamento: Optional[FormaPagamentoFin] = None
     data_prevista: Optional[datetime] = None
@@ -70,6 +82,24 @@ async def criar_lancamento(
     data_realizada = None
     if status_val == StatusLancamento.PAGO:
         data_realizada = datetime.now(timezone.utc)
+
+    if dados.atendimento_id:
+        result_atend = await session.execute(
+            select(Atendimento).where(Atendimento.id == dados.atendimento_id)
+        )
+        atend = result_atend.scalar_one_or_none()
+        if not atend:
+            raise HTTPException(404, "Atendimento vinculado não encontrado")
+        verificar_tenant(atend, usuario)
+
+    if dados.artista_id:
+        result_art = await session.execute(
+            select(Usuario).where(Usuario.id == dados.artista_id)
+        )
+        art = result_art.scalar_one_or_none()
+        if not art:
+            raise HTTPException(404, "Artista vinculado não encontrado")
+        verificar_tenant(art, usuario)
 
     lanc = Lancamento(
         estudio_id=usuario.estudio_id,
@@ -130,3 +160,144 @@ async def resumo_financeiro(
     ticket = float(ticket_res.scalar() or 0)
 
     return ResumoResponse(receita_mes=receita, sinais_pendentes=sinais, ticket_medio=ticket)
+
+
+@router.get("/{id}", response_model=LancamentoResponse)
+async def obter_lancamento(
+    id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    usuario: Usuario = Depends(get_usuario_atual),
+):
+    result = await session.execute(
+        select(Lancamento).where(Lancamento.id == id)
+    )
+    lanc = result.scalar_one_or_none()
+    if not lanc:
+        raise HTTPException(404, "Lançamento não encontrado")
+    verificar_tenant(lanc, usuario)
+    return lanc
+
+
+@router.patch("/{id}", response_model=LancamentoResponse)
+async def atualizar_lancamento(
+    id: uuid.UUID,
+    dados: LancamentoUpdate,
+    session: AsyncSession = Depends(get_session),
+    usuario: Usuario = Depends(get_usuario_atual),
+):
+    result = await session.execute(
+        select(Lancamento).where(Lancamento.id == id)
+    )
+    lanc = result.scalar_one_or_none()
+    if not lanc:
+        raise HTTPException(404, "Lançamento não encontrado")
+    verificar_tenant(lanc, usuario)
+
+    if dados.atendimento_id:
+        result_atend = await session.execute(
+            select(Atendimento).where(Atendimento.id == dados.atendimento_id)
+        )
+        atend = result_atend.scalar_one_or_none()
+        if not atend:
+            raise HTTPException(404, "Atendimento vinculado não encontrado")
+        verificar_tenant(atend, usuario)
+
+    if dados.artista_id:
+        result_art = await session.execute(
+            select(Usuario).where(Usuario.id == dados.artista_id)
+        )
+        art = result_art.scalar_one_or_none()
+        if not art:
+            raise HTTPException(404, "Artista vinculado não encontrado")
+        verificar_tenant(art, usuario)
+
+    for k, v in dados.model_dump(exclude_unset=True).items():
+        setattr(lanc, k, v)
+        if k == "status" and v == StatusLancamento.PAGO:
+            from datetime import timezone
+            lanc.data_realizada = datetime.now(timezone.utc)
+
+    await session.commit()
+    await session.refresh(lanc)
+    return lanc
+
+
+@router.delete("/{id}", status_code=204)
+async def deletar_lancamento(
+    id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    usuario: Usuario = Depends(get_usuario_atual),
+):
+    result = await session.execute(
+        select(Lancamento).where(Lancamento.id == id)
+    )
+    lanc = result.scalar_one_or_none()
+    if not lanc:
+        raise HTTPException(404, "Lançamento não encontrado")
+    verificar_tenant(lanc, usuario)
+    await session.delete(lanc)
+    await session.commit()
+    return None
+
+
+@router.post("/{id}/pagar", response_model=LancamentoResponse)
+async def quitar_lancamento(
+    id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    usuario: Usuario = Depends(get_usuario_atual),
+):
+    result = await session.execute(
+        select(Lancamento).where(Lancamento.id == id)
+    )
+    lanc = result.scalar_one_or_none()
+    if not lanc:
+        raise HTTPException(404, "Lançamento não encontrado")
+    verificar_tenant(lanc, usuario)
+
+    from datetime import timezone
+    lanc.status = StatusLancamento.PAGO
+    lanc.data_realizada = datetime.now(timezone.utc)
+
+    await session.commit()
+    await session.refresh(lanc)
+    return lanc
+
+
+@router.post("/{id}/cancelar", response_model=LancamentoResponse)
+async def cancelar_lancamento(
+    id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    usuario: Usuario = Depends(get_usuario_atual),
+):
+    result = await session.execute(
+        select(Lancamento).where(Lancamento.id == id)
+    )
+    lanc = result.scalar_one_or_none()
+    if not lanc:
+        raise HTTPException(404, "Lançamento não encontrado")
+    verificar_tenant(lanc, usuario)
+
+    lanc.status = StatusLancamento.CANCELADO
+    await session.commit()
+    await session.refresh(lanc)
+    return lanc
+
+
+@router.post("/{id}/estornar", response_model=LancamentoResponse)
+async def estornar_lancamento(
+    id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    usuario: Usuario = Depends(get_usuario_atual),
+):
+    result = await session.execute(
+        select(Lancamento).where(Lancamento.id == id)
+    )
+    lanc = result.scalar_one_or_none()
+    if not lanc:
+        raise HTTPException(404, "Lançamento não encontrado")
+    verificar_tenant(lanc, usuario)
+
+    lanc.status = StatusLancamento.ESTORNADO
+    await session.commit()
+    await session.refresh(lanc)
+    return lanc

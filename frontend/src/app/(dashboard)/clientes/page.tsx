@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Search, UserCircle, Phone, Instagram, X, Mail, Calendar, FileText } from "lucide-react";
 import { api } from "@/lib/api/client";
@@ -255,15 +256,27 @@ function ClienteModal({ cliente, onClose }: ClienteModalProps) {
   );
 }
 
-export default function ClientesPage() {
+function ClientesPageContent() {
   const [busca, setBusca] = useState("");
   const [modalAberto, setModalAberto] = useState(false);
   const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null);
+  const searchParams = useSearchParams();
+  const destaqueId = searchParams.get("destaque");
 
   const { data = [], isLoading } = useQuery<Cliente[]>({
     queryKey: ["clientes"],
     queryFn: () => api.get("/api/v1/clientes/"),
   });
+
+  useEffect(() => {
+    if (destaqueId && data.length > 0) {
+      const cliente = data.find(c => c.id === destaqueId);
+      if (cliente) {
+        setClienteEditando(cliente);
+        setModalAberto(true);
+      }
+    }
+  }, [destaqueId, data]);
 
   const filtrado = data.filter(c =>
     !busca ||
@@ -403,5 +416,13 @@ export default function ClientesPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function ClientesPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-[#87938F]">Carregando...</div>}>
+      <ClientesPageContent />
+    </Suspense>
   );
 }

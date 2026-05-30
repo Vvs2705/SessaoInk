@@ -14,6 +14,7 @@ from app.core.redis import verificar_rate_limit_ip
 from app.models.usuario import Estudio
 from app.models.atendimento import Atendimento, AtendimentoImagem, StatusOperacional, TipoAtendimento
 from app.models.portfolio import Portfolio, VisibilidadePortfolio, FlashArt, StatusFlash
+from app.models.documento import Documento
 
 router = APIRouter(prefix="/public", tags=["portal-público"])
 
@@ -247,3 +248,170 @@ async def solicitar_orcamento(
         atendimento_id=str(atendimento.id),
         mensagem="Pedido de orçamento recebido com sucesso! Entraremos em contato em breve.",
     )
+
+
+# ---------------------------------------------------------------------------
+# Assinatura de Documentos e Flash Arts Públicas
+# ---------------------------------------------------------------------------
+import uuid as _uuid
+from datetime import datetime as _datetime
+
+class AssinarDocumentoRequest(BaseModel):
+    nome_assinatura: str
+    documento_identidade: Optional[str] = None
+    whatsapp: Optional[str] = None
+
+
+class PublicDocumentoResponse(BaseModel):
+    id: _uuid.UUID
+    tipo: str
+    titulo: str
+    conteudo: Optional[str]
+    versao: str
+    assinado: bool
+    data_assinatura: Optional[_datetime]
+    model_config = {"from_attributes": True}
+
+
+class FlashArtPublicoItem(BaseModel):
+    id: str
+    titulo: str
+    descricao: Optional[str]
+    imagem_path: Optional[str]
+    preco: Optional[float]
+    tamanho_sugerido: Optional[str]
+    local_recomendado: Optional[str]
+    status: str
+    model_config = {"from_attributes": True}
+
+
+@router.get("/documentos/{id}", response_model=PublicDocumentoResponse)
+async def obter_documento_publico(
+    id: _uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+):
+    """Busca e retorna dados de um documento/termo público para leitura antes da assinatura."""
+    result = await session.execute(
+        select(Documento).where(Documento.id == id)
+    )
+    doc = result.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(404, "Documento não encontrado")
+    return doc
+
+
+@router.post("/documentos/{id}/assinar", response_model=PublicDocumentoResponse)
+async def assinar_documento_publico(
+    id: _uuid.UUID,
+    dados: AssinarDocumentoRequest,
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+):
+    """Registra o aceite/assinatura digital do termo público de forma segura, arquivando IP e metadados."""
+    result = await session.execute(
+        select(Documento).where(Documento.id == id)
+    )
+    doc = result.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(404, "Documento não encontrado")
+
+    if doc.assinado:
+        raise HTTPException(400, "Este documento já está assinado")
+
+    ip = request.client.host if request.client else "unknown"
+    user_agent = request.headers.get("user-agent", "unknown")
+
+    doc.assinado = True
+    doc.data_assinatura = _datetime.now()
+    doc.ip_assinatura = ip
+    doc.trilha_aceite = {
+        "nome_assinatura": dados.nome_assinatura,
+        "documento_identidade": dados.documento_identidade,
+        "whatsapp": dados.whatsapp,
+        "user_agent": user_agent,
+        "assinado_em": _datetime.now().isoformat()
+    }
+
+    await session.commit()
+    await session.refresh(doc)
+    return doc
+
+
+@router.get("/{slug}/flash-arts", response_model=list[FlashArtPublicoItem])
+async def flash_arts_publico(
+    slug: str,
+    session: AsyncSession = Depends(get_session),
+):
+    """Retorna as flash arts públicas disponíveis do estúdio."""
+    result = await session.execute(
+        select(Estudio).where(Estudio.slug == slug, Estudio.ativo == True)
+    )
+    estudio = result.scalar_one_or_none()
+    if not estudio:
+        raise HTTPException(404, "Estúdio não encontrado")
+
+    items_result = await session.execute(
+        select(FlashArt)
+        .where(
+            FlashArt.estudio_id == estudio.id,
+            FlashArt.status != StatusFlash.ARQUIVADA,
+            FlashArt.ativo == True,
+        )
+        .order_by(FlashArt.criado_em.desc())
+    )
+    return [
+        FlashArtPublicoItem(
+            id=str(f.id),
+            titulo=f.titulo,
+            descricao=f.descricao,
+            imagem_path=f.imagem_path,
+            preco=float(f.preco) if f.preco else None,
+            tamanho_sugerido=f.tamanho_sugerido,
+            local_recomendado=f.local_recomendado,
+            status=f.status.value,
+        )
+        for f in items_result.scalars().all()
+    ]
+
+
+@router.get("/{slug}/flash-arts/{flash_id}/imagem")
+async def imagem_flash_publico(
+    slug: str,
+    flash_id: str,
+    session: AsyncSession = Depends(get_session),
+):
+    """Serve o arquivo físico de imagem de uma flash art pública."""
+    try:
+        fid = _uuid.UUID(flash_id)
+    except ValueError:
+        raise HTTPException(400, "ID inválido")
+
+    result_estudio = await session.execute(
+        select(Estudio).where(Estudio.slug == slug, Estudio.ativo == True)
+    )
+    estudio = result_estudio.scalar_one_or_none()
+    if not estudio:
+        raise HTTPException(404, "Estúdio não encontrado")
+
+    result = await session.execute(
+        select(FlashArt).where(
+            FlashArt.id == fid,
+            FlashArt.estudio_id == estudio.id,
+            FlashArt.ativo == True,
+        )
+    )
+    item = result.scalar_one_or_none()
+    if not item or not item.imagem_path:
+        raise HTTPException(404, "Imagem não encontrada")
+
+    caminho = (
+        Path(settings.STORAGE_PATH)
+        / "uploads"
+        / str(item.estudio_id)
+        / "flash_arts"
+        / item.imagem_path
+    )
+    if not caminho.exists():
+        raise HTTPException(404, "Arquivo não encontrado")
+
+    return FileResponse(str(caminho))

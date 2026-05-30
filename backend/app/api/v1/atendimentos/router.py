@@ -7,11 +7,12 @@ from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.auth.dependencies import get_usuario_atual
+from app.api.v1.auth.dependencies import get_usuario_atual, verificar_tenant
 from app.core.config import settings
 from app.core.database import get_session
 from app.models.atendimento import Atendimento, StatusOperacional
 from app.models.usuario import Usuario
+from app.models.cliente import Cliente
 from app.schemas.atendimento import (
     AtendimentoCreate, AtendimentoResponse,
     AtendimentoStatusUpdate, AtendimentoUpdate,
@@ -86,7 +87,25 @@ async def atualizar_atendimento(
     item = result.scalar_one_or_none()
     if not item:
         raise HTTPException(404, "Atendimento não encontrado")
-    for k, v in dados.model_dump(exclude_none=True).items():
+    if dados.cliente_id:
+        result_cli = await session.execute(
+            select(Cliente).where(Cliente.id == dados.cliente_id)
+        )
+        cli = result_cli.scalar_one_or_none()
+        if not cli:
+            raise HTTPException(404, "Cliente vinculado não encontrado")
+        verificar_tenant(cli, usuario)
+
+    if dados.artista_id:
+        result_art = await session.execute(
+            select(Usuario).where(Usuario.id == dados.artista_id)
+        )
+        art = result_art.scalar_one_or_none()
+        if not art:
+            raise HTTPException(404, "Artista vinculado não encontrado")
+        verificar_tenant(art, usuario)
+
+    for k, v in dados.model_dump(exclude_unset=True).items():
         setattr(item, k, v)
     await session.flush()
     await session.refresh(item)

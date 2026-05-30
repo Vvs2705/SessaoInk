@@ -9,10 +9,12 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.auth.dependencies import get_usuario_atual
+from app.api.v1.auth.dependencies import get_usuario_atual, verificar_tenant
 from app.core.database import get_session
 from app.models.documento import Documento, TipoDocumento
 from app.models.usuario import Usuario
+from app.models.cliente import Cliente
+from app.models.atendimento import Atendimento
 
 router = APIRouter(prefix="/documentos", tags=["documentos"])
 
@@ -59,6 +61,24 @@ async def criar_documento(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
+    if dados.cliente_id:
+        result_cli = await session.execute(
+            select(Cliente).where(Cliente.id == dados.cliente_id)
+        )
+        cli = result_cli.scalar_one_or_none()
+        if not cli:
+            raise HTTPException(404, "Cliente vinculado não encontrado")
+        verificar_tenant(cli, usuario)
+
+    if dados.atendimento_id:
+        result_atend = await session.execute(
+            select(Atendimento).where(Atendimento.id == dados.atendimento_id)
+        )
+        atend = result_atend.scalar_one_or_none()
+        if not atend:
+            raise HTTPException(404, "Atendimento vinculado não encontrado")
+        verificar_tenant(atend, usuario)
+
     doc = Documento(
         estudio_id=usuario.estudio_id,
         **dados.model_dump(),

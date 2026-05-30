@@ -72,7 +72,7 @@ async def atualizar_cliente(
     cliente = result.scalar_one_or_none()
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
-    for k, v in dados.model_dump(exclude_none=True).items():
+    for k, v in dados.model_dump(exclude_unset=True).items():
         setattr(cliente, k, v)
     await session.flush()
     await session.refresh(cliente)

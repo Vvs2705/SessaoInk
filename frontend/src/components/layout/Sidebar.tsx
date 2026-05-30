@@ -44,14 +44,13 @@ export function Sidebar() {
     <>
       <aside className="hidden lg:flex flex-col w-60 bg-[#0B171C] border-r border-[#243337] h-screen sticky top-0 shrink-0">
         {/* Logo */}
-        <div className="flex items-center gap-3 px-5 py-5 border-b border-[#243337]">
-          <div className="w-9 h-9 rounded-lg bg-[#2F9285] flex items-center justify-center font-bold text-sm text-[#050B12] shrink-0">
-            SI
-          </div>
-          <div>
-            <p className="text-sm font-bold text-[#F0EADD] leading-none">SessãoInk</p>
-            <p className="text-[10px] text-[#87938F] mt-0.5">v1.1</p>
-          </div>
+        <div className="flex flex-col items-start px-5 py-5 border-b border-[#243337] gap-1">
+          <img
+            src="/logo-wide.png"
+            alt="SessãoInk"
+            className="h-9 w-auto object-contain"
+          />
+          <span className="text-[10px] text-[#87938F] px-1 font-mono">v1.1</span>
         </div>
 
         {/* Busca rápida */}

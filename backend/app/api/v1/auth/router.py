@@ -34,8 +34,8 @@ from app.models.usuario import Usuario
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 # Configuração de cookies
-COOKIE_SECURE = False  # True apenas em HTTPS/produção
-COOKIE_SAMESITE = "lax"
+COOKIE_SECURE = settings.ENVIRONMENT == "production"
+COOKIE_SAMESITE = "none" if settings.ENVIRONMENT == "production" else "lax"
 ACCESS_COOKIE_MAX_AGE = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
 REFRESH_COOKIE_MAX_AGE = settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600
 

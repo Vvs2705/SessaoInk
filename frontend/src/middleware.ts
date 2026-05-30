@@ -1,28 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/registro", "/senha", "/_next", "/favicon", "/api/auth"];
-const PUBLIC_PORTAL = /^\/[a-z0-9-]+($|\/)/; // /[slug] e sub-rotas públicas
+const PRIVATE_PATHS = [
+  "/agenda",
+  "/atendimentos",
+  "/clientes",
+  "/financeiro",
+  "/documentos",
+  "/estoque",
+  "/relatorios",
+  "/configuracoes",
+  "/mais",
+  "/portfolio",
+  "/flash-arts"
+];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Rotas públicas sempre passam
-  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
-    return NextResponse.next();
-  }
+  const isRoot = pathname === "/";
+  const isPrivate =
+    isRoot ||
+    PRIVATE_PATHS.some(
+      (path) => pathname === path || pathname.startsWith(path + "/")
+    );
 
-  // Portal público (slugs) passa sem auth
-  if (pathname.match(/^\/[a-z0-9][a-z0-9-]*($|\/orcamento|\/portfolio|\/flash-arts)/)) {
-    return NextResponse.next();
-  }
+  if (isPrivate) {
+    const token = request.cookies.get("access_token");
 
-  // Verificar cookie de sessão
-  const token = request.cookies.get("access_token");
-
-  if (!token) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("from", pathname);
-    return NextResponse.redirect(loginUrl);
+    if (!token) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("from", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
   return NextResponse.next();

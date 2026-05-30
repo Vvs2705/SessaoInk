@@ -64,9 +64,31 @@ app.add_middleware(
 )
 
 
-# Headers de segurança
+# Headers de segurança e CSRF protection
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
+    # Proteção CSRF para requisições com estado que usam autenticação por cookie
+    if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+        if "access_token" in request.cookies:
+            origin = request.headers.get("origin")
+            referer = request.headers.get("referer")
+            allowed = False
+            
+            if origin:
+                if origin in settings.ALLOWED_ORIGINS:
+                    allowed = True
+            elif referer:
+                for allowed_origin in settings.ALLOWED_ORIGINS:
+                    if referer.startswith(allowed_origin):
+                        allowed = True
+                        break
+            
+            if not allowed:
+                return JSONResponse(
+                    status_code=403,
+                    content={"detail": "CSRF validation failed: untrusted origin/referer"},
+                )
+
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"

@@ -72,3 +72,13 @@ async def limpar_tentativas_login(ip: str) -> None:
     """Remove contador de falhas após login bem-sucedido."""
     async with get_redis() as r:
         await r.delete(f"{LOGIN_FAIL_PREFIX}{ip}")
+
+
+async def verificar_rate_limit_ip(ip: str, limit: int = 10, window_seconds: int = 60) -> bool:
+    """Retorna True se o IP excedeu o limite dentro da janela de tempo."""
+    async with get_redis() as r:
+        chave = f"rate_limit:{ip}"
+        total = await r.incr(chave)
+        if total == 1:
+            await r.expire(chave, window_seconds)
+        return total > limit

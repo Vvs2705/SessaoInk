@@ -1,6 +1,6 @@
 """Router do Portal Público — sem autenticação."""
 
-from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile, Request
 from fastapi.responses import FileResponse
 from pathlib import Path
 from pydantic import BaseModel, EmailStr
@@ -10,6 +10,7 @@ from typing import Optional
 
 from app.core.config import settings
 from app.core.database import get_session
+from app.core.redis import verificar_rate_limit_ip
 from app.models.usuario import Estudio
 from app.models.atendimento import Atendimento, AtendimentoImagem, StatusOperacional, TipoAtendimento
 from app.models.portfolio import Portfolio, VisibilidadePortfolio, FlashArt, StatusFlash
@@ -157,6 +158,7 @@ async def imagem_portfolio_publico(
 @router.post("/{slug}/orcamento", response_model=OrcamentoResponse, status_code=201)
 async def solicitar_orcamento(
     slug: str,
+    request: Request,
     nome: str = Form(...),
     whatsapp: str = Form(...),
     instagram: Optional[str] = Form(None),
@@ -170,6 +172,13 @@ async def solicitar_orcamento(
     imagens: Optional[list[UploadFile]] = File(None),
     session: AsyncSession = Depends(get_session),
 ):
+    ip = request.client.host if request.client else "unknown"
+    if await verificar_rate_limit_ip(ip, limit=5, window_seconds=60):
+        raise HTTPException(
+            status_code=429,
+            detail="Muitas solicitações de orçamento a partir deste IP. Aguarde um minuto e tente novamente."
+        )
+
     if not aceite_privacidade or not aceite_termos:
         raise HTTPException(400, "É necessário aceitar a política de privacidade e os termos de uso")
 

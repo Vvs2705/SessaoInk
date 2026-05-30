@@ -65,3 +65,6 @@ ROADMAP.md
 
 # Testes (rodam localmente, não sobem para o repositório)
 backend/tests/
+
+# TypeScript cache
+*.tsbuildinfo

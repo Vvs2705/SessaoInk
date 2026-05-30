@@ -43,3 +43,27 @@ async def get_usuario_atual(
         raise credentials_exception
 
     return usuario
+
+
+from typing import Any
+from app.models.usuario import TipoUsuario
+
+def requires_roles(*roles: TipoUsuario):
+    """Dependência que valida se o usuário possui alguma das permissões/funções informadas."""
+    async def dependency(usuario: Usuario = Depends(get_usuario_atual)) -> Usuario:
+        if usuario.tipo not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Permissão insuficiente para esta operação",
+            )
+        return usuario
+    return dependency
+
+
+def verificar_tenant(objeto: Any, usuario: Usuario) -> None:
+    """Verifica se o recurso pertence ao mesmo estúdio do usuário autenticado (tenant isolation)."""
+    if getattr(objeto, "estudio_id", None) != usuario.estudio_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso negado: o recurso solicitado pertence a outro estúdio",
+        )

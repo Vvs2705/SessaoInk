@@ -1,0 +1,25 @@
+:root {
+  --ink-night: #050B12;
+  --deep-graphite: #0B171C;
+  --porcelain-ink: #F0EADD;
+  --teal-ink: #2F9285;
+  --deep-teal: #1E5F59;
+  --copper-needle: #C36B3F;
+  --smoke-text: #B8C2BF;
+  --mist-line: #243337;
+  --error-red: #E35D5B;
+
+  --bg: var(--ink-night);
+  --surface: var(--deep-graphite);
+  --text: var(--porcelain-ink);
+  --text-muted: var(--smoke-text);
+  --primary: var(--teal-ink);
+  --primary-hover: #3AA99A;
+  --accent: var(--copper-needle);
+  --border: var(--mist-line);
+  --danger: var(--error-red);
+
+  --radius-card: 18px;
+  --radius-button: 14px;
+  --shadow-card: 0 18px 50px rgba(0,0,0,.35);
+}

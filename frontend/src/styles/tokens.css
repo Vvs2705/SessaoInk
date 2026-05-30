@@ -1,0 +1,82 @@
+:root {
+  /* Brand Assets base design tokens */
+  --ink-night: #050B12;
+  --deep-graphite: #0B171C;
+  --porcelain-ink: #F0EADD;
+  --teal-ink: #2F9285;
+  --deep-teal: #1E5F59;
+  --copper-needle: #C36B3F;
+  --smoke-text: #B8C2BF;
+  --mist-line: #243337;
+  --error-red: #E35D5B;
+
+  --bg: var(--ink-night);
+  --surface: var(--deep-graphite);
+  --text: var(--porcelain-ink);
+  --text-muted: var(--smoke-text);
+  --primary: var(--teal-ink);
+  --primary-hover: #3AA99A;
+  --accent: var(--copper-needle);
+  --border: var(--mist-line);
+  --danger: var(--error-red);
+
+  --radius-card: 18px;
+  --radius-button: 14px;
+
+  /* Expanded design tokens from EQUIPE_FRONTEND */
+  --surface-raised: #102128;
+  --surface-soft: #0E1C22;
+  --text-subtle: #87938F;
+
+  /* Interactive States */
+  --primary-pressed: #26766C;
+  --accent-soft: rgba(195, 107, 63, .14);
+  --warning: #D99A3D;
+  --success: #54B88D;
+  --info: #5E9ED6;
+
+  /* Status de atendimento */
+  --status-solicitado: #5E9ED6;
+  --status-aguardando-sinal: #D99A3D;
+  --status-confirmado: #54B88D;
+  --status-finalizado: #8B7CF6;
+  --status-cancelado: #E35D5B;
+  --status-nao-compareceu: #C36B3F;
+  --status-privado: #87938F;
+  --status-publico: #2F9285;
+
+  /* Status financeiro */
+  --fin-pendente: #D99A3D;
+  --fin-sinal-pago: #5E9ED6;
+  --fin-pago-total: #54B88D;
+  --fin-estornado: #E35D5B;
+
+  /* Radius */
+  --radius-xs: 8px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  /* Espaçamento base-4 */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px;
+  --space-4: 16px; --space-5: 20px; --space-6: 24px;
+  --space-8: 32px; --space-10: 40px; --space-12: 48px;
+
+  /* Tipografia */
+  --font-sans: Inter, system-ui, -apple-system, sans-serif;
+  --text-xs: 12px; --text-sm: 14px; --text-md: 16px;
+  --text-lg: 18px; --text-xl: 22px; --text-2xl: 28px; --text-3xl: 36px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --duration-fast: 120ms;
+  --duration-normal: 180ms;
+  --duration-slow: 260ms;
+
+  /* Sombras */
+  --shadow-card: 0 18px 50px rgba(0,0,0,.35);
+  --shadow-popover: 0 24px 70px rgba(0,0,0,.48);
+  --shadow-focus: 0 0 0 3px rgba(47,146,133,.35);
+}

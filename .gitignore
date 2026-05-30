@@ -1,0 +1,67 @@
+# Secrets e ambiente
+.env
+.env.*
+!.env.example
+
+# Storage local (nunca commitar arquivos de upload)
+storage/
+backend/storage/
+
+# Node
+node_modules/
+.next/
+frontend/.next/
+frontend/node_modules/
+frontend/out/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+backend/.venv/
+backend/venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Docker
+*.log
+
+# Chaves e certificados
+*.pem
+*.key
+*.cert
+*.crt
+
+# Banco local
+*.sqlite
+*.db
+
+# Claude Code (arquivos internos do assistente)
+.claude/
+
+# Imagens temporárias / assets de trabalho
+*.png~
+ChatGPT Image*.png
+
+# Documentação interna / arquivos de equipe (apenas consulta local)
+_memoria/
+_equipes/
+docs/
+ROADMAP.md
+
+# Testes (rodam localmente, não sobem para o repositório)
+backend/tests/

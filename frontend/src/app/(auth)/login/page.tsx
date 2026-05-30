@@ -49,12 +49,13 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#050B12] flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-xl bg-[#2F9285] flex items-center justify-center font-bold text-2xl text-[#050B12] mx-auto mb-4 shadow-[0_0_40px_rgba(47,146,133,0.3)]">
-            SI
-          </div>
-          <h1 className="text-2xl font-bold text-[#F0EADD] tracking-tight">SessãoInk</h1>
-          <p className="text-sm text-[#87938F] mt-1">Acesse o painel do seu estúdio</p>
+        <div className="text-center mb-8 flex flex-col items-center">
+          <img
+            src="/logo-wide.png"
+            alt="SessãoInk"
+            className="h-16 w-auto object-contain mb-4"
+          />
+          <p className="text-sm text-[#87938F]">Acesse o painel do seu estúdio</p>
         </div>
 
         {/* Card */}

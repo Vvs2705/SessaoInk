@@ -6,7 +6,7 @@ from datetime import datetime
 
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 from app.core.mixins import SoftDeleteMixin, TimestampMixin, UUIDMixin
@@ -93,3 +93,27 @@ class Atendimento(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
         DateTime(timezone=True), nullable=True, index=True
     )
     duracao_minutos: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    cliente: Mapped["Cliente" | None] = relationship(
+        "Cliente", foreign_keys=[cliente_id], lazy="joined"
+    )
+
+    imagens: Mapped[list["AtendimentoImagem"]] = relationship(
+        "AtendimentoImagem", back_populates="atendimento", cascade="all, delete-orphan"
+    )
+
+
+class AtendimentoImagem(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
+    __tablename__ = "atendimento_imagens"
+
+    atendimento_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("atendimentos.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    imagem_path: Mapped[str] = mapped_column(String(500), nullable=False)
+
+    atendimento: Mapped["Atendimento"] = relationship(
+        "Atendimento", back_populates="imagens"
+    )

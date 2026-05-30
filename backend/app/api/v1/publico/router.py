@@ -1,6 +1,6 @@
 """Router do Portal Público — sem autenticação."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile
 from fastapi.responses import FileResponse
 from pathlib import Path
 from pydantic import BaseModel, EmailStr
@@ -11,7 +11,7 @@ from typing import Optional
 from app.core.config import settings
 from app.core.database import get_session
 from app.models.usuario import Estudio
-from app.models.atendimento import Atendimento, StatusOperacional, TipoAtendimento
+from app.models.atendimento import Atendimento, AtendimentoImagem, StatusOperacional, TipoAtendimento
 from app.models.portfolio import Portfolio, VisibilidadePortfolio, FlashArt, StatusFlash
 
 router = APIRouter(prefix="/public", tags=["portal-público"])
@@ -157,10 +157,20 @@ async def imagem_portfolio_publico(
 @router.post("/{slug}/orcamento", response_model=OrcamentoResponse, status_code=201)
 async def solicitar_orcamento(
     slug: str,
-    dados: OrcamentoRequest,
+    nome: str = Form(...),
+    whatsapp: str = Form(...),
+    instagram: Optional[str] = Form(None),
+    descricao: Optional[str] = Form(None),
+    estilo: Optional[str] = Form(None),
+    parte_corpo: Optional[str] = Form(None),
+    tamanho_cm: Optional[str] = Form(None),
+    observacoes: Optional[str] = Form(None),
+    aceite_privacidade: bool = Form(...),
+    aceite_termos: bool = Form(...),
+    imagens: Optional[list[UploadFile]] = File(None),
     session: AsyncSession = Depends(get_session),
 ):
-    if not dados.aceite_privacidade or not dados.aceite_termos:
+    if not aceite_privacidade or not aceite_termos:
         raise HTTPException(400, "É necessário aceitar a política de privacidade e os termos de uso")
 
     result = await session.execute(
@@ -170,21 +180,57 @@ async def solicitar_orcamento(
     if not estudio:
         raise HTTPException(404, "Estúdio não encontrado")
 
+    # Construir notas_privadas
+    notas = f"Contato: {nome} | WhatsApp: {whatsapp}"
+    if instagram:
+        notas += f" | Instagram: {instagram}"
+    if observacoes:
+        notas += f"\nObservações: {observacoes}"
+
     # Criar atendimento automaticamente
     atendimento = Atendimento(
         estudio_id=estudio.id,
         status_operacional=StatusOperacional.SOLICITADO,
         tipo=TipoAtendimento.TATUAGEM,
-        descricao=dados.descricao,
-        parte_corpo=dados.parte_corpo,
-        estilo=dados.estilo,
-        tamanho_cm=dados.tamanho_cm,
-        notas_privadas=f"Contato: {dados.nome} | WhatsApp: {dados.whatsapp}{f' | Instagram: {dados.instagram}' if dados.instagram else ''}",
+        descricao=descricao,
+        parte_corpo=parte_corpo,
+        estilo=estilo,
+        tamanho_cm=tamanho_cm,
+        notas_privadas=notas,
     )
     session.add(atendimento)
     await session.flush()
 
+    # Salvar imagens fisicamente se houver
     import uuid
+    if imagens:
+        upload_dir = Path(settings.STORAGE_PATH) / "uploads" / str(estudio.id) / "atendimentos" / str(atendimento.id)
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        
+        for imagem in imagens:
+            # Pula arquivos se forem enviados vazios ou sem nome
+            if not imagem.filename:
+                continue
+            
+            # Gerar nome de arquivo único
+            ext = Path(imagem.filename).suffix
+            novo_nome = f"{uuid.uuid4()}{ext}"
+            caminho_arquivo = upload_dir / novo_nome
+            
+            # Salvar o arquivo de forma assíncrona
+            conteudo = await imagem.read()
+            with open(caminho_arquivo, "wb") as f:
+                f.write(conteudo)
+            
+            # Registrar no banco de dados
+            atendimento_imagem = AtendimentoImagem(
+                atendimento_id=atendimento.id,
+                imagem_path=novo_nome
+            )
+            session.add(atendimento_imagem)
+        
+        await session.flush()
+
     protocolo = f"SI{str(atendimento.id).split('-')[0].upper()}"
 
     return OrcamentoResponse(

@@ -1,0 +1,25 @@
+{
+  "name": "SessãoInk",
+  "short_name": "SessãoInk",
+  "description": "O Sistema Operacional do Tatuador. Gerencie clientes, orçamentos, agenda, sinal e documentos.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050B12",
+  "theme_color": "#0B171C",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

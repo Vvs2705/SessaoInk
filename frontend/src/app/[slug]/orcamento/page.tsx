@@ -8,6 +8,8 @@ import {
   Loader2,
   ArrowLeft,
   AlertCircle,
+  Upload,
+  X,
 } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -41,6 +43,11 @@ interface FormState {
   aceite_termos: boolean;
 }
 
+interface ImagemReferencia {
+  file: File;
+  preview: string;
+}
+
 const inputClass =
   "w-full h-11 px-3.5 rounded-[14px] bg-[#050B12] border border-[#243337] text-[#F0EADD] text-sm placeholder-[#87938F]/70 focus:outline-none focus:border-[#2F9285]/60 transition-colors";
 
@@ -67,6 +74,28 @@ export default function OrcamentoPage() {
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState<OrcamentoResponse | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [imagens, setImagens] = useState<ImagemReferencia[]>([]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      const novasImagens = filesArray.map((file) => ({
+        file,
+        preview: URL.createObjectURL(file),
+      }));
+      setImagens((prev) => [...prev, ...novasImagens]);
+    }
+  };
+
+  const removerImagem = (index: number) => {
+    setImagens((prev) => {
+      const target = prev[index];
+      if (target) {
+        URL.revokeObjectURL(target.preview);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+  };
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((prev) => ({ ...prev, [k]: v }));
@@ -86,24 +115,37 @@ export default function OrcamentoPage() {
     setErro(null);
 
     try {
-      const body = {
-        nome: form.nome.trim(),
-        whatsapp: form.whatsapp.trim(),
-        instagram: form.instagram.trim() || null,
-        descricao: form.descricao.trim(),
-        estilo: form.estilo || null,
-        parte_corpo: form.parte_corpo.trim() || null,
-        tamanho_cm: form.tamanho_cm.trim() || null,
-        aceite_privacidade: true,
-        aceite_termos: true,
-      };
+      const formData = new FormData();
+      formData.append("nome", form.nome.trim());
+      formData.append("whatsapp", form.whatsapp.trim());
+      if (form.instagram.trim()) {
+        formData.append("instagram", form.instagram.trim());
+      }
+      if (form.descricao.trim()) {
+        formData.append("descricao", form.descricao.trim());
+      }
+      if (form.estilo) {
+        formData.append("estilo", form.estilo);
+      }
+      if (form.parte_corpo.trim()) {
+        formData.append("parte_corpo", form.parte_corpo.trim());
+      }
+      if (form.tamanho_cm.trim()) {
+        formData.append("tamanho_cm", form.tamanho_cm.trim());
+      }
+      formData.append("aceite_privacidade", String(form.aceite_privacidade));
+      formData.append("aceite_termos", String(form.aceite_termos));
+
+      // Adicionar imagens
+      imagens.forEach((img) => {
+        formData.append("imagens", img.file);
+      });
 
       const res = await fetch(
         `${API_URL}/api/v1/public/${slug}/orcamento`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
+          body: formData,
         }
       );
 
@@ -299,6 +341,56 @@ export default function OrcamentoPage() {
                 className={inputClass}
               />
             </div>
+          </div>
+
+          {/* ── Fotos de referência ── */}
+          <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-sm font-semibold text-[#87938F] uppercase tracking-wider">
+                Fotos de referência
+              </h2>
+              <span className="text-xs text-[#87938F]">opcional</span>
+            </div>
+
+            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[#243337] hover:border-[#2F9285]/50 bg-[#050B12] rounded-[14px] cursor-pointer transition-colors group">
+              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                <Upload className="w-8 h-8 text-[#87938F] group-hover:text-[#2F9285] transition-colors mb-2" />
+                <p className="text-sm text-[#F0EADD] font-medium mb-1">
+                  Carregar fotos de referência
+                </p>
+                <p className="text-xs text-[#87938F]">
+                  Selecione uma ou mais imagens
+                </p>
+              </div>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+            </label>
+
+            {imagens.length > 0 && (
+              <div className="grid grid-cols-3 gap-3 mt-4">
+                {imagens.map((img, index) => (
+                  <div key={index} className="relative aspect-square rounded-[12px] overflow-hidden border border-[#243337] bg-[#050B12]">
+                    <img
+                      src={img.preview}
+                      alt={`Referência ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removerImagem(index)}
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/70 hover:bg-black text-[#F0EADD] flex items-center justify-center transition-colors border border-[#243337]/50"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* ── Privacidade ── */}

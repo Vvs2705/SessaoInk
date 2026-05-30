@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import DetalhesAtendimentoModal from "./DetalhesAtendimentoModal";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ClipboardList, Plus, Search, X } from "lucide-react";
 import { api } from "@/lib/api/client";
@@ -27,15 +28,28 @@ const FIN_CONFIG: Record<string, { label: string; cls: string }> = {
   ESTORNADO:   { label: "Estornado",  cls: "text-[#E35D5B]" },
 };
 
+interface ClienteAtendimento {
+  id: string;
+  nome: string;
+  telefone: string | null;
+  instagram: string | null;
+  email: string | null;
+}
+
 interface Atendimento {
   id: string;
   tipo: string;
   estilo: string | null;
   parte_corpo: string | null;
+  descricao: string | null;
   status_operacional: string;
   status_financeiro: string;
   valor_total: number | null;
+  valor_sinal: number | null;
+  tamanho_cm: string | null;
+  notas_privadas: string | null;
   data_sessao: string | null;
+  cliente: ClienteAtendimento | null;
 }
 
 interface NovoAtendimentoForm {
@@ -279,6 +293,7 @@ export default function AtendimentosPage() {
   const [view, setView] = useState<"lista" | "kanban">("lista");
   const [busca, setBusca] = useState("");
   const [modalAberto, setModalAberto] = useState(false);
+  const [atendimentoSelecionado, setAtendimentoSelecionado] = useState<Atendimento | null>(null);
 
   const { data = [], isLoading } = useQuery<Atendimento[]>({
     queryKey: ["atendimentos"],
@@ -386,6 +401,7 @@ export default function AtendimentosPage() {
             return (
               <div
                 key={a.id}
+                onClick={() => setAtendimentoSelecionado(a)}
                 className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-[#0B171C] border border-[#243337] rounded-[14px] hover:border-[#2F9285]/40 hover:bg-[#102128] transition-all cursor-pointer"
               >
                 <div className="flex items-start gap-3">
@@ -439,6 +455,7 @@ export default function AtendimentosPage() {
                     {items.map(a => (
                       <div
                         key={a.id}
+                        onClick={() => setAtendimentoSelecionado(a)}
                         className="p-3 bg-[#0B171C] border border-[#243337] rounded-[14px] hover:border-[#2F9285]/40 transition-all cursor-pointer"
                       >
                         <p className="text-sm font-medium text-[#F0EADD]">{a.tipo}</p>
@@ -465,6 +482,12 @@ export default function AtendimentosPage() {
 
       {/* Modal */}
       {modalAberto && <NovoAtendimentoModal onClose={() => setModalAberto(false)} />}
+      {atendimentoSelecionado && (
+        <DetalhesAtendimentoModal
+          atendimento={atendimentoSelecionado}
+          onClose={() => setAtendimentoSelecionado(null)}
+        />
+      )}
     </div>
   );
 }

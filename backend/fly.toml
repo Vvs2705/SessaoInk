@@ -1,0 +1,42 @@
+# Fly.io — SessãoInk API
+# Deploy: fly deploy (na pasta backend/)
+
+app = 'sessaoink-api'
+primary_region = 'gru'      # São Paulo — menor latência para o Brasil
+
+[build]
+  dockerfile = 'Dockerfile'
+
+[env]
+  PORT = "8000"
+  ENVIRONMENT = "production"
+  DEBUG = "false"
+  STORAGE_PATH = "/storage"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = true   # para em idle para economizar
+  auto_start_machines = true  # acorda na primeira request
+  min_machines_running = 0
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 100
+    soft_limit = 80
+
+[[vm]]
+  memory = '256mb'
+  cpu_kind = 'shared'
+  cpus = 1
+
+# Volume persistente para imagens de upload
+[mounts]
+  source = "sessaoink_storage"
+  destination = "/storage"
+
+# Health check
+[[services.tcp_checks]]
+  interval = "15s"
+  timeout = "2s"

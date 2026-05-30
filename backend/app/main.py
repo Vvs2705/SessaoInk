@@ -1,10 +1,26 @@
 from contextlib import asynccontextmanager
 
+import sentry_sdk
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 
 from app.core.config import settings
+
+# Inicializar Sentry apenas se DSN configurado (produção)
+if settings.SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        integrations=[
+            FastApiIntegration(),
+            SqlalchemyIntegration(),
+        ],
+        traces_sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
+        environment=settings.ENVIRONMENT,
+        send_default_pii=False,  # LGPD — não enviar dados pessoais
+    )
 from app.api.v1.auth.router import router as auth_router
 from app.api.v1.clientes.router import router as clientes_router
 from app.api.v1.atendimentos.router import router as atendimentos_router

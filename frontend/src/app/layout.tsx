@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "../styles/globals.css";
 import { QueryProvider } from "@/providers/QueryProvider";
+import { PostHogProvider } from "@/providers/PostHogProvider";
+import { Suspense } from "react";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -26,7 +28,11 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${inter.variable} h-full`}>
       <body className="h-full bg-ink-night text-porcelain-ink font-sans antialiased overflow-x-hidden">
-        <QueryProvider>{children}</QueryProvider>
+        <Suspense>
+          <PostHogProvider>
+            <QueryProvider>{children}</QueryProvider>
+          </PostHogProvider>
+        </Suspense>
       </body>
     </html>
   );

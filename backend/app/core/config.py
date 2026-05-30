@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     STORAGE_PATH: str = "./storage"
     UPLOAD_MAX_SIZE_MB: int = 15
 
+    # Observabilidade
+    SENTRY_DSN: str = ""
+    SENTRY_TRACES_SAMPLE_RATE: float = 0.1
+
     # Config model configuration
     model_config = SettingsConfigDict(
         env_file=".env",

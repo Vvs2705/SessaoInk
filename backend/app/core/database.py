@@ -6,7 +6,11 @@ from app.core.config import settings
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
-    future=True
+    future=True,
+    pool_pre_ping=True,      # reconecta automaticamente após idle (essencial para Neon)
+    pool_size=5,             # Neon pooler já gerencia conexões — não exagerar
+    max_overflow=10,
+    pool_recycle=300,        # recicla conexões a cada 5 min (Neon desconecta idle)
 )
 
 # Async session maker

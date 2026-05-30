@@ -37,6 +37,11 @@ primary_region = 'gru'      # São Paulo — menor latência para o Brasil
   destination = "/storage"
 
 # Health check
-[[services.tcp_checks]]
+[http_service.checks.status]
+  grace_period = "10s"
   interval = "15s"
+  method = "GET"
+  path = "/health"
+  protocol = "http"
   timeout = "2s"
+

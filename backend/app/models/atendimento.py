@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import enum
+from typing import Optional
 import uuid
 from datetime import datetime
 
@@ -96,7 +97,7 @@ class Atendimento(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     )
     duracao_minutos: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
-    cliente: Mapped["Cliente" | None] = relationship(
+    cliente: Mapped[Optional["Cliente"]] = relationship(
         "Cliente", foreign_keys=[cliente_id], lazy="joined"
     )
 

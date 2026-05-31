@@ -39,9 +39,18 @@ export default function LoginPage() {
       router.refresh();
     } catch (e) {
       if (e instanceof ApiError) {
-        setApiError(e.detail === "Email ou senha incorretos"
-          ? "E-mail ou senha incorretos. Verifique e tente novamente."
-          : e.detail);
+        let msg = "Erro na requisição. Verifique os dados.";
+        const detail = e.detail as any;
+        if (typeof detail === "string") {
+          msg = detail === "Email ou senha incorretos"
+            ? "E-mail ou senha incorretos. Verifique e tente novamente."
+            : detail;
+        } else if (Array.isArray(detail)) {
+          msg = detail.map((err: any) => err.msg || JSON.stringify(err)).join(", ");
+        } else if (detail && typeof detail === "object") {
+          msg = JSON.stringify(detail);
+        }
+        setApiError(msg);
       } else {
         setApiError("Erro de conexão. Verifique se o servidor está rodando.");
       }

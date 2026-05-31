@@ -6,7 +6,7 @@ import { Zap, Plus, Loader2, X, DollarSign, Maximize2, MapPin, Trash2, Tag, File
 import { api, ApiError } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+const API = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 interface FlashArtItem {
   id: string;

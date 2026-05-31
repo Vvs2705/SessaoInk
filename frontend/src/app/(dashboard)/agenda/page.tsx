@@ -81,7 +81,12 @@ function AgendarSessaoModal({ onClose }: { onClose: () => void }) {
   const { data: atendimentos = [], isLoading } = useQuery<any[]>({
     queryKey: ["atendimentos"],
     queryFn: () => api.get("/api/v1/atendimentos/"),
-    select: (data) => data.filter((a: any) => !a.data_sessao),
+    select: (data) =>
+      data.filter((a: any) =>
+        !["FINALIZADO", "CANCELADO_CLIENTE", "CANCELADO_ESTUDIO", "NAO_COMPARECEU"].includes(
+          a.status_operacional
+        )
+      ),
   });
 
   const mutation = useMutation({
@@ -136,7 +141,9 @@ function AgendarSessaoModal({ onClose }: { onClose: () => void }) {
                 <option value="">Selecione um atendimento...</option>
                 {atendimentos.map((a: any) => (
                   <option key={a.id} value={a.id}>
-                    {a.tipo}{a.estilo ? ` — ${a.estilo}` : ""}{a.cliente ? ` · ${a.cliente.nome}` : ""}
+                    {a.tipo}{a.estilo ? ` — ${a.estilo}` : ""}
+                    {a.cliente ? ` · ${a.cliente.nome}` : ""}
+                    {a.data_sessao ? ` (reagendar)` : ""}
                   </option>
                 ))}
               </select>

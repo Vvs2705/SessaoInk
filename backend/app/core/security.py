@@ -1,11 +1,11 @@
 """Funções de segurança: JWT e hashing de senha."""
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from jose import JWTError, jwt
 import bcrypt as _bcrypt
+from jose import JWTError, jwt
 
 from app.core.config import settings
 
@@ -24,7 +24,7 @@ def verificar_senha(senha_plana: str, senha_hash: str) -> bool:
 def criar_access_token(data: dict[str, Any]) -> str:
     """Cria JWT de acesso com expiração de ACCESS_TOKEN_EXPIRE_MINUTES."""
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(
+    expire = datetime.now(UTC) + timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
     to_encode.update({"exp": expire, "type": "access"})

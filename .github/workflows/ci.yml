@@ -21,11 +21,12 @@ jobs:
           cache: pip
       - run: pip install --upgrade pip && pip install -r requirements.txt
       - name: Lint (ruff)
+        # ruff lê configuração do pyproject.toml automaticamente
         run: pip install ruff && ruff check .
       - name: Type check (pyright)
         run: pip install pyright && pyright --pythonpath $(which python) app/ || true
-      - name: Check migrations compile
-        run: python -c "from app.core.config import settings; print('config ok')"
+      - name: Smoke test — imports
+        run: python -c "from app.core.config import settings; from app.main import app; print('OK')"
         env:
           SECRET_KEY: ci-test-secret-key-32chars-minimum
           DATABASE_URL: postgresql+asyncpg://user:pass@localhost/db
@@ -45,7 +46,9 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
+      # lucide-react@0.390 declara peer react@^18 mas funciona com React 19
+      # Vercel usa --legacy-peer-deps internamente; replicamos aqui
+      - run: npm ci --legacy-peer-deps
       - name: Lint
         run: npm run lint
       - name: Type check

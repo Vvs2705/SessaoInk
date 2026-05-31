@@ -3,14 +3,14 @@
 import enum
 import uuid
 
-from sqlalchemy import Boolean, Enum, ForeignKey, String, Uuid
+from sqlalchemy import Enum, ForeignKey, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 from app.core.mixins import SoftDeleteMixin, TimestampMixin, UUIDMixin
 
 
-class TipoUsuario(str, enum.Enum):
+class TipoUsuario(enum.StrEnum):
     ADMIN = "ADMIN"
     ARTISTA = "ARTISTA"
     RECEPCIONISTA = "RECEPCIONISTA"

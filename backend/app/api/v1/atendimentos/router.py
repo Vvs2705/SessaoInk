@@ -2,6 +2,7 @@
 
 import uuid
 from pathlib import Path
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import FileResponse
 from sqlalchemy import select
@@ -11,11 +12,13 @@ from app.api.v1.auth.dependencies import get_usuario_atual
 from app.core.config import settings
 from app.core.database import get_session
 from app.models.atendimento import Atendimento, StatusOperacional
-from app.models.usuario import Usuario
 from app.models.cliente import Cliente
+from app.models.usuario import Usuario
 from app.schemas.atendimento import (
-    AtendimentoCreate, AtendimentoResponse,
-    AtendimentoStatusUpdate, AtendimentoUpdate,
+    AtendimentoCreate,
+    AtendimentoResponse,
+    AtendimentoStatusUpdate,
+    AtendimentoUpdate,
 )
 
 router = APIRouter(prefix="/atendimentos", tags=["atendimentos"])
@@ -29,7 +32,7 @@ async def listar_atendimentos(
 ):
     q = select(Atendimento).where(
         Atendimento.estudio_id == usuario.estudio_id,
-        Atendimento.ativo == True,
+        Atendimento.ativo,
     )
     if status_op:
         q = q.where(Atendimento.status_operacional == status_op)
@@ -50,7 +53,7 @@ async def criar_atendimento(
             select(Cliente).where(
                 Cliente.id == dados.cliente_id,
                 Cliente.estudio_id == usuario.estudio_id,
-                Cliente.ativo == True,
+                Cliente.ativo,
             )
         )
         if not cliente_exists:
@@ -65,7 +68,7 @@ async def criar_atendimento(
             select(Usuario).where(
                 Usuario.id == dados.artista_id,
                 Usuario.estudio_id == usuario.estudio_id,
-                Usuario.ativo == True,
+                Usuario.ativo,
             )
         )
         if not artista_exists:
@@ -124,7 +127,7 @@ async def atualizar_atendimento(
             select(Cliente).where(
                 Cliente.id == dados.cliente_id,
                 Cliente.estudio_id == usuario.estudio_id,
-                Cliente.ativo == True,
+                Cliente.ativo,
             )
         )
         if not cliente_exists:
@@ -139,7 +142,7 @@ async def atualizar_atendimento(
             select(Usuario).where(
                 Usuario.id == dados.artista_id,
                 Usuario.estudio_id == usuario.estudio_id,
-                Usuario.ativo == True,
+                Usuario.ativo,
             )
         )
         if not artista_exists:
@@ -221,7 +224,7 @@ async def listar_imagens_atendimento(
         / "atendimentos"
         / str(id)
     )
-    
+
     if not dir_imagens.exists() or not dir_imagens.is_dir():
         return []
 
@@ -260,7 +263,7 @@ async def obter_imagem_atendimento(
         / str(id)
         / filename
     )
-    
+
     if not caminho.exists() or not caminho.is_file():
         raise HTTPException(404, "Imagem não encontrada no disco")
 

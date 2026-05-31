@@ -3,15 +3,14 @@
 import hashlib
 import secrets
 import uuid
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.auth.dependencies import get_usuario_atual, require_role
+from app.api.v1.auth.dependencies import require_role
 from app.core.database import get_session
 from app.core.security import hash_senha
 from app.models.convite import Convite, StatusConvite
@@ -40,7 +39,7 @@ class ConviteResponse(BaseModel):
     role: TipoUsuario
     status: StatusConvite
     expira_em: datetime
-    aceito_em: Optional[datetime] = None
+    aceito_em: datetime | None = None
     criado_em: datetime
     model_config = {"from_attributes": True}
 
@@ -90,7 +89,7 @@ async def criar_convite(
         select(Usuario).where(
             Usuario.estudio_id == usuario.estudio_id,
             Usuario.email == dados.email.lower(),
-            Usuario.ativo == True,
+            Usuario.ativo,
         )
     )
     if result_usuario.scalar_one_or_none():
@@ -109,7 +108,7 @@ async def criar_convite(
         role=dados.role,
         token_hash=token_hash,
         status=StatusConvite.PENDENTE,
-        expira_em=datetime.now(timezone.utc) + timedelta(days=CONVITE_TTL_DIAS),
+        expira_em=datetime.now(UTC) + timedelta(days=CONVITE_TTL_DIAS),
         convidado_por_id=usuario.id,
     )
     session.add(convite)
@@ -189,7 +188,7 @@ async def aceitar_convite(
             detail=f"Este convite não está mais disponível (status: {convite.status}).",
         )
 
-    agora = datetime.now(timezone.utc)
+    agora = datetime.now(UTC)
     if convite.expira_em < agora:
         convite.status = StatusConvite.EXPIRADO
         raise HTTPException(status_code=status.HTTP_410_GONE, detail="Este convite expirou.")

@@ -1,8 +1,9 @@
 """Cliente Redis assíncrono — refresh tokens e rate limiting."""
 
-from redis.asyncio import Redis
-from typing import Dict, Any, List
 import logging
+from typing import Any
+
+from redis.asyncio import Redis
 
 from app.core.config import settings
 
@@ -21,8 +22,8 @@ class MockRedis:
     """Redis in-memory mock — singleton com estado compartilhado para testes."""
 
     _instance: "MockRedis | None" = None
-    _shared_data: Dict[str, str] = {}
-    _shared_ttls: Dict[str, int] = {}
+    _shared_data: dict[str, str] = {}
+    _shared_ttls: dict[str, int] = {}
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -76,7 +77,7 @@ class MockRedis:
         self._ttls[key] = seconds
         return True
 
-    async def keys(self, pattern: str) -> List[str]:
+    async def keys(self, pattern: str) -> list[str]:
         if pattern.endswith("*"):
             prefix = pattern[:-1]
             return [k for k in self._data.keys() if k.startswith(prefix)]
@@ -175,7 +176,7 @@ class RedisFallbackWrapper:
             RedisFallbackWrapper._use_mock = True
             return await self.mock_client.expire(key, seconds)
 
-    async def keys(self, pattern: str) -> List[str]:
+    async def keys(self, pattern: str) -> list[str]:
         if RedisFallbackWrapper._use_mock:
             return await self.mock_client.keys(pattern)
         try:
@@ -227,7 +228,7 @@ class ProductionRedis:
     async def expire(self, key: str, seconds: int) -> bool:
         return await self._client.expire(key, seconds)
 
-    async def keys(self, pattern: str) -> List[str]:
+    async def keys(self, pattern: str) -> list[str]:
         return await self._client.keys(pattern)
 
     async def ping(self) -> bool:

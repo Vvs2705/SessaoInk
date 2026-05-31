@@ -1,24 +1,28 @@
 """Router do Portal Público — sem autenticação."""
 
 import hashlib
-from datetime import datetime, timezone
-
-from fastapi import APIRouter, Depends, Form, File, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse
+import uuid
+from datetime import UTC, datetime
 from pathlib import Path
-from pydantic import BaseModel, EmailStr
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Optional
 
-import uuid
 from app.core.config import settings
 from app.core.database import get_session
-from app.core.redis import verificar_limite_orcamento, registrar_solicitacao_orcamento
-from app.models.usuario import Estudio
-from app.models.atendimento import Atendimento, AtendimentoImagem, StatusOperacional, TipoAtendimento
-from app.models.portfolio import Portfolio, VisibilidadePortfolio, FlashArt, StatusFlash
+from app.core.redis import registrar_solicitacao_orcamento, verificar_limite_orcamento
+from app.models.atendimento import (
+    Atendimento,
+    AtendimentoImagem,
+    StatusOperacional,
+    TipoAtendimento,
+)
 from app.models.documento import AcaoLink, Documento, DocumentoLinkAcesso
+from app.models.portfolio import FlashArt, Portfolio, StatusFlash, VisibilidadePortfolio
+from app.models.usuario import Estudio
 
 router = APIRouter(prefix="/public", tags=["portal-público"])
 
@@ -26,22 +30,22 @@ router = APIRouter(prefix="/public", tags=["portal-público"])
 class EstudioPublicoResponse(BaseModel):
     slug: str
     nome: str
-    bio: Optional[str]
-    cidade: Optional[str]
-    uf: Optional[str]
-    instagram: Optional[str]
+    bio: str | None
+    cidade: str | None
+    uf: str | None
+    instagram: str | None
     model_config = {"from_attributes": True}
 
 
 class OrcamentoRequest(BaseModel):
     nome: str
     whatsapp: str
-    instagram: Optional[str] = None
-    descricao: Optional[str] = None
-    estilo: Optional[str] = None
-    parte_corpo: Optional[str] = None
-    tamanho_cm: Optional[str] = None
-    observacoes: Optional[str] = None
+    instagram: str | None = None
+    descricao: str | None = None
+    estilo: str | None = None
+    parte_corpo: str | None = None
+    tamanho_cm: str | None = None
+    observacoes: str | None = None
     aceite_privacidade: bool
     aceite_termos: bool
 
@@ -54,10 +58,10 @@ class OrcamentoResponse(BaseModel):
 
 class PortfolioPublicoItem(BaseModel):
     id: str
-    titulo: Optional[str]
-    descricao: Optional[str]
-    estilo: Optional[str]
-    parte_corpo: Optional[str]
+    titulo: str | None
+    descricao: str | None
+    estilo: str | None
+    parte_corpo: str | None
     imagem_path: str
     model_config = {"from_attributes": True}
 
@@ -68,7 +72,7 @@ async def perfil_publico(
     session: AsyncSession = Depends(get_session),
 ):
     result = await session.execute(
-        select(Estudio).where(Estudio.slug == slug, Estudio.ativo == True)
+        select(Estudio).where(Estudio.slug == slug, Estudio.ativo)
     )
     estudio = result.scalar_one_or_none()
     if not estudio:
@@ -83,7 +87,7 @@ async def portfolio_publico(
 ):
     """Retorna itens do portfólio com visibilidade PUBLICO e autorização — sem autenticação."""
     result = await session.execute(
-        select(Estudio).where(Estudio.slug == slug, Estudio.ativo == True)
+        select(Estudio).where(Estudio.slug == slug, Estudio.ativo)
     )
     estudio = result.scalar_one_or_none()
     if not estudio:
@@ -94,8 +98,8 @@ async def portfolio_publico(
         .where(
             Portfolio.estudio_id == estudio.id,
             Portfolio.visibilidade == VisibilidadePortfolio.PUBLICO,
-            Portfolio.autorizado_publicacao == True,
-            Portfolio.ativo == True,
+            Portfolio.autorizado_publicacao,
+            Portfolio.ativo,
         )
         .order_by(Portfolio.criado_em.desc())
         .limit(30)
@@ -128,7 +132,7 @@ async def imagem_portfolio_publico(
         raise HTTPException(400, "ID inválido")
 
     result_estudio = await session.execute(
-        select(Estudio).where(Estudio.slug == slug, Estudio.ativo == True)
+        select(Estudio).where(Estudio.slug == slug, Estudio.ativo)
     )
     estudio = result_estudio.scalar_one_or_none()
     if not estudio:
@@ -139,8 +143,8 @@ async def imagem_portfolio_publico(
             Portfolio.id == pid,
             Portfolio.estudio_id == estudio.id,
             Portfolio.visibilidade == VisibilidadePortfolio.PUBLICO,
-            Portfolio.autorizado_publicacao == True,
-            Portfolio.ativo == True,
+            Portfolio.autorizado_publicacao,
+            Portfolio.ativo,
         )
     )
     item = result.scalar_one_or_none()
@@ -163,10 +167,10 @@ async def imagem_portfolio_publico(
 class FlashArtPublicaResponse(BaseModel):
     id: str
     titulo: str
-    descricao: Optional[str]
-    preco: Optional[float]
-    tamanho_sugerido: Optional[str]
-    local_recomendado: Optional[str]
+    descricao: str | None
+    preco: float | None
+    tamanho_sugerido: str | None
+    local_recomendado: str | None
     has_imagem: bool
 
 
@@ -177,7 +181,7 @@ async def flash_arts_publicas(
 ):
     """Retorna flash arts disponíveis do estúdio — sem autenticação."""
     result = await session.execute(
-        select(Estudio).where(Estudio.slug == slug, Estudio.ativo == True)
+        select(Estudio).where(Estudio.slug == slug, Estudio.ativo)
     )
     estudio = result.scalar_one_or_none()
     if not estudio:
@@ -187,7 +191,7 @@ async def flash_arts_publicas(
         select(FlashArt).where(
             FlashArt.estudio_id == estudio.id,
             FlashArt.status == StatusFlash.DISPONIVEL,
-            FlashArt.ativo == True,
+            FlashArt.ativo,
         ).order_by(FlashArt.criado_em.desc())
     )
     return [
@@ -218,7 +222,7 @@ async def imagem_flash_art_publica(
         raise HTTPException(400, "ID inválido")
 
     result_estudio = await session.execute(
-        select(Estudio).where(Estudio.slug == slug, Estudio.ativo == True)
+        select(Estudio).where(Estudio.slug == slug, Estudio.ativo)
     )
     estudio = result_estudio.scalar_one_or_none()
     if not estudio:
@@ -229,7 +233,7 @@ async def imagem_flash_art_publica(
             FlashArt.id == fid,
             FlashArt.estudio_id == estudio.id,
             FlashArt.status == StatusFlash.DISPONIVEL,
-            FlashArt.ativo == True,
+            FlashArt.ativo,
         )
     )
     flash = result.scalar_one_or_none()
@@ -258,17 +262,17 @@ async def solicitar_orcamento(
     request: Request,
     nome: str = Form(...),
     whatsapp: str = Form(...),
-    instagram: Optional[str] = Form(None),
-    descricao: Optional[str] = Form(None),
-    estilo: Optional[str] = Form(None),
-    parte_corpo: Optional[str] = Form(None),
-    tamanho_cm: Optional[str] = Form(None),
-    observacoes: Optional[str] = Form(None),
+    instagram: str | None = Form(None),
+    descricao: str | None = Form(None),
+    estilo: str | None = Form(None),
+    parte_corpo: str | None = Form(None),
+    tamanho_cm: str | None = Form(None),
+    observacoes: str | None = Form(None),
     aceite_privacidade: bool = Form(...),
     aceite_termos: bool = Form(...),
-    email_confirm: Optional[str] = Form(None),
-    website: Optional[str] = Form(None),
-    imagens: Optional[list[UploadFile]] = File(None),
+    email_confirm: str | None = Form(None),
+    website: str | None = Form(None),
+    imagens: list[UploadFile] | None = File(None),
     session: AsyncSession = Depends(get_session),
 ):
     # 1. Rate Limiting
@@ -300,7 +304,7 @@ async def solicitar_orcamento(
     await registrar_solicitacao_orcamento(ip)
 
     result = await session.execute(
-        select(Estudio).where(Estudio.slug == slug, Estudio.ativo == True)
+        select(Estudio).where(Estudio.slug == slug, Estudio.ativo)
     )
     estudio = result.scalar_one_or_none()
     if not estudio:
@@ -338,7 +342,7 @@ async def solicitar_orcamento(
 
         ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp"}
         MAX_SIZE = settings.UPLOAD_MAX_SIZE_MB * 1024 * 1024  # 15MB
-        
+
         salvos_no_disco = []
         upload_dir = Path(settings.STORAGE_PATH) / "uploads" / str(estudio.id) / "atendimentos" / str(atendimento.id)
 
@@ -347,34 +351,34 @@ async def solicitar_orcamento(
                 # 2. Validar content_type
                 if imagem.content_type not in ALLOWED_MIME:
                     raise HTTPException(415, f"Tipo de arquivo não permitido: {imagem.filename}. Use JPG, PNG ou WEBP.")
-                
+
                 # 3. Ler conteúdo e validar tamanho
                 conteudo = await imagem.read()
                 if len(conteudo) > MAX_SIZE:
                     raise HTTPException(413, f"O arquivo {imagem.filename} excede o tamanho máximo de {settings.UPLOAD_MAX_SIZE_MB}MB.")
-                
+
                 # Gerar nome de arquivo único e seguro
                 ext = Path(imagem.filename).suffix.lower()
                 if ext not in {".jpg", ".jpeg", ".png", ".webp"}:
                     ext = ".jpg" # fallback/segurança
                 novo_nome = f"{uuid.uuid4()}{ext}"
-                
+
                 upload_dir.mkdir(parents=True, exist_ok=True)
                 caminho_arquivo = upload_dir / novo_nome
-                
+
                 # Salvar o arquivo
                 with open(caminho_arquivo, "wb") as f:
                     f.write(conteudo)
-                
+
                 salvos_no_disco.append(caminho_arquivo)
-                
+
                 # Registrar no banco de dados
                 atendimento_imagem = AtendimentoImagem(
                     atendimento_id=atendimento.id,
                     imagem_path=novo_nome
                 )
                 session.add(atendimento_imagem)
-            
+
             await session.flush()
 
         except Exception as e:
@@ -391,8 +395,9 @@ async def solicitar_orcamento(
 
     # Enviar email de notificação para o estúdio (silencioso se SMTP não configurado)
     if estudio.email_notificacao:
-        from app.core.email import enviar_notificacao_orcamento
         import asyncio
+
+        from app.core.email import enviar_notificacao_orcamento
         asyncio.create_task(enviar_notificacao_orcamento(
             email_destino=estudio.email_notificacao,
             nome_estudio=estudio.nome,
@@ -416,9 +421,9 @@ class PublicDocumentoResponse(BaseModel):
     id: uuid.UUID
     tipo: str
     titulo: str
-    conteudo: Optional[str]
+    conteudo: str | None
     assinado: bool
-    data_assinatura: Optional[datetime] = None
+    data_assinatura: datetime | None = None
     model_config = {"from_attributes": True}
 
 
@@ -433,9 +438,9 @@ async def _validar_token_doc(
         select(DocumentoLinkAcesso).where(
             DocumentoLinkAcesso.token_hash == token_hash,
             DocumentoLinkAcesso.acao == acao,
-            DocumentoLinkAcesso.revogado == False,
-            DocumentoLinkAcesso.usado_em == None,
-            DocumentoLinkAcesso.expira_em > datetime.now(timezone.utc),
+            not DocumentoLinkAcesso.revogado,
+            DocumentoLinkAcesso.usado_em is None,
+            DocumentoLinkAcesso.expira_em > datetime.now(UTC),
         )
     )
     if not link:
@@ -457,8 +462,8 @@ async def obter_documento_por_token(
     link = await session.scalar(
         select(DocumentoLinkAcesso).where(
             DocumentoLinkAcesso.token_hash == token_hash,
-            DocumentoLinkAcesso.revogado == False,
-            DocumentoLinkAcesso.expira_em > datetime.now(timezone.utc),
+            not DocumentoLinkAcesso.revogado,
+            DocumentoLinkAcesso.expira_em > datetime.now(UTC),
         )
     )
     if not link:
@@ -489,7 +494,7 @@ async def assinar_documento_por_token(
     if doc.assinado:
         raise HTTPException(400, "Documento já está assinado")
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     ip = (
         request.headers.get("x-forwarded-for", "")
         .split(",")[0]

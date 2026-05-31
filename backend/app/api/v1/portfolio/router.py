@@ -1,9 +1,7 @@
 """Router de Portfólio — upload seguro de imagens."""
 
-import os
 import uuid
 from pathlib import Path
-from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
@@ -42,9 +40,9 @@ def detectar_extensao(conteudo: bytes) -> str:
 class PortfolioResponse(BaseModel):
     id: uuid.UUID
     imagem_path: str
-    titulo: Optional[str]
-    estilo: Optional[str]
-    parte_corpo: Optional[str]
+    titulo: str | None
+    estilo: str | None
+    parte_corpo: str | None
     visibilidade: VisibilidadePortfolio
     autorizado_publicacao: bool
     ativo: bool
@@ -59,7 +57,7 @@ async def listar_portfolio(
     result = await session.execute(
         select(Portfolio).where(
             Portfolio.estudio_id == usuario.estudio_id,
-            Portfolio.ativo == True,
+            Portfolio.ativo,
         ).order_by(Portfolio.criado_em.desc())
     )
     return result.scalars().all()
@@ -68,9 +66,9 @@ async def listar_portfolio(
 @router.post("/upload", response_model=PortfolioResponse, status_code=201)
 async def upload_foto(
     arquivo: UploadFile = File(...),
-    titulo: Optional[str] = Form(None),
-    estilo: Optional[str] = Form(None),
-    parte_corpo: Optional[str] = Form(None),
+    titulo: str | None = Form(None),
+    estilo: str | None = Form(None),
+    parte_corpo: str | None = Form(None),
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):

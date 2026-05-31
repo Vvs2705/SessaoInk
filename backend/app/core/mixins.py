@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, func, Uuid
+from sqlalchemy import Boolean, DateTime, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 

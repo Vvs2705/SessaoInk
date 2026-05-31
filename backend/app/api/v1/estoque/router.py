@@ -1,7 +1,7 @@
 """Router de Estoque."""
 
 import uuid
-from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.auth.dependencies import get_usuario_atual
 from app.core.database import get_session
-from app.models.financeiro import EstoqueItem, CategoriaEstoque
+from app.models.financeiro import CategoriaEstoque, EstoqueItem
 from app.models.usuario import Usuario
 
 router = APIRouter(prefix="/estoque", tags=["estoque"])
@@ -21,7 +21,7 @@ class EstoqueItemCreate(BaseModel):
     unidade: str = "un"
     quantidade_atual: float = 0
     quantidade_minima: float = 0
-    preco_custo: Optional[float] = None
+    preco_custo: float | None = None
 
 
 class EstoqueItemResponse(BaseModel):
@@ -31,7 +31,7 @@ class EstoqueItemResponse(BaseModel):
     unidade: str
     quantidade_atual: float
     quantidade_minima: float
-    preco_custo: Optional[float]
+    preco_custo: float | None
     ativo: bool
     alerta_minimo: bool = False
 
@@ -52,7 +52,7 @@ async def listar_estoque(
     result = await session.execute(
         select(EstoqueItem).where(
             EstoqueItem.estudio_id == usuario.estudio_id,
-            EstoqueItem.ativo == True,
+            EstoqueItem.ativo,
         ).order_by(EstoqueItem.nome)
     )
     itens = result.scalars().all()
@@ -80,7 +80,7 @@ async def alertas_estoque(
     result = await session.execute(
         select(EstoqueItem).where(
             EstoqueItem.estudio_id == usuario.estudio_id,
-            EstoqueItem.ativo == True,
+            EstoqueItem.ativo,
             EstoqueItem.quantidade_atual <= EstoqueItem.quantidade_minima,
         )
     )
@@ -90,7 +90,7 @@ async def alertas_estoque(
 
 class AtualizarQuantidadeRequest(BaseModel):
     delta: float  # positivo = entrada, negativo = saída
-    motivo: Optional[str] = None
+    motivo: str | None = None
 
 
 @router.patch("/{id}/quantidade", response_model=EstoqueItemResponse)
@@ -105,7 +105,7 @@ async def atualizar_quantidade(
         select(EstoqueItem).where(
             EstoqueItem.id == id,
             EstoqueItem.estudio_id == usuario.estudio_id,
-            EstoqueItem.ativo == True,
+            EstoqueItem.ativo,
         )
     )
     item = result.scalar_one_or_none()

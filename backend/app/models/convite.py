@@ -11,7 +11,7 @@ from app.core.mixins import TimestampMixin, UUIDMixin
 from app.models.usuario import TipoUsuario
 
 
-class StatusConvite(str, enum.Enum):
+class StatusConvite(enum.StrEnum):
     PENDENTE = "PENDENTE"
     ACEITO = "ACEITO"
     EXPIRADO = "EXPIRADO"

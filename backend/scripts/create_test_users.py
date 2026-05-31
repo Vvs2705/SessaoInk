@@ -1,8 +1,11 @@
 import asyncio
-from app.core.database import async_session
-from app.models.usuario import Usuario, Estudio, TipoUsuario
-from app.core.security import hash_senha
+
 from sqlalchemy import select
+
+from app.core.database import async_session
+from app.core.security import hash_senha
+from app.models.usuario import Estudio, TipoUsuario, Usuario
+
 
 async def main():
     async with async_session() as session:
@@ -47,7 +50,7 @@ async def main():
                 user.senha_hash = senha_hash_val  # garante a senha correta
                 user.tipo = TipoUsuario.ADMIN     # garante acesso completo
                 print(f"Usuário {email} já existia, senha e cargo atualizados.")
-        
+
         await session.commit()
         print("Finalizado com sucesso!")
 

@@ -1,7 +1,7 @@
 """Dependências de autenticação para injeção via FastAPI."""
 
 import uuid
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import Cookie, Depends, HTTPException, status
 from sqlalchemy import select
@@ -38,7 +38,7 @@ async def get_usuario_atual(
     result = await session.execute(
         select(Usuario).where(
             Usuario.id == usuario_id,
-            Usuario.ativo == True,
+            Usuario.ativo,
         )
     )
     usuario = result.scalar_one_or_none()

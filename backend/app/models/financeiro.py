@@ -4,28 +4,36 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Numeric, String, Text, Integer, Boolean, Uuid
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Numeric,
+    String,
+    Uuid,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
 from app.core.mixins import TimestampMixin, UUIDMixin
 
 
-class TipoLancamento(str, enum.Enum):
+class TipoLancamento(enum.StrEnum):
     ENTRADA = "ENTRADA"
     SAIDA = "SAIDA"
     COMISSAO = "COMISSAO"
     SINAL = "SINAL"
 
 
-class StatusLancamento(str, enum.Enum):
+class StatusLancamento(enum.StrEnum):
     PENDENTE = "PENDENTE"
     PAGO = "PAGO"
     CANCELADO = "CANCELADO"
     ESTORNADO = "ESTORNADO"
 
 
-class FormaPagamentoFin(str, enum.Enum):
+class FormaPagamentoFin(enum.StrEnum):
     PIX = "PIX"
     DINHEIRO = "DINHEIRO"
     CARTAO_DEBITO = "CARTAO_DEBITO"
@@ -63,7 +71,7 @@ class Lancamento(Base, UUIDMixin, TimestampMixin):
     data_realizada: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
-class CategoriaEstoque(str, enum.Enum):
+class CategoriaEstoque(enum.StrEnum):
     TINTA = "TINTA"
     AGULHA = "AGULHA"
     LUVA = "LUVA"

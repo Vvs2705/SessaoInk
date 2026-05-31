@@ -1,7 +1,6 @@
 """Router de Busca Global — pesquisa multi-entidade."""
 
 import uuid
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
@@ -27,7 +26,7 @@ class ResultadoCliente(BaseModel):
     id: uuid.UUID
     tipo: str = "cliente"
     titulo: str
-    subtitulo: Optional[str] = None
+    subtitulo: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -36,7 +35,7 @@ class ResultadoAtendimento(BaseModel):
     id: uuid.UUID
     tipo: str = "atendimento"
     titulo: str
-    subtitulo: Optional[str] = None
+    subtitulo: str | None = None
     status: str
 
     model_config = {"from_attributes": True}
@@ -46,7 +45,7 @@ class ResultadoFlashArt(BaseModel):
     id: uuid.UUID
     tipo: str = "flash_art"
     titulo: str
-    subtitulo: Optional[str] = None
+    subtitulo: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -83,7 +82,7 @@ async def buscar(
         select(Cliente)
         .where(
             Cliente.estudio_id == estudio_id,
-            Cliente.ativo == True,
+            Cliente.ativo,
             or_(
                 Cliente.nome.ilike(termo),
                 Cliente.email.ilike(termo),
@@ -108,7 +107,7 @@ async def buscar(
         select(Atendimento)
         .where(
             Atendimento.estudio_id == estudio_id,
-            Atendimento.ativo == True,
+            Atendimento.ativo,
             or_(
                 Atendimento.descricao.ilike(termo),
                 Atendimento.estilo.ilike(termo),
@@ -133,7 +132,7 @@ async def buscar(
         select(FlashArt)
         .where(
             FlashArt.estudio_id == estudio_id,
-            FlashArt.ativo == True,
+            FlashArt.ativo,
             FlashArt.titulo.ilike(termo),
         )
         .order_by(FlashArt.titulo)

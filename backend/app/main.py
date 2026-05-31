@@ -2,7 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 
 import sentry_sdk
-from fastapi import FastAPI, Request, Depends
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sentry_sdk.integrations.fastapi import FastApiIntegration
@@ -29,21 +29,21 @@ if settings.SENTRY_DSN:
         environment=settings.ENVIRONMENT,
         send_default_pii=False,  # LGPD — não enviar dados pessoais
     )
-from app.api.v1.auth.router import router as auth_router
-from app.api.v1.clientes.router import router as clientes_router
-from app.api.v1.atendimentos.router import router as atendimentos_router
-from app.api.v1.flash_arts.router import router as flash_arts_router
-from app.api.v1.financeiro.router import router as financeiro_router
-from app.api.v1.estoque.router import router as estoque_router
-from app.api.v1.publico.router import router as publico_router
-from app.api.v1.portfolio.router import router as portfolio_router
-from app.api.v1.documentos.router import router as documentos_router
-from app.api.v1.estudio.router import router as estudio_router
-from app.api.v1.busca.router import router as busca_router
 from app.api.v1.agenda.router import router as agenda_router
+from app.api.v1.atendimentos.router import router as atendimentos_router
+from app.api.v1.auth.router import router as auth_router
+from app.api.v1.busca.router import router as busca_router
+from app.api.v1.clientes.router import router as clientes_router
+from app.api.v1.convites.router import router as convites_router
+from app.api.v1.documentos.router import router as documentos_router
+from app.api.v1.estoque.router import router as estoque_router
+from app.api.v1.estudio.router import router as estudio_router
+from app.api.v1.financeiro.router import router as financeiro_router
+from app.api.v1.flash_arts.router import router as flash_arts_router
+from app.api.v1.portfolio.router import router as portfolio_router
+from app.api.v1.publico.router import router as publico_router
 from app.api.v1.relatorios.router import router as relatorios_router
 from app.api.v1.usuarios.router import router as usuarios_router
-from app.api.v1.convites.router import router as convites_router
 
 
 @asynccontextmanager
@@ -173,6 +173,7 @@ async def health():
 async def readiness(session: AsyncSession = Depends(get_session)):
     """Readiness check — banco e dependências prontos."""
     from sqlalchemy import text
+
     from app.core.redis import get_redis
     checks = {}
 

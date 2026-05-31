@@ -1,7 +1,6 @@
 """Router de autenticação — login, logout, refresh, me."""
 
 import uuid
-from datetime import timedelta
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
@@ -72,7 +71,7 @@ async def login(
     result = await session.execute(
         select(Usuario).where(
             Usuario.email == dados.email,
-            Usuario.ativo == True,
+            Usuario.ativo,
         )
     )
     usuario = result.scalar_one_or_none()
@@ -191,7 +190,7 @@ async def refresh(
     result = await session.execute(
         select(Usuario).where(
             Usuario.id == usuario_id,
-            Usuario.ativo == True,
+            Usuario.ativo,
         )
     )
     usuario = result.scalar_one_or_none()

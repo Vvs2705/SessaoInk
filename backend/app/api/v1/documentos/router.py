@@ -3,8 +3,7 @@
 import hashlib
 import secrets
 import uuid
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -14,10 +13,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.auth.dependencies import get_usuario_atual
 from app.core.config import settings
 from app.core.database import get_session
+from app.models.atendimento import Atendimento
+from app.models.cliente import Cliente
 from app.models.documento import AcaoLink, Documento, DocumentoLinkAcesso, TipoDocumento
 from app.models.usuario import Usuario
-from app.models.cliente import Cliente
-from app.models.atendimento import Atendimento
 
 router = APIRouter(prefix="/documentos", tags=["documentos"])
 
@@ -25,22 +24,22 @@ router = APIRouter(prefix="/documentos", tags=["documentos"])
 class DocumentoCreate(BaseModel):
     tipo: TipoDocumento
     titulo: str
-    conteudo: Optional[str] = None
+    conteudo: str | None = None
     versao: str = "1.0"
-    cliente_id: Optional[uuid.UUID] = None
-    atendimento_id: Optional[uuid.UUID] = None
+    cliente_id: uuid.UUID | None = None
+    atendimento_id: uuid.UUID | None = None
 
 
 class DocumentoResponse(BaseModel):
     id: uuid.UUID
     tipo: TipoDocumento
     titulo: str
-    conteudo: Optional[str]
+    conteudo: str | None
     versao: str
     assinado: bool
-    data_assinatura: Optional[datetime]
-    cliente_id: Optional[uuid.UUID]
-    atendimento_id: Optional[uuid.UUID]
+    data_assinatura: datetime | None
+    cliente_id: uuid.UUID | None
+    atendimento_id: uuid.UUID | None
     criado_em: datetime
     model_config = {"from_attributes": True}
 
@@ -70,7 +69,7 @@ async def criar_documento(
             select(Cliente).where(
                 Cliente.id == dados.cliente_id,
                 Cliente.estudio_id == usuario.estudio_id,
-                Cliente.ativo == True,
+                Cliente.ativo,
             )
         )
         if not cliente_exists:
@@ -85,7 +84,7 @@ async def criar_documento(
             select(Atendimento).where(
                 Atendimento.id == dados.atendimento_id,
                 Atendimento.estudio_id == usuario.estudio_id,
-                Atendimento.ativo == True,
+                Atendimento.ativo,
             )
         )
         if not atendimento_exists:
@@ -161,7 +160,7 @@ async def gerar_link_documento(
 
     token_raw = secrets.token_urlsafe(32)
     token_hash = hashlib.sha256(token_raw.encode()).hexdigest()
-    expira = datetime.now(timezone.utc) + timedelta(hours=max(1, min(horas, 720)))
+    expira = datetime.now(UTC) + timedelta(hours=max(1, min(horas, 720)))
 
     link = DocumentoLinkAcesso(
         documento_id=id,

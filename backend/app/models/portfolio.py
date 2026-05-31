@@ -10,12 +10,12 @@ from app.core.database import Base
 from app.core.mixins import SoftDeleteMixin, TimestampMixin, UUIDMixin
 
 
-class VisibilidadePortfolio(str, enum.Enum):
+class VisibilidadePortfolio(enum.StrEnum):
     PRIVADO = "PRIVADO"
     PUBLICO = "PUBLICO"
 
 
-class StatusFlash(str, enum.Enum):
+class StatusFlash(enum.StrEnum):
     DISPONIVEL = "DISPONIVEL"
     EM_NEGOCIACAO = "EM_NEGOCIACAO"
     RESERVADA = "RESERVADA"

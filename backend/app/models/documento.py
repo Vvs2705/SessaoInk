@@ -11,7 +11,7 @@ from app.core.database import Base
 from app.core.mixins import TimestampMixin, UUIDMixin
 
 
-class TipoDocumento(str, enum.Enum):
+class TipoDocumento(enum.StrEnum):
     POLITICA_PRIVACIDADE = "POLITICA_PRIVACIDADE"
     TERMOS_USO = "TERMOS_USO"
     CONSENTIMENTO = "CONSENTIMENTO"
@@ -46,7 +46,7 @@ class Documento(Base, UUIDMixin, TimestampMixin):
     nome_assinante: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
 
-class AcaoLink(str, enum.Enum):
+class AcaoLink(enum.StrEnum):
     VISUALIZAR = "VISUALIZAR"
     ASSINAR = "ASSINAR"
 

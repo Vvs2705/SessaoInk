@@ -6,6 +6,7 @@ Caso contrário, a operação é silenciosa (no-op).
 
 import asyncio
 import logging
+
 import resend
 
 from app.core.config import settings

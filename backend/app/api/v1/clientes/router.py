@@ -1,6 +1,7 @@
 """Router de Clientes."""
 
 import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,7 +23,7 @@ async def listar_clientes(
 ):
     q = select(Cliente).where(
         Cliente.estudio_id == usuario.estudio_id,
-        Cliente.ativo == True,
+        Cliente.ativo,
     )
     if busca:
         q = q.where(Cliente.nome.ilike(f"%{busca}%"))

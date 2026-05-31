@@ -2,50 +2,54 @@
 
 import uuid
 from datetime import datetime
-from typing import Optional
+
 from pydantic import BaseModel
+
 from app.models.atendimento import (
-    StatusOperacional, StatusFinanceiro, TipoAtendimento, FormaPagamento
+    FormaPagamento,
+    StatusFinanceiro,
+    StatusOperacional,
+    TipoAtendimento,
 )
 
 
 class AtendimentoCreate(BaseModel):
-    cliente_id: Optional[uuid.UUID] = None
-    artista_id: Optional[uuid.UUID] = None
+    cliente_id: uuid.UUID | None = None
+    artista_id: uuid.UUID | None = None
     tipo: TipoAtendimento = TipoAtendimento.TATUAGEM
-    descricao: Optional[str] = None
-    parte_corpo: Optional[str] = None
-    estilo: Optional[str] = None
-    tamanho_cm: Optional[str] = None
-    valor_total: Optional[float] = None
-    valor_sinal: Optional[float] = None
-    forma_pagamento: Optional[FormaPagamento] = None
-    notas_privadas: Optional[str] = None
-    data_sessao: Optional[datetime] = None
-    duracao_minutos: Optional[int] = None
+    descricao: str | None = None
+    parte_corpo: str | None = None
+    estilo: str | None = None
+    tamanho_cm: str | None = None
+    valor_total: float | None = None
+    valor_sinal: float | None = None
+    forma_pagamento: FormaPagamento | None = None
+    notas_privadas: str | None = None
+    data_sessao: datetime | None = None
+    duracao_minutos: int | None = None
 
 
 class AtendimentoUpdate(BaseModel):
-    cliente_id: Optional[uuid.UUID] = None
-    artista_id: Optional[uuid.UUID] = None
-    tipo: Optional[TipoAtendimento] = None
-    status_operacional: Optional[StatusOperacional] = None
-    status_financeiro: Optional[StatusFinanceiro] = None
-    descricao: Optional[str] = None
-    parte_corpo: Optional[str] = None
-    estilo: Optional[str] = None
-    tamanho_cm: Optional[str] = None
-    valor_total: Optional[float] = None
-    valor_sinal: Optional[float] = None
-    forma_pagamento: Optional[FormaPagamento] = None
-    notas_privadas: Optional[str] = None
-    data_sessao: Optional[datetime] = None
-    duracao_minutos: Optional[int] = None
+    cliente_id: uuid.UUID | None = None
+    artista_id: uuid.UUID | None = None
+    tipo: TipoAtendimento | None = None
+    status_operacional: StatusOperacional | None = None
+    status_financeiro: StatusFinanceiro | None = None
+    descricao: str | None = None
+    parte_corpo: str | None = None
+    estilo: str | None = None
+    tamanho_cm: str | None = None
+    valor_total: float | None = None
+    valor_sinal: float | None = None
+    forma_pagamento: FormaPagamento | None = None
+    notas_privadas: str | None = None
+    data_sessao: datetime | None = None
+    duracao_minutos: int | None = None
 
 
 class AtendimentoStatusUpdate(BaseModel):
-    status_operacional: Optional[StatusOperacional] = None
-    status_financeiro: Optional[StatusFinanceiro] = None
+    status_operacional: StatusOperacional | None = None
+    status_financeiro: StatusFinanceiro | None = None
 
 
 class AtendimentoImagemResponse(BaseModel):
@@ -59,9 +63,9 @@ class AtendimentoImagemResponse(BaseModel):
 class ClienteAtendimentoResponse(BaseModel):
     id: uuid.UUID
     nome: str
-    telefone: Optional[str] = None
-    instagram: Optional[str] = None
-    email: Optional[str] = None
+    telefone: str | None = None
+    instagram: str | None = None
+    email: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -69,21 +73,21 @@ class ClienteAtendimentoResponse(BaseModel):
 class AtendimentoResponse(BaseModel):
     id: uuid.UUID
     estudio_id: uuid.UUID
-    cliente_id: Optional[uuid.UUID]
-    artista_id: Optional[uuid.UUID]
+    cliente_id: uuid.UUID | None
+    artista_id: uuid.UUID | None
     status_operacional: StatusOperacional
     status_financeiro: StatusFinanceiro
     tipo: TipoAtendimento
-    descricao: Optional[str]
-    parte_corpo: Optional[str]
-    estilo: Optional[str]
-    tamanho_cm: Optional[str] = None
-    valor_total: Optional[float]
-    valor_sinal: Optional[float]
-    notas_privadas: Optional[str] = None
-    data_sessao: Optional[datetime]
+    descricao: str | None
+    parte_corpo: str | None
+    estilo: str | None
+    tamanho_cm: str | None = None
+    valor_total: float | None
+    valor_sinal: float | None
+    notas_privadas: str | None = None
+    data_sessao: datetime | None
     ativo: bool
-    cliente: Optional[ClienteAtendimentoResponse] = None
+    cliente: ClienteAtendimentoResponse | None = None
     imagens: list[AtendimentoImagemResponse] = []
 
     model_config = {"from_attributes": True}

@@ -2,17 +2,17 @@
 
 import uuid
 from datetime import date
-from typing import Optional
+
 from pydantic import BaseModel
 
 
 class ClienteBase(BaseModel):
     nome: str
-    telefone: Optional[str] = None
-    instagram: Optional[str] = None
-    email: Optional[str] = None
-    data_nascimento: Optional[date] = None
-    observacoes: Optional[str] = None
+    telefone: str | None = None
+    instagram: str | None = None
+    email: str | None = None
+    data_nascimento: date | None = None
+    observacoes: str | None = None
 
 
 class ClienteCreate(ClienteBase):
@@ -20,12 +20,12 @@ class ClienteCreate(ClienteBase):
 
 
 class ClienteUpdate(BaseModel):
-    nome: Optional[str] = None
-    telefone: Optional[str] = None
-    instagram: Optional[str] = None
-    email: Optional[str] = None
-    data_nascimento: Optional[date] = None
-    observacoes: Optional[str] = None
+    nome: str | None = None
+    telefone: str | None = None
+    instagram: str | None = None
+    email: str | None = None
+    data_nascimento: date | None = None
+    observacoes: str | None = None
 
 
 class ClienteResponse(ClienteBase):

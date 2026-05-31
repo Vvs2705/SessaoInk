@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import enum
-from typing import Optional
 import uuid
 from datetime import datetime
 
@@ -14,7 +13,7 @@ from app.core.database import Base
 from app.core.mixins import SoftDeleteMixin, TimestampMixin, UUIDMixin
 
 
-class StatusOperacional(str, enum.Enum):
+class StatusOperacional(enum.StrEnum):
     SOLICITADO = "SOLICITADO"
     EM_ANALISE = "EM_ANALISE"
     AGUARDANDO_SINAL = "AGUARDANDO_SINAL"
@@ -28,7 +27,7 @@ class StatusOperacional(str, enum.Enum):
     RETOQUE = "RETOQUE"
 
 
-class StatusFinanceiro(str, enum.Enum):
+class StatusFinanceiro(enum.StrEnum):
     PENDENTE = "PENDENTE"
     SINAL_PAGO = "SINAL_PAGO"
     PAGO_PARCIAL = "PAGO_PARCIAL"
@@ -37,14 +36,14 @@ class StatusFinanceiro(str, enum.Enum):
     ESTORNADO = "ESTORNADO"
 
 
-class TipoAtendimento(str, enum.Enum):
+class TipoAtendimento(enum.StrEnum):
     TATUAGEM = "TATUAGEM"
     CONSULTA = "CONSULTA"
     RETOQUE = "RETOQUE"
     FLASH = "FLASH"
 
 
-class FormaPagamento(str, enum.Enum):
+class FormaPagamento(enum.StrEnum):
     PIX = "PIX"
     DINHEIRO = "DINHEIRO"
     CARTAO_DEBITO = "CARTAO_DEBITO"
@@ -96,11 +95,11 @@ class Atendimento(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     )
     duracao_minutos: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
-    cliente: Mapped[Optional["Cliente"]] = relationship(
+    cliente: Mapped[Cliente | None] = relationship(
         "Cliente", foreign_keys=[cliente_id], lazy="joined"
     )
 
-    imagens: Mapped[list["AtendimentoImagem"]] = relationship(
+    imagens: Mapped[list[AtendimentoImagem]] = relationship(
         "AtendimentoImagem",
         back_populates="atendimento",
         cascade="all, delete-orphan",
@@ -119,6 +118,6 @@ class AtendimentoImagem(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     )
     imagem_path: Mapped[str] = mapped_column(String(500), nullable=False)
 
-    atendimento: Mapped["Atendimento"] = relationship(
+    atendimento: Mapped[Atendimento] = relationship(
         "Atendimento", back_populates="imagens"
     )

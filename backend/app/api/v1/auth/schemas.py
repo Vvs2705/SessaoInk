@@ -1,6 +1,7 @@
 """Schemas Pydantic para autenticação."""
 
 import uuid
+
 from pydantic import BaseModel, EmailStr
 
 

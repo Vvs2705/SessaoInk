@@ -1,16 +1,16 @@
 """Alembic environment configuration."""
 
 import asyncio
-import os
 from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+import app.models  # noqa: F401 — registra todos os models
+
 # Importar Base e todos os models para o Alembic detectar
 from app.core.database import Base
-import app.models  # noqa: F401 — registra todos os models
 
 config = context.config
 

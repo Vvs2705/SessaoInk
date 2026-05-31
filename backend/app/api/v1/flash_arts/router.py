@@ -1,10 +1,9 @@
 """Router de Flash Arts."""
 
-import os
 import uuid
 from pathlib import Path
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, File, Form, UploadFile
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -38,11 +37,11 @@ class FlashArtResponse(BaseModel):
     id: uuid.UUID
     estudio_id: uuid.UUID
     titulo: str
-    descricao: Optional[str]
-    imagem_path: Optional[str]
-    preco: Optional[float]
-    tamanho_sugerido: Optional[str]
-    local_recomendado: Optional[str]
+    descricao: str | None
+    imagem_path: str | None
+    preco: float | None
+    tamanho_sugerido: str | None
+    local_recomendado: str | None
     status: StatusFlash
     ativo: bool
     model_config = {"from_attributes": True}
@@ -56,7 +55,7 @@ async def listar_flash_arts(
     result = await session.execute(
         select(FlashArt).where(
             FlashArt.estudio_id == usuario.estudio_id,
-            FlashArt.ativo == True,
+            FlashArt.ativo,
         ).order_by(FlashArt.criado_em.desc())
     )
     return result.scalars().all()
@@ -66,10 +65,10 @@ async def listar_flash_arts(
 async def criar_flash_art(
     arquivo: UploadFile = File(...),
     titulo: str = Form(...),
-    descricao: Optional[str] = Form(None),
-    preco: Optional[float] = Form(None),
-    tamanho_sugerido: Optional[str] = Form(None),
-    local_recomendado: Optional[str] = Form(None),
+    descricao: str | None = Form(None),
+    preco: float | None = Form(None),
+    tamanho_sugerido: str | None = Form(None),
+    local_recomendado: str | None = Form(None),
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):

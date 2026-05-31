@@ -1,7 +1,6 @@
 """Router de Relatórios — métricas e resumos financeiros/operacionais."""
 
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
@@ -10,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.auth.dependencies import get_usuario_atual
 from app.core.database import get_session
-from app.models.atendimento import Atendimento, StatusFinanceiro, StatusOperacional
+from app.models.atendimento import Atendimento, StatusOperacional
 from app.models.financeiro import Lancamento, StatusLancamento, TipoLancamento
 from app.models.usuario import Usuario
 
@@ -26,11 +25,11 @@ class ResumoFinanceiro(BaseModel):
     periodo_dias: int
     receita_total: float
     receita_periodo: float
-    variacao_percentual: Optional[float]  # comparado com período anterior
+    variacao_percentual: float | None  # comparado com período anterior
     total_atendimentos: int
     atendimentos_confirmados: int
     atendimentos_finalizados: int
-    ticket_medio: Optional[float]
+    ticket_medio: float | None
     sinais_recebidos: float
 
 
@@ -91,7 +90,7 @@ async def resumo_financeiro(
 
     Compara o período atual com o período anterior de mesmo tamanho.
     """
-    agora = datetime.now(timezone.utc)
+    agora = datetime.now(UTC)
     inicio_atual = agora - timedelta(days=periodo)
     inicio_anterior = inicio_atual - timedelta(days=periodo)
 
@@ -138,7 +137,7 @@ async def resumo_financeiro(
     r_total_atend = await session.execute(
         select(func.count()).where(
             Atendimento.estudio_id == estudio_id,
-            Atendimento.ativo == True,
+            Atendimento.ativo,
         )
     )
     total_atendimentos = r_total_atend.scalar()
@@ -146,7 +145,7 @@ async def resumo_financeiro(
     r_confirmados = await session.execute(
         select(func.count()).where(
             Atendimento.estudio_id == estudio_id,
-            Atendimento.ativo == True,
+            Atendimento.ativo,
             Atendimento.status_operacional == StatusOperacional.CONFIRMADO,
         )
     )
@@ -155,7 +154,7 @@ async def resumo_financeiro(
     r_finalizados = await session.execute(
         select(func.count()).where(
             Atendimento.estudio_id == estudio_id,
-            Atendimento.ativo == True,
+            Atendimento.ativo,
             Atendimento.status_operacional == StatusOperacional.FINALIZADO,
         )
     )
@@ -165,7 +164,7 @@ async def resumo_financeiro(
     r_ticket = await session.execute(
         select(func.avg(Atendimento.valor_total)).where(
             Atendimento.estudio_id == estudio_id,
-            Atendimento.ativo == True,
+            Atendimento.ativo,
             Atendimento.status_operacional == StatusOperacional.FINALIZADO,
             Atendimento.valor_total.isnot(None),
         )
@@ -206,7 +205,7 @@ async def relatorio_por_status(
         select(Atendimento.status_operacional, func.count().label("total"))
         .where(
             Atendimento.estudio_id == usuario.estudio_id,
-            Atendimento.ativo == True,
+            Atendimento.ativo,
         )
         .group_by(Atendimento.status_operacional)
         .order_by(func.count().desc())
@@ -235,9 +234,8 @@ async def relatorio_temporal(
     usuario: Usuario = Depends(get_usuario_atual),
 ):
     """Receita agrupada por dia nos últimos N dias."""
-    from datetime import date
 
-    agora = datetime.now(timezone.utc)
+    agora = datetime.now(UTC)
     inicio = agora - timedelta(days=periodo)
     estudio_id = usuario.estudio_id
 

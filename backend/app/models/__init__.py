@@ -1,15 +1,34 @@
 """Importa todos os models para o Alembic detectar automaticamente."""
 
-from app.models.usuario import Estudio, TipoUsuario, Usuario
-from app.models.cliente import Cliente
-from app.models.atendimento import (
-    Atendimento, FormaPagamento, StatusFinanceiro, StatusOperacional, TipoAtendimento,
+from app.models.atendimento import (  # noqa: F401
+    Atendimento,
+    FormaPagamento,
+    StatusFinanceiro,
+    StatusOperacional,
+    TipoAtendimento,
 )
-from app.models.portfolio import Portfolio, FlashArt, VisibilidadePortfolio, StatusFlash
-from app.models.financeiro import Lancamento, EstoqueItem, TipoLancamento
-from app.models.documento import Documento, TipoDocumento, DocumentoLinkAcesso, AcaoLink
-from app.models.saas import Plano, Assinatura, StatusPlano, StatusAssinatura  # noqa
-from app.models.convite import Convite, StatusConvite  # noqa
+from app.models.cliente import Cliente  # noqa: F401
+from app.models.convite import Convite, StatusConvite  # noqa: F401
+from app.models.documento import (  # noqa: F401
+    AcaoLink,
+    Documento,
+    DocumentoLinkAcesso,
+    TipoDocumento,
+)
+from app.models.financeiro import EstoqueItem, Lancamento, TipoLancamento  # noqa: F401
+from app.models.portfolio import (  # noqa: F401
+    FlashArt,
+    Portfolio,
+    StatusFlash,
+    VisibilidadePortfolio,
+)
+from app.models.saas import (  # noqa: F401
+    Assinatura,
+    Plano,
+    StatusAssinatura,
+    StatusPlano,
+)
+from app.models.usuario import Estudio, TipoUsuario, Usuario  # noqa: F401
 
 __all__ = [
     "Estudio",

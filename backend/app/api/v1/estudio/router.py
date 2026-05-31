@@ -1,7 +1,6 @@
 """Router de Estúdio — perfil, configurações e dados públicos."""
 
 import uuid
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -24,24 +23,24 @@ class EstudioResponse(BaseModel):
     id: uuid.UUID
     nome: str
     slug: str
-    bio: Optional[str] = None
-    cidade: Optional[str] = None
-    uf: Optional[str] = None
-    telefone: Optional[str] = None
-    instagram: Optional[str] = None
-    email_notificacao: Optional[str] = None
+    bio: str | None = None
+    cidade: str | None = None
+    uf: str | None = None
+    telefone: str | None = None
+    instagram: str | None = None
+    email_notificacao: str | None = None
 
     model_config = {"from_attributes": True}
 
 
 class EstudioAtualizarRequest(BaseModel):
-    nome: Optional[str] = None
-    bio: Optional[str] = None
-    cidade: Optional[str] = None
-    uf: Optional[str] = None
-    telefone: Optional[str] = None
-    instagram: Optional[str] = None
-    email_notificacao: Optional[str] = None
+    nome: str | None = None
+    bio: str | None = None
+    cidade: str | None = None
+    uf: str | None = None
+    telefone: str | None = None
+    instagram: str | None = None
+    email_notificacao: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -58,7 +57,7 @@ async def obter_estudio(
     result = await session.execute(
         select(Estudio).where(
             Estudio.id == usuario.estudio_id,
-            Estudio.ativo == True,
+            Estudio.ativo,
         )
     )
     estudio = result.scalar_one_or_none()
@@ -88,7 +87,7 @@ async def atualizar_estudio(
     result = await session.execute(
         select(Estudio).where(
             Estudio.id == usuario.estudio_id,
-            Estudio.ativo == True,
+            Estudio.ativo,
         )
     )
     estudio = result.scalar_one_or_none()
@@ -117,7 +116,7 @@ async def listar_equipe(
     result = await session.execute(
         select(Usuario).where(
             Usuario.estudio_id == usuario.estudio_id,
-            Usuario.ativo == True,
+            Usuario.ativo,
         )
     )
     membros = result.scalars().all()

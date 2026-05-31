@@ -1,54 +1,58 @@
 """Router de Financeiro."""
 
 import uuid
-from datetime import datetime
-from decimal import Decimal
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from datetime import UTC, datetime
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.auth.dependencies import get_usuario_atual, require_role
 from app.core.database import get_session
-from app.models.financeiro import Lancamento, TipoLancamento, StatusLancamento, FormaPagamentoFin
-from app.models.usuario import TipoUsuario, Usuario
 from app.models.atendimento import Atendimento
+from app.models.financeiro import (
+    FormaPagamentoFin,
+    Lancamento,
+    StatusLancamento,
+    TipoLancamento,
+)
+from app.models.usuario import TipoUsuario, Usuario
 
 router = APIRouter(prefix="/financeiro", tags=["financeiro"])
 
 
 class LancamentoCreate(BaseModel):
     tipo: TipoLancamento
-    descricao: Optional[str] = None
+    descricao: str | None = None
     valor: float
-    status: Optional[StatusLancamento] = None
-    forma_pagamento: Optional[FormaPagamentoFin] = None
-    data_prevista: Optional[datetime] = None
-    atendimento_id: Optional[uuid.UUID] = None
-    artista_id: Optional[uuid.UUID] = None
+    status: StatusLancamento | None = None
+    forma_pagamento: FormaPagamentoFin | None = None
+    data_prevista: datetime | None = None
+    atendimento_id: uuid.UUID | None = None
+    artista_id: uuid.UUID | None = None
 
 
 class LancamentoUpdate(BaseModel):
-    tipo: Optional[TipoLancamento] = None
-    descricao: Optional[str] = None
-    valor: Optional[float] = None
-    status: Optional[StatusLancamento] = None
-    forma_pagamento: Optional[FormaPagamentoFin] = None
-    data_prevista: Optional[datetime] = None
-    atendimento_id: Optional[uuid.UUID] = None
-    artista_id: Optional[uuid.UUID] = None
+    tipo: TipoLancamento | None = None
+    descricao: str | None = None
+    valor: float | None = None
+    status: StatusLancamento | None = None
+    forma_pagamento: FormaPagamentoFin | None = None
+    data_prevista: datetime | None = None
+    atendimento_id: uuid.UUID | None = None
+    artista_id: uuid.UUID | None = None
 
 
 class LancamentoResponse(BaseModel):
     id: uuid.UUID
     tipo: TipoLancamento
-    descricao: Optional[str]
+    descricao: str | None
     valor: float
     status: StatusLancamento
-    forma_pagamento: Optional[FormaPagamentoFin]
-    data_prevista: Optional[datetime]
-    data_realizada: Optional[datetime]
+    forma_pagamento: FormaPagamentoFin | None
+    data_prevista: datetime | None
+    data_realizada: datetime | None
     model_config = {"from_attributes": True}
 
 
@@ -83,7 +87,7 @@ async def criar_lancamento(
             select(Atendimento).where(
                 Atendimento.id == dados.atendimento_id,
                 Atendimento.estudio_id == usuario.estudio_id,
-                Atendimento.ativo == True,
+                Atendimento.ativo,
             )
         )
         if not atendimento_exists:
@@ -98,7 +102,7 @@ async def criar_lancamento(
             select(Usuario).where(
                 Usuario.id == dados.artista_id,
                 Usuario.estudio_id == usuario.estudio_id,
-                Usuario.ativo == True,
+                Usuario.ativo,
             )
         )
         if not artista_exists:
@@ -107,11 +111,10 @@ async def criar_lancamento(
                 detail="Artista inválido ou não pertence ao seu estúdio",
             )
 
-    from datetime import timezone
     status_val = dados.status or StatusLancamento.PENDENTE
     data_realizada = None
     if status_val == StatusLancamento.PAGO:
-        data_realizada = datetime.now(timezone.utc)
+        data_realizada = datetime.now(UTC)
 
     lanc = Lancamento(
         estudio_id=usuario.estudio_id,
@@ -136,9 +139,8 @@ async def resumo_financeiro(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    from datetime import timezone
-    now = datetime.now(timezone.utc)
-    start_of_month = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+    now = datetime.now(UTC)
+    start_of_month = datetime(now.year, now.month, 1, tzinfo=UTC)
 
     # 1. Receita do mês (ENTRADA e SINAL pagos neste mês)
     receita_res = await session.execute(
@@ -197,7 +199,7 @@ async def atualizar_lancamento(
             select(Atendimento).where(
                 Atendimento.id == dados.atendimento_id,
                 Atendimento.estudio_id == usuario.estudio_id,
-                Atendimento.ativo == True,
+                Atendimento.ativo,
             )
         )
         if not atendimento_exists:
@@ -212,7 +214,7 @@ async def atualizar_lancamento(
             select(Usuario).where(
                 Usuario.id == dados.artista_id,
                 Usuario.estudio_id == usuario.estudio_id,
-                Usuario.ativo == True,
+                Usuario.ativo,
             )
         )
         if not artista_exists:
@@ -222,11 +224,10 @@ async def atualizar_lancamento(
             )
 
     campos = dados.model_dump(exclude_unset=True)
-    
+
     if "status" in campos:
-        from datetime import timezone
         if campos["status"] == StatusLancamento.PAGO and lanc.status != StatusLancamento.PAGO:
-            lanc.data_realizada = datetime.now(timezone.utc)
+            lanc.data_realizada = datetime.now(UTC)
         elif campos["status"] != StatusLancamento.PAGO and lanc.status == StatusLancamento.PAGO:
             lanc.data_realizada = None
 

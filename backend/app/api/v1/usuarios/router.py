@@ -1,14 +1,14 @@
 """Router de Usuários — gerenciamento de perfil do usuário autenticado."""
 
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-import uuid
 
 from app.api.v1.auth.dependencies import get_usuario_atual
 from app.core.database import get_session
-from app.models.usuario import Usuario, TipoUsuario
+from app.models.usuario import TipoUsuario, Usuario
 
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 

@@ -3,19 +3,19 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, JSON, String, Uuid
+from sqlalchemy import JSON, Boolean, DateTime, Enum, ForeignKey, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
 from app.core.mixins import TimestampMixin, UUIDMixin
 
 
-class StatusPlano(str, enum.Enum):
+class StatusPlano(enum.StrEnum):
     ATIVO = "ATIVO"
     INATIVO = "INATIVO"
 
 
-class StatusAssinatura(str, enum.Enum):
+class StatusAssinatura(enum.StrEnum):
     TRIAL = "TRIAL"
     ATIVA = "ATIVA"
     INADIMPLENTE = "INADIMPLENTE"

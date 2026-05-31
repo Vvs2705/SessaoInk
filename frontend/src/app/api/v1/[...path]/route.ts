@@ -12,7 +12,7 @@ async function proxy(
 
   const accessToken = request.cookies.get("access_token")?.value;
   const rawCookie = request.headers.get("cookie") ?? "";
-  console.log(`[DBG] tok:${!!accessToken} cookieLen:${rawCookie.length} path:${path.join("/")} method:${request.method}`);
+  console.log(`[DBG] path=${JSON.stringify(path)} tok:${!!accessToken} tlen:${accessToken?.length??0}`);
   const incomingContentType = request.headers.get("content-type") ?? "";
   const isMultipart =
     incomingContentType.includes("multipart/form-data") ||

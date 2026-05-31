@@ -12,6 +12,7 @@ from app.core.config import settings
 from app.core.database import get_session
 from app.models.atendimento import Atendimento, StatusOperacional
 from app.models.usuario import Usuario
+from app.models.cliente import Cliente
 from app.schemas.atendimento import (
     AtendimentoCreate, AtendimentoResponse,
     AtendimentoStatusUpdate, AtendimentoUpdate,
@@ -43,6 +44,36 @@ async def criar_atendimento(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
+    # Validar se o cliente informado pertence ao mesmo estúdio do usuário
+    if dados.cliente_id:
+        cliente_exists = await session.scalar(
+            select(Cliente).where(
+                Cliente.id == dados.cliente_id,
+                Cliente.estudio_id == usuario.estudio_id,
+                Cliente.ativo == True,
+            )
+        )
+        if not cliente_exists:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cliente inválido ou não pertence ao seu estúdio",
+            )
+
+    # Validar se o artista informado pertence ao mesmo estúdio do usuário
+    if dados.artista_id:
+        artista_exists = await session.scalar(
+            select(Usuario).where(
+                Usuario.id == dados.artista_id,
+                Usuario.estudio_id == usuario.estudio_id,
+                Usuario.ativo == True,
+            )
+        )
+        if not artista_exists:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Artista inválido ou não pertence ao seu estúdio",
+            )
+
     atendimento = Atendimento(
         estudio_id=usuario.estudio_id,
         **dados.model_dump()
@@ -86,6 +117,37 @@ async def atualizar_atendimento(
     item = result.scalar_one_or_none()
     if not item:
         raise HTTPException(404, "Atendimento não encontrado")
+
+    # Validar se o cliente informado pertence ao mesmo estúdio do usuário
+    if dados.cliente_id is not None:
+        cliente_exists = await session.scalar(
+            select(Cliente).where(
+                Cliente.id == dados.cliente_id,
+                Cliente.estudio_id == usuario.estudio_id,
+                Cliente.ativo == True,
+            )
+        )
+        if not cliente_exists:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cliente inválido ou não pertence ao seu estúdio",
+            )
+
+    # Validar se o artista informado pertence ao mesmo estúdio do usuário
+    if dados.artista_id is not None:
+        artista_exists = await session.scalar(
+            select(Usuario).where(
+                Usuario.id == dados.artista_id,
+                Usuario.estudio_id == usuario.estudio_id,
+                Usuario.ativo == True,
+            )
+        )
+        if not artista_exists:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Artista inválido ou não pertence ao seu estúdio",
+            )
+
     for k, v in dados.model_dump(exclude_none=True).items():
         setattr(item, k, v)
     await session.flush()

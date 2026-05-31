@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Wallet, TrendingUp, Clock, Plus, Loader2, X, Calendar, DollarSign, CreditCard } from "lucide-react";
+import { Wallet, TrendingUp, Clock, Plus, Loader2, X, Calendar, DollarSign, CreditCard, Check, Trash2, Edit2 } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
@@ -59,10 +59,11 @@ export default function FinanceiroPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
+  const [editingItem, setEditingItem] = useState<LancamentoItem | null>(null);
 
   // Form states
   const [tipo, setTipo] = useState<"ENTRADA" | "SAIDA" | "COMISSAO" | "SINAL">("ENTRADA");
-  const [status, setStatus] = useState<"PENDENTE" | "PAGO">("PAGO");
+  const [status, setStatus] = useState<"PENDENTE" | "PAGO" | "CANCELADO" | "ESTORNADO">("PAGO");
   const [descricao, setDescricao] = useState("");
   const [valor, setValor] = useState("");
   const [formaPagamento, setFormaPagamento] = useState("PIX");
@@ -90,14 +91,51 @@ export default function FinanceiroPage() {
     },
   });
 
+  const updateLancamentoMutation = useMutation({
+    mutationFn: ({ id, ...dados }: { id: string; [key: string]: any }) =>
+      api.patch(`/api/v1/financeiro/${id}`, dados),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["financeiro-resumo"] });
+      qc.invalidateQueries({ queryKey: ["financeiro-lancamentos"] });
+      setIsModalOpen(false);
+    },
+    onError: (err: any) => {
+      setErrorText(err.message ?? "Erro ao atualizar lançamento.");
+    },
+  });
+
+  const deleteLancamentoMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/api/v1/financeiro/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["financeiro-resumo"] });
+      qc.invalidateQueries({ queryKey: ["financeiro-lancamentos"] });
+    },
+    onError: (err: any) => {
+      alert(err.message ?? "Erro ao deletar lançamento.");
+    },
+  });
+
   const handleOpenModal = () => {
-    setIsModalOpen(true);
+    setEditingItem(null);
     setTipo("ENTRADA");
     setStatus("PAGO");
     setDescricao("");
     setValor("");
     setFormaPagamento("PIX");
     setDataPrevista(new Date().toISOString().split("T")[0]);
+    setIsModalOpen(true);
+    setErrorText(null);
+  };
+
+  const handleEditClick = (item: LancamentoItem) => {
+    setEditingItem(item);
+    setTipo(item.tipo);
+    setStatus(item.status);
+    setDescricao(item.descricao || "");
+    setValor(String(item.valor));
+    setFormaPagamento(item.forma_pagamento || "PIX");
+    setDataPrevista(item.data_prevista ? new Date(item.data_prevista).toISOString().split("T")[0] : "");
+    setIsModalOpen(true);
     setErrorText(null);
   };
 
@@ -113,14 +151,26 @@ export default function FinanceiroPage() {
 
     setLoading(true);
     try {
-      await addLancamentoMutation.mutateAsync({
-        tipo,
-        status,
-        descricao: descricao.trim() || undefined,
-        valor: valNum,
-        forma_pagamento: formaPagamento || undefined,
-        data_prevista: dataPrevista ? new Date(dataPrevista).toISOString() : undefined,
-      });
+      if (editingItem) {
+        await updateLancamentoMutation.mutateAsync({
+          id: editingItem.id,
+          tipo,
+          status,
+          descricao: descricao.trim() || "",
+          valor: valNum,
+          forma_pagamento: formaPagamento || undefined,
+          data_prevista: dataPrevista ? new Date(dataPrevista).toISOString() : undefined,
+        });
+      } else {
+        await addLancamentoMutation.mutateAsync({
+          tipo,
+          status,
+          descricao: descricao.trim() || undefined,
+          valor: valNum,
+          forma_pagamento: formaPagamento || undefined,
+          data_prevista: dataPrevista ? new Date(dataPrevista).toISOString() : undefined,
+        });
+      }
     } catch (e) {
       // Handled by onError
     } finally {
@@ -280,6 +330,7 @@ export default function FinanceiroPage() {
                   <th className="px-5 py-3">Método</th>
                   <th className="px-5 py-3">Status</th>
                   <th className="px-5 py-3 text-right">Valor</th>
+                  <th className="px-5 py-3 text-right w-28">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#243337]/50 text-sm text-[#F0EADD]">
@@ -313,6 +364,37 @@ export default function FinanceiroPage() {
                       {item.tipo === "SAIDA" ? "- " : "+ "}
                       {formatCurrency(item.valor)}
                     </td>
+                    <td className="px-5 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {item.status === "PENDENTE" && (
+                          <button
+                            onClick={() => updateLancamentoMutation.mutate({ id: item.id, status: "PAGO" })}
+                            className="p-1.5 rounded-[8px] bg-[#2F9285]/10 border border-[#2F9285]/20 hover:bg-[#2F9285] hover:text-[#050B12] text-[#2F9285] transition-all"
+                            title="Marcar como Pago"
+                          >
+                            <Check size={13} />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleEditClick(item)}
+                          className="p-1.5 rounded-[8px] bg-[#5E9ED6]/10 border border-[#5E9ED6]/20 hover:bg-[#5E9ED6] hover:text-[#050B12] text-[#5E9ED6] transition-all"
+                          title="Editar Lançamento"
+                        >
+                          <Edit2 size={13} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm("Deseja realmente excluir este lançamento?")) {
+                              deleteLancamentoMutation.mutate(item.id);
+                            }
+                          }}
+                          className="p-1.5 rounded-[8px] bg-[#E35D5B]/10 border border-[#E35D5B]/20 hover:bg-[#E35D5B] hover:text-white text-[#E35D5B] transition-all"
+                          title="Excluir Lançamento"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -329,7 +411,9 @@ export default function FinanceiroPage() {
             <div className="flex items-center justify-between px-5 py-4 border-b border-[#243337]">
               <div className="flex items-center gap-2">
                 <Wallet size={18} className="text-[#2F9285]" />
-                <h2 className="text-[#F0EADD] font-bold text-base">Novo Lançamento</h2>
+                <h2 className="text-[#F0EADD] font-bold text-base">
+                  {editingItem ? "Editar Lançamento" : "Novo Lançamento"}
+                </h2>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="text-[#87938F] hover:text-[#F0EADD]">
                 <X size={18} />
@@ -370,6 +454,12 @@ export default function FinanceiroPage() {
                 >
                   <option value="PAGO">Confirmado (Pago / Recebido)</option>
                   <option value="PENDENTE">Pendente (Agendado)</option>
+                  {editingItem && (
+                    <>
+                      <option value="CANCELADO">Cancelado</option>
+                      <option value="ESTORNADO">Estornado</option>
+                    </>
+                  )}
                 </select>
               </div>
 

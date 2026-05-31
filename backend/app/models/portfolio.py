@@ -3,8 +3,7 @@
 import enum
 import uuid
 
-from sqlalchemy import Boolean, Enum, ForeignKey, Numeric, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Boolean, Enum, ForeignKey, Numeric, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -29,13 +28,13 @@ class Portfolio(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "portfolio"
 
     estudio_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("estudios.id"), nullable=False, index=True
+        Uuid(as_uuid=True), ForeignKey("estudios.id"), nullable=False, index=True
     )
     artista_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True
+        Uuid(as_uuid=True), ForeignKey("usuarios.id"), nullable=True
     )
     atendimento_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("atendimentos.id"), nullable=True
+        Uuid(as_uuid=True), ForeignKey("atendimentos.id"), nullable=True
     )
     imagem_path: Mapped[str] = mapped_column(String(500), nullable=False)
     titulo: Mapped[str | None] = mapped_column(String(200), nullable=True)
@@ -54,10 +53,10 @@ class FlashArt(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "flash_arts"
 
     estudio_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("estudios.id"), nullable=False, index=True
+        Uuid(as_uuid=True), ForeignKey("estudios.id"), nullable=False, index=True
     )
     artista_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True
+        Uuid(as_uuid=True), ForeignKey("usuarios.id"), nullable=True
     )
     titulo: Mapped[str] = mapped_column(String(200), nullable=False)
     descricao: Mapped[str | None] = mapped_column(Text, nullable=True)

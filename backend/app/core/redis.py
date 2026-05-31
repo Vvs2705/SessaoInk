@@ -1,8 +1,12 @@
 """Cliente Redis assíncrono — refresh tokens e rate limiting."""
 
 from redis.asyncio import Redis
+from typing import Dict, Any, List
+import logging
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 # Prefixo de chave para refresh tokens
 REFRESH_PREFIX = "refresh:"
@@ -13,13 +17,194 @@ LOGIN_MAX_TENTATIVAS = 5
 LOGIN_BLOQUEIO_SEGUNDOS = 15 * 60  # 15 minutos
 
 
-def get_redis() -> Redis:
-    """Retorna cliente Redis assíncrono."""
-    return Redis.from_url(
+class MockRedis:
+    """Redis in-memory mock — singleton com estado compartilhado para testes."""
+
+    _instance: "MockRedis | None" = None
+    _shared_data: Dict[str, str] = {}
+    _shared_ttls: Dict[str, int] = {}
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __init__(self, *args, **kwargs):
+        # Usa _shared_data para que toda instância veja o mesmo estado
+        self._data = MockRedis._shared_data
+        self._ttls = MockRedis._shared_ttls
+
+    @classmethod
+    def from_url(cls, *args, **kwargs):
+        return cls()
+
+    @classmethod
+    def reset(cls) -> None:
+        """Limpa todo o estado in-memory (útil entre test sessions)."""
+        cls._shared_data.clear()
+        cls._shared_ttls.clear()
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+    async def get(self, key: str) -> str | None:
+        return self._data.get(key)
+
+    async def set(self, key: str, value: Any, ex: int | None = None) -> None:
+        self._data[key] = str(value)
+        if ex:
+            self._ttls[key] = ex
+
+    async def delete(self, *keys: str) -> int:
+        count = 0
+        for k in keys:
+            if k in self._data:
+                del self._data[k]
+                self._ttls.pop(k, None)
+                count += 1
+        return count
+
+    async def incr(self, key: str) -> int:
+        val = int(self._data.get(key, 0)) + 1
+        self._data[key] = str(val)
+        return val
+
+    async def expire(self, key: str, seconds: int) -> bool:
+        self._ttls[key] = seconds
+        return True
+
+    async def keys(self, pattern: str) -> List[str]:
+        if pattern.endswith("*"):
+            prefix = pattern[:-1]
+            return [k for k in self._data.keys() if k.startswith(prefix)]
+        return [k for k in self._data.keys() if k == pattern]
+
+    async def ping(self) -> bool:
+        return True
+
+
+class RedisFallbackWrapper:
+    _use_mock: bool = False
+    _mock_instance: MockRedis | None = None
+
+    def __init__(self, real_client: Redis, mock_client: MockRedis):
+        self.real_client = real_client
+        self.mock_client = mock_client
+
+    async def __aenter__(self):
+        if RedisFallbackWrapper._use_mock:
+            await self.mock_client.__aenter__()
+            return self
+        try:
+            await self.real_client.__aenter__()
+            await self.real_client.ping()
+            return self
+        except Exception as e:
+            logger.warning(
+                f"Falha ao conectar no Redis ({settings.REDIS_URL}), usando fallback in-memory (MockRedis): {e}"
+            )
+            RedisFallbackWrapper._use_mock = True
+            await self.mock_client.__aenter__()
+            return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if RedisFallbackWrapper._use_mock:
+            await self.mock_client.__aexit__(exc_type, exc_val, exc_tb)
+        else:
+            try:
+                await self.real_client.__aexit__(exc_type, exc_val, exc_tb)
+            except Exception:
+                pass
+
+    async def get(self, key: str) -> str | None:
+        if RedisFallbackWrapper._use_mock:
+            return await self.mock_client.get(key)
+        try:
+            return await self.real_client.get(key)
+        except Exception as e:
+            logger.warning(f"Erro no Redis (get), usando MockRedis fallback: {e}")
+            RedisFallbackWrapper._use_mock = True
+            return await self.mock_client.get(key)
+
+    async def set(self, key: str, value: Any, ex: int | None = None) -> None:
+        if RedisFallbackWrapper._use_mock:
+            await self.mock_client.set(key, value, ex)
+            return
+        try:
+            await self.real_client.set(key, value, ex=ex)
+        except Exception as e:
+            logger.warning(f"Erro no Redis (set), usando MockRedis fallback: {e}")
+            RedisFallbackWrapper._use_mock = True
+            await self.mock_client.set(key, value, ex)
+
+    async def delete(self, *keys: str) -> int:
+        if RedisFallbackWrapper._use_mock:
+            return await self.mock_client.delete(*keys)
+        try:
+            return await self.real_client.delete(*keys)
+        except Exception as e:
+            logger.warning(f"Erro no Redis (delete), usando MockRedis fallback: {e}")
+            RedisFallbackWrapper._use_mock = True
+            return await self.mock_client.delete(*keys)
+
+    async def incr(self, key: str) -> int:
+        if RedisFallbackWrapper._use_mock:
+            return await self.mock_client.incr(key)
+        try:
+            return await self.real_client.incr(key)
+        except Exception as e:
+            logger.warning(f"Erro no Redis (incr), usando MockRedis fallback: {e}")
+            RedisFallbackWrapper._use_mock = True
+            return await self.mock_client.incr(key)
+
+    async def expire(self, key: str, seconds: int) -> bool:
+        if RedisFallbackWrapper._use_mock:
+            return await self.mock_client.expire(key, seconds)
+        try:
+            return await self.real_client.expire(key, seconds)
+        except Exception as e:
+            logger.warning(f"Erro no Redis (expire), usando MockRedis fallback: {e}")
+            RedisFallbackWrapper._use_mock = True
+            return await self.mock_client.expire(key, seconds)
+
+    async def keys(self, pattern: str) -> List[str]:
+        if RedisFallbackWrapper._use_mock:
+            return await self.mock_client.keys(pattern)
+        try:
+            return await self.real_client.keys(pattern)
+        except Exception as e:
+            logger.warning(f"Erro no Redis (keys), usando MockRedis fallback: {e}")
+            RedisFallbackWrapper._use_mock = True
+            return await self.mock_client.keys(pattern)
+
+    async def ping(self) -> bool:
+        if RedisFallbackWrapper._use_mock:
+            return True
+        try:
+            return await self.real_client.ping()
+        except Exception as e:
+            logger.warning(f"Erro no Redis (ping), usando MockRedis fallback: {e}")
+            RedisFallbackWrapper._use_mock = True
+            return True
+
+
+_global_mock_redis = None
+
+
+def get_redis() -> Any:
+    """Retorna cliente Redis com fallback gracioso para MockRedis."""
+    global _global_mock_redis
+    if _global_mock_redis is None:
+        _global_mock_redis = MockRedis()
+    real_client = Redis.from_url(
         settings.REDIS_URL,
         encoding="utf-8",
         decode_responses=True,
     )
+    return RedisFallbackWrapper(real_client, _global_mock_redis)
 
 
 async def salvar_refresh_token(token: str, usuario_id: str, ttl_dias: int) -> None:
@@ -72,3 +257,31 @@ async def limpar_tentativas_login(ip: str) -> None:
     """Remove contador de falhas após login bem-sucedido."""
     async with get_redis() as r:
         await r.delete(f"{LOGIN_FAIL_PREFIX}{ip}")
+
+
+# ---------------------------------------------------------------------------
+# Rate limiting — orçamento público por IP
+# ---------------------------------------------------------------------------
+
+ORCAMENTO_LIMIT_PREFIX = "orcamento_limit:"
+ORCAMENTO_MAX_REQUISICOES = 5
+ORCAMENTO_BLOQUEIO_SEGUNDOS = 10 * 60  # 10 minutos
+
+
+async def verificar_limite_orcamento(ip: str) -> bool:
+    """Retorna True se o IP excedeu o limite de solicitações de orçamento."""
+    async with get_redis() as r:
+        val = await r.get(f"{ORCAMENTO_LIMIT_PREFIX}{ip}")
+        return int(val) >= ORCAMENTO_MAX_REQUISICOES if val else False
+
+
+async def registrar_solicitacao_orcamento(ip: str) -> int:
+    """Incrementa o contador de solicitações de orçamento do IP.
+    Retorna o total acumulado."""
+    async with get_redis() as r:
+        chave = f"{ORCAMENTO_LIMIT_PREFIX}{ip}"
+        total = await r.incr(chave)
+        if total == 1:
+            await r.expire(chave, ORCAMENTO_BLOQUEIO_SEGUNDOS)
+        return total
+

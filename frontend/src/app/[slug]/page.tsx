@@ -9,6 +9,7 @@ import {
   Zap,
 } from "lucide-react";
 import { notFound } from "next/navigation";
+import { BrandLogo } from "@/components/BrandLogo";
 
 const API_URL = process.env.BACKEND_URL || "https://sessaoink-api.fly.dev";
 
@@ -102,6 +103,9 @@ export default async function PortalPublicoPage({ params }: Props) {
     ? `@${estudio.instagram}`
     : null;
 
+  const maxHomeItems = 6;
+  const portfolioLimitada = portfolio.slice(0, maxHomeItems);
+
   return (
     <div className="min-h-screen bg-[#050B12] text-[#F0EADD]">
       {/* ── Hero ── */}
@@ -173,7 +177,17 @@ export default async function PortalPublicoPage({ params }: Props) {
 
       {/* ── Portfólio ── */}
       <section className="px-6 py-12 max-w-2xl mx-auto">
-        <h2 className="font-bold text-lg mb-5 text-[#F0EADD]">Portfólio</h2>
+        <div className="flex justify-between items-center mb-5">
+          <h2 className="font-bold text-lg text-[#F0EADD]">Portfólio</h2>
+          {portfolio.length > 0 && (
+            <Link
+              href={`/${slug}/portfolio`}
+              className="text-xs text-[#2F9285] hover:underline"
+            >
+              Ver tudo
+            </Link>
+          )}
+        </div>
 
         {portfolio.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 bg-[#0B171C] border border-[#243337] rounded-[18px] text-center">
@@ -189,10 +203,11 @@ export default async function PortalPublicoPage({ params }: Props) {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {portfolio.map((item) => (
-              <div
+            {portfolioLimitada.map((item) => (
+              <Link
                 key={item.id}
-                className="group relative aspect-square rounded-[14px] overflow-hidden bg-[#0B171C] border border-[#243337]"
+                href={`/${slug}/portfolio`}
+                className="group relative aspect-square rounded-[14px] overflow-hidden bg-[#0B171C] border border-[#243337] cursor-pointer"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -215,17 +230,19 @@ export default async function PortalPublicoPage({ params }: Props) {
                     )}
                   </div>
                 )}
-              </div>
+              </Link>
             ))}
           </div>
         )}
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-[#243337] bg-[#0B171C] px-6 py-8 text-center text-xs text-[#87938F]">
+      <footer className="border-t border-[#243337] bg-[#0B171C] px-6 py-8 flex flex-col items-center justify-center gap-3 text-xs text-[#87938F]">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-[#87938F]/60">Powered by</span>
+          <BrandLogo size="sm" scaling={false} />
+        </div>
         <p>
-          Powered by{" "}
-          <span className="text-[#2F9285] font-semibold">SessãoInk</span> —
           Suas informações são protegidas e nunca compartilhadas
         </p>
       </footer>

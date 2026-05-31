@@ -13,6 +13,8 @@ from app.api.v1.auth.dependencies import get_usuario_atual
 from app.core.database import get_session
 from app.models.documento import Documento, TipoDocumento
 from app.models.usuario import Usuario
+from app.models.cliente import Cliente
+from app.models.atendimento import Atendimento
 
 router = APIRouter(prefix="/documentos", tags=["documentos"])
 
@@ -59,6 +61,36 @@ async def criar_documento(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
+    # Validar se o cliente pertence ao mesmo estúdio do usuário
+    if dados.cliente_id:
+        cliente_exists = await session.scalar(
+            select(Cliente).where(
+                Cliente.id == dados.cliente_id,
+                Cliente.estudio_id == usuario.estudio_id,
+                Cliente.ativo == True,
+            )
+        )
+        if not cliente_exists:
+            raise HTTPException(
+                status_code=400,
+                detail="Cliente inválido ou não pertence ao seu estúdio",
+            )
+
+    # Validar se o atendimento pertence ao mesmo estúdio do usuário
+    if dados.atendimento_id:
+        atendimento_exists = await session.scalar(
+            select(Atendimento).where(
+                Atendimento.id == dados.atendimento_id,
+                Atendimento.estudio_id == usuario.estudio_id,
+                Atendimento.ativo == True,
+            )
+        )
+        if not atendimento_exists:
+            raise HTTPException(
+                status_code=400,
+                detail="Atendimento inválido ou não pertence ao seu estúdio",
+            )
+
     doc = Documento(
         estudio_id=usuario.estudio_id,
         **dados.model_dump(),

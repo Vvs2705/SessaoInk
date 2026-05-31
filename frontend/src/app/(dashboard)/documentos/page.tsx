@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { FileText, Plus, Shield, CheckCircle, Clock, Trash2, Loader2, X, ChevronRight } from "lucide-react";
+import { FileText, Plus, Shield, CheckCircle, Clock, Trash2, Loader2, X, ChevronRight, Copy, Check } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
@@ -51,6 +51,11 @@ export default function DocumentosPage() {
   const [titulo, setTitulo] = useState("");
   const [conteudo, setConteudo] = useState("");
   const [versao, setVersao] = useState("1.0");
+
+  const { data: estudio } = useQuery<any>({
+    queryKey: ["estudio"],
+    queryFn: () => api.get("/api/v1/estudio/"),
+  });
 
   const { data: docs = [], isLoading } = useQuery<Documento[]>({
     queryKey: ["documentos"],
@@ -176,7 +181,7 @@ export default function DocumentosPage() {
           </h2>
           <div className="space-y-2">
             {pendentes.map((doc) => (
-              <DocRow key={doc.id} doc={doc} onView={setViewDoc} onDelete={(id) => {
+              <DocRow key={doc.id} doc={doc} slug={estudio?.slug || ""} onView={setViewDoc} onDelete={(id) => {
                 if (confirm(`Excluir "${doc.titulo}"?`)) deleteMutation.mutate(id);
               }} />
             ))}
@@ -192,7 +197,7 @@ export default function DocumentosPage() {
           </h2>
           <div className="space-y-2">
             {assinados.map((doc) => (
-              <DocRow key={doc.id} doc={doc} onView={setViewDoc} onDelete={(id) => {
+              <DocRow key={doc.id} doc={doc} slug={estudio?.slug || ""} onView={setViewDoc} onDelete={(id) => {
                 if (confirm(`Excluir "${doc.titulo}"?`)) deleteMutation.mutate(id);
               }} />
             ))}
@@ -338,16 +343,28 @@ export default function DocumentosPage() {
 // Sub-componente para linha de documento
 function DocRow({
   doc,
+  slug,
   onView,
   onDelete,
 }: {
   doc: Documento;
+  slug: string;
   onView: (d: Documento) => void;
   onDelete: (id: string) => void;
 }) {
   const cfg = TIPO_CONFIG[doc.tipo];
   const formatDate = (dateStr: string | null) =>
     dateStr ? new Date(dateStr).toLocaleDateString("pt-BR", { timeZone: "UTC", day: "2-digit", month: "short" }) : "—";
+
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyLink = () => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+    const link = `${origin}/${slug}/documento/${doc.id}`;
+    navigator.clipboard.writeText(link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="flex items-center gap-3 p-4 bg-[#0B171C] border border-[#243337] rounded-[14px] hover:border-[#2F9285]/30 transition-all group">
@@ -376,9 +393,20 @@ function DocRow({
             <Clock size={10} /> Pendente
           </span>
         )}
+        
+        {!doc.assinado && slug && (
+          <button
+            onClick={handleCopyLink}
+            className="p-1.5 rounded-[8px] text-[#2F9285] hover:text-[#3AA99A] hover:bg-[#2F9285]/10 transition-all"
+            title="Copiar link de assinatura"
+          >
+            {copied ? <Check size={13} className="text-[#54B88D]" /> : <Copy size={13} />}
+          </button>
+        )}
+
         <button
           onClick={() => onView(doc)}
-          className="ml-1 p-1.5 rounded-[8px] text-[#87938F] hover:text-[#F0EADD] hover:bg-[#102128] transition-all"
+          className="p-1.5 rounded-[8px] text-[#87938F] hover:text-[#F0EADD] hover:bg-[#102128] transition-all"
           title="Ver documento"
         >
           <FileText size={13} />

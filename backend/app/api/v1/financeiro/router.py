@@ -13,6 +13,7 @@ from app.api.v1.auth.dependencies import get_usuario_atual
 from app.core.database import get_session
 from app.models.financeiro import Lancamento, TipoLancamento, StatusLancamento, FormaPagamentoFin
 from app.models.usuario import Usuario
+from app.models.atendimento import Atendimento
 
 router = APIRouter(prefix="/financeiro", tags=["financeiro"])
 
@@ -21,6 +22,17 @@ class LancamentoCreate(BaseModel):
     tipo: TipoLancamento
     descricao: Optional[str] = None
     valor: float
+    status: Optional[StatusLancamento] = None
+    forma_pagamento: Optional[FormaPagamentoFin] = None
+    data_prevista: Optional[datetime] = None
+    atendimento_id: Optional[uuid.UUID] = None
+    artista_id: Optional[uuid.UUID] = None
+
+
+class LancamentoUpdate(BaseModel):
+    tipo: Optional[TipoLancamento] = None
+    descricao: Optional[str] = None
+    valor: Optional[float] = None
     status: Optional[StatusLancamento] = None
     forma_pagamento: Optional[FormaPagamentoFin] = None
     data_prevista: Optional[datetime] = None
@@ -65,6 +77,36 @@ async def criar_lancamento(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
+    # Validar se o atendimento pertence ao mesmo estúdio do usuário
+    if dados.atendimento_id:
+        atendimento_exists = await session.scalar(
+            select(Atendimento).where(
+                Atendimento.id == dados.atendimento_id,
+                Atendimento.estudio_id == usuario.estudio_id,
+                Atendimento.ativo == True,
+            )
+        )
+        if not atendimento_exists:
+            raise HTTPException(
+                status_code=400,
+                detail="Atendimento inválido ou não pertence ao seu estúdio",
+            )
+
+    # Validar se o artista/usuário pertence ao mesmo estúdio do usuário
+    if dados.artista_id:
+        artista_exists = await session.scalar(
+            select(Usuario).where(
+                Usuario.id == dados.artista_id,
+                Usuario.estudio_id == usuario.estudio_id,
+                Usuario.ativo == True,
+            )
+        )
+        if not artista_exists:
+            raise HTTPException(
+                status_code=400,
+                detail="Artista inválido ou não pertence ao seu estúdio",
+            )
+
     from datetime import timezone
     status_val = dados.status or StatusLancamento.PENDENTE
     data_realizada = None
@@ -130,3 +172,87 @@ async def resumo_financeiro(
     ticket = float(ticket_res.scalar() or 0)
 
     return ResumoResponse(receita_mes=receita, sinais_pendentes=sinais, ticket_medio=ticket)
+
+
+@router.patch("/{id}", response_model=LancamentoResponse)
+async def atualizar_lancamento(
+    id: uuid.UUID,
+    dados: LancamentoUpdate,
+    session: AsyncSession = Depends(get_session),
+    usuario: Usuario = Depends(get_usuario_atual),
+):
+    result = await session.execute(
+        select(Lancamento).where(
+            Lancamento.id == id,
+            Lancamento.estudio_id == usuario.estudio_id
+        )
+    )
+    lanc = result.scalar_one_or_none()
+    if not lanc:
+        raise HTTPException(status_code=404, detail="Lançamento não encontrado")
+
+    # Validar se o atendimento pertence ao mesmo estúdio do usuário
+    if dados.atendimento_id is not None:
+        atendimento_exists = await session.scalar(
+            select(Atendimento).where(
+                Atendimento.id == dados.atendimento_id,
+                Atendimento.estudio_id == usuario.estudio_id,
+                Atendimento.ativo == True,
+            )
+        )
+        if not atendimento_exists:
+            raise HTTPException(
+                status_code=400,
+                detail="Atendimento inválido ou não pertence ao seu estúdio",
+            )
+
+    # Validar se o artista/usuário pertence ao mesmo estúdio do usuário
+    if dados.artista_id is not None:
+        artista_exists = await session.scalar(
+            select(Usuario).where(
+                Usuario.id == dados.artista_id,
+                Usuario.estudio_id == usuario.estudio_id,
+                Usuario.ativo == True,
+            )
+        )
+        if not artista_exists:
+            raise HTTPException(
+                status_code=400,
+                detail="Artista inválido ou não pertence ao seu estúdio",
+            )
+
+    campos = dados.model_dump(exclude_unset=True)
+    
+    if "status" in campos:
+        from datetime import timezone
+        if campos["status"] == StatusLancamento.PAGO and lanc.status != StatusLancamento.PAGO:
+            lanc.data_realizada = datetime.now(timezone.utc)
+        elif campos["status"] != StatusLancamento.PAGO and lanc.status == StatusLancamento.PAGO:
+            lanc.data_realizada = None
+
+    for campo, valor in campos.items():
+        setattr(lanc, campo, valor)
+
+    await session.flush()
+    await session.refresh(lanc)
+    return lanc
+
+
+@router.delete("/{id}", status_code=204)
+async def deletar_lancamento(
+    id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    usuario: Usuario = Depends(get_usuario_atual),
+):
+    result = await session.execute(
+        select(Lancamento).where(
+            Lancamento.id == id,
+            Lancamento.estudio_id == usuario.estudio_id
+        )
+    )
+    lanc = result.scalar_one_or_none()
+    if not lanc:
+        raise HTTPException(status_code=404, detail="Lançamento não encontrado")
+
+    await session.delete(lanc)
+    return None

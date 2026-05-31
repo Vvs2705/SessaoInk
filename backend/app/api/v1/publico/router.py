@@ -1,6 +1,6 @@
 """Router do Portal Público — sem autenticação."""
 
-from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile, Request
 from fastapi.responses import FileResponse
 from pathlib import Path
 from pydantic import BaseModel, EmailStr
@@ -8,11 +8,15 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 
+import uuid
+from datetime import datetime
 from app.core.config import settings
 from app.core.database import get_session
+from app.core.redis import verificar_limite_orcamento, registrar_solicitacao_orcamento
 from app.models.usuario import Estudio
 from app.models.atendimento import Atendimento, AtendimentoImagem, StatusOperacional, TipoAtendimento
 from app.models.portfolio import Portfolio, VisibilidadePortfolio, FlashArt, StatusFlash
+from app.models.documento import Documento
 
 router = APIRouter(prefix="/public", tags=["portal-público"])
 
@@ -249,6 +253,7 @@ async def imagem_flash_art_publica(
 @router.post("/{slug}/orcamento", response_model=OrcamentoResponse, status_code=201)
 async def solicitar_orcamento(
     slug: str,
+    request: Request,
     nome: str = Form(...),
     whatsapp: str = Form(...),
     instagram: Optional[str] = Form(None),
@@ -259,11 +264,28 @@ async def solicitar_orcamento(
     observacoes: Optional[str] = Form(None),
     aceite_privacidade: bool = Form(...),
     aceite_termos: bool = Form(...),
+    email_confirm: Optional[str] = Form(None),
+    website: Optional[str] = Form(None),
     imagens: Optional[list[UploadFile]] = File(None),
     session: AsyncSession = Depends(get_session),
 ):
+    # 1. Rate Limiting
+    ip = request.client.host if request.client else "unknown"
+    if await verificar_limite_orcamento(ip):
+        raise HTTPException(
+            status_code=429,
+            detail="Muitas solicitações de orçamento. Por favor, aguarde alguns minutos e tente novamente."
+        )
+
+    # 2. Honeypot Validation
+    if email_confirm or website:
+        raise HTTPException(400, "Requisição inválida (spam detectado)")
+
     if not aceite_privacidade or not aceite_termos:
         raise HTTPException(400, "É necessário aceitar a política de privacidade e os termos de uso")
+
+    # 3. Registrar solicitação no Redis
+    await registrar_solicitacao_orcamento(ip)
 
     result = await session.execute(
         select(Estudio).where(Estudio.slug == slug, Estudio.ativo == True)
@@ -296,32 +318,62 @@ async def solicitar_orcamento(
     # Salvar imagens fisicamente se houver
     import uuid
     if imagens:
+        # 1. Validar quantidade
+        # Filtrar imagens enviadas vazias
+        imagens_validas = [img for img in imagens if img.filename]
+        if len(imagens_validas) > 5:
+            raise HTTPException(400, "Você pode enviar no máximo 5 imagens de referência.")
+
+        ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp"}
+        MAX_SIZE = settings.UPLOAD_MAX_SIZE_MB * 1024 * 1024  # 15MB
+        
+        salvos_no_disco = []
         upload_dir = Path(settings.STORAGE_PATH) / "uploads" / str(estudio.id) / "atendimentos" / str(atendimento.id)
-        upload_dir.mkdir(parents=True, exist_ok=True)
-        
-        for imagem in imagens:
-            # Pula arquivos se forem enviados vazios ou sem nome
-            if not imagem.filename:
-                continue
+
+        try:
+            for imagem in imagens_validas:
+                # 2. Validar content_type
+                if imagem.content_type not in ALLOWED_MIME:
+                    raise HTTPException(415, f"Tipo de arquivo não permitido: {imagem.filename}. Use JPG, PNG ou WEBP.")
+                
+                # 3. Ler conteúdo e validar tamanho
+                conteudo = await imagem.read()
+                if len(conteudo) > MAX_SIZE:
+                    raise HTTPException(413, f"O arquivo {imagem.filename} excede o tamanho máximo de {settings.UPLOAD_MAX_SIZE_MB}MB.")
+                
+                # Gerar nome de arquivo único e seguro
+                ext = Path(imagem.filename).suffix.lower()
+                if ext not in {".jpg", ".jpeg", ".png", ".webp"}:
+                    ext = ".jpg" # fallback/segurança
+                novo_nome = f"{uuid.uuid4()}{ext}"
+                
+                upload_dir.mkdir(parents=True, exist_ok=True)
+                caminho_arquivo = upload_dir / novo_nome
+                
+                # Salvar o arquivo
+                with open(caminho_arquivo, "wb") as f:
+                    f.write(conteudo)
+                
+                salvos_no_disco.append(caminho_arquivo)
+                
+                # Registrar no banco de dados
+                atendimento_imagem = AtendimentoImagem(
+                    atendimento_id=atendimento.id,
+                    imagem_path=novo_nome
+                )
+                session.add(atendimento_imagem)
             
-            # Gerar nome de arquivo único
-            ext = Path(imagem.filename).suffix
-            novo_nome = f"{uuid.uuid4()}{ext}"
-            caminho_arquivo = upload_dir / novo_nome
-            
-            # Salvar o arquivo de forma assíncrona
-            conteudo = await imagem.read()
-            with open(caminho_arquivo, "wb") as f:
-                f.write(conteudo)
-            
-            # Registrar no banco de dados
-            atendimento_imagem = AtendimentoImagem(
-                atendimento_id=atendimento.id,
-                imagem_path=novo_nome
-            )
-            session.add(atendimento_imagem)
-        
-        await session.flush()
+            await session.flush()
+
+        except Exception as e:
+            # Rollback físico: apagar todos os arquivos salvos em disco se der erro
+            for path in salvos_no_disco:
+                try:
+                    if path.exists():
+                        path.unlink()
+                except Exception:
+                    pass
+            raise e
 
     protocolo = f"SI{str(atendimento.id).split('-')[0].upper()}"
 
@@ -330,3 +382,69 @@ async def solicitar_orcamento(
         atendimento_id=str(atendimento.id),
         mensagem="Pedido de orçamento recebido com sucesso! Entraremos em contato em breve.",
     )
+
+
+class PublicDocumentoResponse(BaseModel):
+    id: uuid.UUID
+    tipo: str
+    titulo: str
+    conteudo: Optional[str]
+    assinado: bool
+    data_assinatura: Optional[datetime] = None
+    model_config = {"from_attributes": True}
+
+
+class AssinarDocumentoRequest(BaseModel):
+    ip: str
+    user_agent: str
+    nome_assinante: str
+
+
+@router.get("/documentos/{doc_id}", response_model=PublicDocumentoResponse)
+async def obter_documento_publico(
+    doc_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+):
+    result = await session.execute(
+        select(Documento).where(Documento.id == doc_id)
+    )
+    doc = result.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(404, "Documento não encontrado")
+    return PublicDocumentoResponse(
+        id=doc.id,
+        tipo=doc.tipo.value,
+        titulo=doc.titulo,
+        conteudo=doc.conteudo,
+        assinado=doc.assinado,
+        data_assinatura=doc.data_assinatura,
+    )
+
+
+@router.post("/documentos/{doc_id}/assinar", status_code=200)
+async def assinar_documento_publico(
+    doc_id: uuid.UUID,
+    dados: AssinarDocumentoRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    from datetime import timezone
+    result = await session.execute(
+        select(Documento).where(Documento.id == doc_id)
+    )
+    doc = result.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(404, "Documento não encontrado")
+    if doc.assinado:
+        raise HTTPException(400, "Documento já está assinado")
+
+    doc.assinado = True
+    doc.data_assinatura = datetime.now(timezone.utc)
+    doc.ip_assinatura = dados.ip
+    doc.trilha_aceite = {
+        "user_agent": dados.user_agent,
+        "nome_assinante": dados.nome_assinante,
+        "assinado_em": doc.data_assinatura.isoformat(),
+    }
+
+    await session.commit()
+    return {"message": "Documento assinado com sucesso"}

@@ -4,8 +4,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, Boolean, DateTime, Enum, ForeignKey, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import JSON, Boolean, DateTime, Enum, ForeignKey, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -26,13 +25,13 @@ class Documento(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "documentos"
 
     estudio_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("estudios.id"), nullable=False, index=True
+        Uuid(as_uuid=True), ForeignKey("estudios.id"), nullable=False, index=True
     )
     cliente_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("clientes.id"), nullable=True
+        Uuid(as_uuid=True), ForeignKey("clientes.id"), nullable=True
     )
     atendimento_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("atendimentos.id"), nullable=True
+        Uuid(as_uuid=True), ForeignKey("atendimentos.id"), nullable=True
     )
     tipo: Mapped[TipoDocumento] = mapped_column(
         Enum(TipoDocumento, name="tipo_documento"), nullable=False

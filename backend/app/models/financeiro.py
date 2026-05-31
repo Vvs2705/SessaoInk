@@ -4,8 +4,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Numeric, String, Text, Integer, Boolean
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import DateTime, Enum, ForeignKey, Numeric, String, Text, Integer, Boolean, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -39,13 +38,13 @@ class Lancamento(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "lancamentos"
 
     estudio_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("estudios.id"), nullable=False, index=True
+        Uuid(as_uuid=True), ForeignKey("estudios.id"), nullable=False, index=True
     )
     atendimento_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("atendimentos.id"), nullable=True
+        Uuid(as_uuid=True), ForeignKey("atendimentos.id"), nullable=True
     )
     artista_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True
+        Uuid(as_uuid=True), ForeignKey("usuarios.id"), nullable=True
     )
     tipo: Mapped[TipoLancamento] = mapped_column(
         Enum(TipoLancamento, name="tipo_lancamento"), nullable=False
@@ -77,7 +76,7 @@ class EstoqueItem(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "estoque_itens"
 
     estudio_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("estudios.id"), nullable=False, index=True
+        Uuid(as_uuid=True), ForeignKey("estudios.id"), nullable=False, index=True
     )
     nome: Mapped[str] = mapped_column(String(200), nullable=False)
     categoria: Mapped[CategoriaEstoque] = mapped_column(

@@ -7,8 +7,7 @@ from typing import Optional
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Numeric, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Numeric, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -58,13 +57,13 @@ class Atendimento(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "atendimentos"
 
     estudio_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("estudios.id"), nullable=False, index=True
+        Uuid(as_uuid=True), ForeignKey("estudios.id"), nullable=False, index=True
     )
     cliente_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("clientes.id"), nullable=True, index=True
+        Uuid(as_uuid=True), ForeignKey("clientes.id"), nullable=True, index=True
     )
     artista_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True, index=True
+        Uuid(as_uuid=True), ForeignKey("usuarios.id"), nullable=True, index=True
     )
     status_operacional: Mapped[StatusOperacional] = mapped_column(
         Enum(StatusOperacional, name="status_operacional"),
@@ -102,7 +101,10 @@ class Atendimento(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     )
 
     imagens: Mapped[list["AtendimentoImagem"]] = relationship(
-        "AtendimentoImagem", back_populates="atendimento", cascade="all, delete-orphan"
+        "AtendimentoImagem",
+        back_populates="atendimento",
+        cascade="all, delete-orphan",
+        lazy="selectin",
     )
 
 
@@ -110,7 +112,7 @@ class AtendimentoImagem(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "atendimento_imagens"
 
     atendimento_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         ForeignKey("atendimentos.id", ondelete="CASCADE"),
         nullable=False,
         index=True,

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BuscaModal } from "@/components/BuscaModal";
+import { BrandLogo } from "@/components/BrandLogo";
 
 const NAV = [
   { href: "/",              label: "Início",        icon: BarChart2 },
@@ -45,11 +46,7 @@ export function Sidebar() {
       <aside className="hidden lg:flex flex-col w-60 bg-[#0B171C] border-r border-[#243337] h-screen sticky top-0 shrink-0">
         {/* Logo */}
         <div className="flex flex-col items-start px-5 py-5 border-b border-[#243337] gap-1">
-          <img
-            src="/logo-wide.png"
-            alt="SessãoInk"
-            className="h-9 w-auto object-contain"
-          />
+          <BrandLogo size="md" />
           <span className="text-[10px] text-[#87938F] px-1 font-mono">v1.1</span>
         </div>
 

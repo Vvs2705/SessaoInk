@@ -1,5 +1,6 @@
 """Router de autenticação — login, logout, refresh, me."""
 
+import uuid
 from datetime import timedelta
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
@@ -128,8 +129,20 @@ async def logout(
     if refresh_token:
         await revogar_refresh_token(refresh_token)
 
-    response.delete_cookie("access_token", path="/")
-    response.delete_cookie("refresh_token", path="/api/v1/auth/refresh")
+    response.delete_cookie(
+        "access_token",
+        path="/",
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+        httponly=True,
+    )
+    response.delete_cookie(
+        "refresh_token",
+        path="/api/v1/auth/refresh",
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+        httponly=True,
+    )
 
 
 @router.get("/me", response_model=UsuarioResponse)
@@ -152,8 +165,16 @@ async def refresh(
         )
 
     # Validar token no Redis
-    usuario_id = await obter_usuario_do_refresh(refresh_token)
-    if not usuario_id:
+    usuario_id_str = await obter_usuario_do_refresh(refresh_token)
+    if not usuario_id_str:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token inválido ou expirado",
+        )
+
+    try:
+        usuario_id = uuid.UUID(usuario_id_str)
+    except (ValueError, AttributeError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh token inválido ou expirado",

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import {
   Shield,
   CheckCircle,
@@ -58,6 +58,7 @@ const labelClass = "block text-sm font-medium text-[#B8C2BF] mb-1.5";
 
 export default function OrcamentoPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug ?? "";
 
   const [form, setForm] = useState<FormState>({
@@ -71,19 +72,58 @@ export default function OrcamentoPage() {
     aceite_privacidade: false,
     aceite_termos: false,
   });
+
+  useEffect(() => {
+    const descParam = searchParams.get("descricao");
+    if (descParam) {
+      setForm((prev) => ({ ...prev, descricao: descParam }));
+    }
+  }, [searchParams]);
+
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState<OrcamentoResponse | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [imagens, setImagens] = useState<ImagemReferencia[]>([]);
+  const [emailConfirm, setEmailConfirm] = useState("");
+  const [website, setWebsite] = useState("");
+
+  // Limpar previews ao desmontar para evitar memory leaks
+  useEffect(() => {
+    return () => {
+      imagens.forEach((img) => URL.revokeObjectURL(img.preview));
+    };
+  }, [imagens]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setErro(null);
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
-      const novasImagens = filesArray.map((file) => ({
-        file,
-        preview: URL.createObjectURL(file),
-      }));
-      setImagens((prev) => [...prev, ...novasImagens]);
+      
+      if (imagens.length + filesArray.length > 5) {
+        setErro("Você pode carregar no máximo 5 imagens de referência.");
+        return;
+      }
+
+      const validFiles: ImagemReferencia[] = [];
+      const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+      const MAX_SIZE_BYTES = 15 * 1024 * 1024; // 15MB
+
+      for (const file of filesArray) {
+        if (!ALLOWED_TYPES.includes(file.type)) {
+          setErro("Formato não permitido. Use apenas JPG, PNG ou WEBP.");
+          return;
+        }
+        if (file.size > MAX_SIZE_BYTES) {
+          setErro("Cada imagem deve ter no máximo 15MB.");
+          return;
+        }
+        validFiles.push({
+          file,
+          preview: URL.createObjectURL(file),
+        });
+      }
+
+      setImagens((prev) => [...prev, ...validFiles]);
     }
   };
 
@@ -135,6 +175,8 @@ export default function OrcamentoPage() {
       }
       formData.append("aceite_privacidade", String(form.aceite_privacidade));
       formData.append("aceite_termos", String(form.aceite_termos));
+      formData.append("email_confirm", emailConfirm);
+      formData.append("website", website);
 
       // Adicionar imagens
       imagens.forEach((img) => {
@@ -226,6 +268,26 @@ export default function OrcamentoPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Honeypot fields to prevent spam */}
+          <div className="hidden" aria-hidden="true" style={{ display: "none", position: "absolute", left: "-9999px" }}>
+            <input
+              type="text"
+              name="email_confirm"
+              value={emailConfirm}
+              onChange={(e) => setEmailConfirm(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+            />
+            <input
+              type="text"
+              name="website"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+            />
+          </div>
+
           {/* ── Dados pessoais ── */}
           <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4">
             <h2 className="text-sm font-semibold text-[#87938F] uppercase tracking-wider">

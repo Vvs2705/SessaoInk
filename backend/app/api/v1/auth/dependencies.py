@@ -1,5 +1,6 @@
 """Dependências de autenticação para injeção via FastAPI."""
 
+import uuid
 from fastapi import Cookie, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,10 +26,11 @@ async def get_usuario_atual(
 
     try:
         payload = decodificar_token(access_token)
-        usuario_id: str = payload.get("sub")
-        if not usuario_id:
+        usuario_id_str: str | None = payload.get("sub")
+        if not usuario_id_str:
             raise credentials_exception
-    except ValueError:
+        usuario_id = uuid.UUID(usuario_id_str)
+    except (ValueError, AttributeError):
         raise credentials_exception
 
     result = await session.execute(
@@ -43,3 +45,11 @@ async def get_usuario_atual(
         raise credentials_exception
 
     return usuario
+
+
+async def get_estudio_id(
+    usuario: Usuario = Depends(get_usuario_atual),
+) -> uuid.UUID:
+    """Retorna o estudio_id do usuário autenticado."""
+    return usuario.estudio_id
+

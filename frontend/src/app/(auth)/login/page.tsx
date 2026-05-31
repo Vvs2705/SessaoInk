@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { api, ApiError } from "@/lib/api/client";
+import { BrandLogo } from "@/components/BrandLogo";
 
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -52,11 +53,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8 flex flex-col items-center">
-          <img
-            src="/logo-wide.png"
-            alt="SessãoInk"
-            className="h-16 w-auto object-contain mb-4"
-          />
+          <BrandLogo size="lg" className="mb-4" />
           <p className="text-sm text-[#87938F]">Acesse o painel do seu estúdio</p>
         </div>
 

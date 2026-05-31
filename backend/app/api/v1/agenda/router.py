@@ -129,6 +129,43 @@ async def agendar_sessao(
     if not atendimento:
         raise HTTPException(status_code=404, detail="Atendimento não encontrado")
 
+    if atendimento.artista_id:
+        duracao_min = dados.duracao_minutos or 120
+
+        # Normaliza para UTC naive para evitar TypeError ao comparar com datas do SQLite
+        def _naive(dt: datetime) -> datetime:
+            """Remove timezone info, convertendo para UTC se necessário."""
+            if dt.tzinfo is not None:
+                from datetime import timezone as _tz
+                dt = dt.astimezone(_tz.utc).replace(tzinfo=None)
+            return dt
+
+        inicio_prop = _naive(dados.data_sessao)
+        fim_prop = inicio_prop + timedelta(minutes=duracao_min)
+        
+        conflito_result = await session.execute(
+            select(Atendimento).where(
+                Atendimento.artista_id == atendimento.artista_id,
+                Atendimento.estudio_id == usuario.estudio_id,
+                Atendimento.ativo == True,
+                Atendimento.id != atendimento.id,
+                Atendimento.data_sessao.isnot(None),
+                Atendimento.status_operacional.in_([
+                    StatusOperacional.CONFIRMADO,
+                    StatusOperacional.EM_ATENDIMENTO
+                ])
+            )
+        )
+        for outro in conflito_result.scalars().all():
+            outro_duracao = outro.duracao_minutos or 120
+            outro_inicio = _naive(outro.data_sessao)
+            outro_fim = outro_inicio + timedelta(minutes=outro_duracao)
+            if outro_inicio < fim_prop and outro_fim > inicio_prop:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"Conflito de horário: o artista já possui uma sessão agendada neste período."
+                )
+
     atendimento.data_sessao = dados.data_sessao
     atendimento.duracao_minutos = dados.duracao_minutos
 

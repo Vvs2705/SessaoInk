@@ -1,31 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Rotas de API nunca são interceptadas — elas retornam JSON 401, não redirect.
-const PUBLIC_PATHS = ["/login", "/registro", "/senha", "/_next", "/favicon", "/api/"];
-const PUBLIC_PORTAL = /^\/[a-z0-9-]+($|\/)/; // /[slug] e sub-rotas públicas
+const PROTECTED_PREFIXES = [
+  "/agenda",
+  "/atendimentos",
+  "/clientes",
+  "/configuracoes",
+  "/documentos",
+  "/estoque",
+  "/financeiro",
+  "/flash-arts",
+  "/portfolio",
+  "/relatorios",
+  "/mais",
+];
+
+const PUBLIC_AUTH_PATHS = ["/login", "/registro", "/senha"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Rotas públicas sempre passam
-  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
+  // Normalize path: lowercase and remove trailing slash (except for absolute root '/')
+  const normalizedPath = pathname.toLowerCase().replace(/(.+)\/$/, "$1");
+
+  // 1. Libera chamadas de API do Next/Backend e recursos estáticos do Next
+  if (normalizedPath.startsWith("/api/") || normalizedPath.startsWith("/_next/")) {
     return NextResponse.next();
   }
 
-  // Portal público (slugs) passa sem auth
-  if (pathname.match(/^\/[a-z0-9][a-z0-9-]*($|\/orcamento|\/portfolio|\/flash-arts)/)) {
+  // 2. Libera rotas públicas de autenticação
+  if (PUBLIC_AUTH_PATHS.some((path) => normalizedPath === path || normalizedPath.startsWith(path + "/"))) {
     return NextResponse.next();
   }
 
-  // Verificar cookie de sessão
-  const token = request.cookies.get("access_token");
+  // 3. Identifica se é uma rota protegida (dashboard)
+  // É protegida se for exatamente "/" ou começar com um dos prefixos protegidos (seguido de "/" ou fim da string)
+  const isDashboardRoute =
+    normalizedPath === "/" ||
+    PROTECTED_PREFIXES.some(
+      (prefix) => normalizedPath === prefix || normalizedPath.startsWith(prefix + "/")
+    );
 
-  if (!token) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("from", pathname);
-    return NextResponse.redirect(loginUrl);
+  if (isDashboardRoute) {
+    const token = request.cookies.get("access_token");
+
+    if (!token) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("from", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
+  // 4. Qualquer outra rota é tratada como portal público (slugs) e passa sem auth
   return NextResponse.next();
 }
 

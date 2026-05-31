@@ -3,8 +3,7 @@
 import uuid
 from datetime import date
 
-from sqlalchemy import Date, ForeignKey, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Date, ForeignKey, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -15,7 +14,7 @@ class Cliente(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "clientes"
 
     estudio_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         ForeignKey("estudios.id", ondelete="RESTRICT"),
         nullable=False,
         index=True,

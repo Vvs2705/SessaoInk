@@ -143,7 +143,7 @@ async def buscar(
         ResultadoFlashArt(
             id=f.id,
             titulo=f.titulo,
-            subtitulo=f.estilo,
+            subtitulo=f.tamanho_sugerido,
         )
         for f in r_flash.scalars().all()
     ]

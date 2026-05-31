@@ -3,8 +3,7 @@
 import enum
 import uuid
 
-from sqlalchemy import Boolean, Enum, ForeignKey, String
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Boolean, Enum, ForeignKey, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -40,7 +39,7 @@ class Usuario(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "usuarios"
 
     estudio_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         ForeignKey("estudios.id", ondelete="RESTRICT"),
         nullable=False,
         index=True,

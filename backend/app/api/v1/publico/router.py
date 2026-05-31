@@ -154,6 +154,98 @@ async def imagem_portfolio_publico(
     return FileResponse(str(caminho))
 
 
+class FlashArtPublicaResponse(BaseModel):
+    id: str
+    titulo: str
+    descricao: Optional[str]
+    preco: Optional[float]
+    tamanho_sugerido: Optional[str]
+    local_recomendado: Optional[str]
+    has_imagem: bool
+
+
+@router.get("/{slug}/flash-arts", response_model=list[FlashArtPublicaResponse])
+async def flash_arts_publicas(
+    slug: str,
+    session: AsyncSession = Depends(get_session),
+):
+    """Retorna flash arts disponíveis do estúdio — sem autenticação."""
+    result = await session.execute(
+        select(Estudio).where(Estudio.slug == slug, Estudio.ativo == True)
+    )
+    estudio = result.scalar_one_or_none()
+    if not estudio:
+        raise HTTPException(404, "Estúdio não encontrado")
+
+    result_flash = await session.execute(
+        select(FlashArt).where(
+            FlashArt.estudio_id == estudio.id,
+            FlashArt.status == StatusFlash.DISPONIVEL,
+            FlashArt.ativo == True,
+        ).order_by(FlashArt.criado_em.desc())
+    )
+    return [
+        FlashArtPublicaResponse(
+            id=str(f.id),
+            titulo=f.titulo,
+            descricao=f.descricao,
+            preco=float(f.preco) if f.preco else None,
+            tamanho_sugerido=f.tamanho_sugerido,
+            local_recomendado=f.local_recomendado,
+            has_imagem=bool(f.imagem_path),
+        )
+        for f in result_flash.scalars().all()
+    ]
+
+
+@router.get("/{slug}/flash-arts/{flash_id}/imagem")
+async def imagem_flash_art_publica(
+    slug: str,
+    flash_id: str,
+    session: AsyncSession = Depends(get_session),
+):
+    """Serve imagem pública de flash art — sem autenticação."""
+    import uuid as _uuid
+    try:
+        fid = _uuid.UUID(flash_id)
+    except ValueError:
+        raise HTTPException(400, "ID inválido")
+
+    result_estudio = await session.execute(
+        select(Estudio).where(Estudio.slug == slug, Estudio.ativo == True)
+    )
+    estudio = result_estudio.scalar_one_or_none()
+    if not estudio:
+        raise HTTPException(404, "Estúdio não encontrado")
+
+    result = await session.execute(
+        select(FlashArt).where(
+            FlashArt.id == fid,
+            FlashArt.estudio_id == estudio.id,
+            FlashArt.status == StatusFlash.DISPONIVEL,
+            FlashArt.ativo == True,
+        )
+    )
+    flash = result.scalar_one_or_none()
+    if not flash:
+        raise HTTPException(404, "Flash art não encontrada")
+
+    if not flash.imagem_path:
+        raise HTTPException(404, "Imagem não disponível")
+
+    caminho = (
+        Path(settings.STORAGE_PATH)
+        / "uploads"
+        / str(flash.estudio_id)
+        / "flash_arts"
+        / flash.imagem_path
+    )
+    if not caminho.exists():
+        raise HTTPException(404, "Arquivo não encontrado")
+
+    return FileResponse(str(caminho))
+
+
 @router.post("/{slug}/orcamento", response_model=OrcamentoResponse, status_code=201)
 async def solicitar_orcamento(
     slug: str,

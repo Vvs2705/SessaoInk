@@ -381,7 +381,7 @@ export default function ConfiguracoesPage() {
                 </label>
                 <div className="flex items-center gap-2 bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5">
                   <span className="text-sm text-[#87938F] shrink-0">
-                    localhost:3000/
+                    {process.env.NEXT_PUBLIC_APP_URL ?? "https://sessao-ink.vercel.app"}/
                   </span>
                   <span className="text-sm text-[#2F9285] font-medium">
                     {estudio?.slug ?? "..."}
@@ -398,7 +398,7 @@ export default function ConfiguracoesPage() {
                 </div>
                 <div className="p-4">
                   <a
-                    href={`http://localhost:3000/${estudio?.slug ?? "demo"}`}
+                    href={`${process.env.NEXT_PUBLIC_APP_URL ?? "https://sessao-ink.vercel.app"}/${estudio?.slug ?? "demo"}`}
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center justify-between p-3 bg-[#050B12] rounded-[10px] hover:bg-[#102128] transition-colors group"
@@ -408,7 +408,7 @@ export default function ConfiguracoesPage() {
                         {estudio?.nome ?? "Seu Estúdio"}
                       </p>
                       <p className="text-xs text-[#2F9285] mt-0.5">
-                        localhost:3000/{estudio?.slug ?? "demo"} →
+                        {(process.env.NEXT_PUBLIC_APP_URL ?? "https://sessao-ink.vercel.app").replace("https://", "")}/{estudio?.slug ?? "demo"} →
                       </p>
                     </div>
                     <ChevronRight

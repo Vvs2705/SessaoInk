@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Calendar, ClipboardList, Users, Wallet, TrendingUp, AlertCircle, Loader2 } from "lucide-react";
 import { api } from "@/lib/api/client";
 import Link from "next/link";
+import DetalhesAtendimentoModal from "./atendimentos/DetalhesAtendimentoModal";
 
 function StatCard({ label, value, icon: Icon, color, loading }: {
   label: string; value: string; icon: React.ElementType; color: string; loading?: boolean;
@@ -26,6 +28,8 @@ function StatCard({ label, value, icon: Icon, color, loading }: {
 }
 
 export default function DashboardPage() {
+  const [atendimentoSelecionado, setAtendimentoSelecionado] = useState<any | null>(null);
+
   const { data: atendimentos, isLoading: loadAt } = useQuery({
     queryKey: ["atendimentos"],
     queryFn: () => api.get<any[]>("/api/v1/atendimentos/"),
@@ -128,18 +132,29 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-2">
               {pendentes.slice(0, 5).map((a: any) => (
-                <Link key={a.id} href={`/atendimentos/${a.id}`} className="flex items-center justify-between p-3 bg-[#102128] rounded-[10px] border border-[#243337] hover:border-[#2F9285]/40 transition-all">
+                <button
+                  key={a.id}
+                  onClick={() => setAtendimentoSelecionado(a)}
+                  className="w-full flex items-center justify-between p-3 bg-[#102128] rounded-[10px] border border-[#243337] hover:border-[#2F9285]/40 transition-all text-left"
+                >
                   <div>
                     <p className="text-sm text-[#F0EADD] font-medium">{a.tipo} • {a.estilo || "Sem estilo"}</p>
                     <p className="text-xs text-[#87938F]">{a.status_operacional.replace(/_/g, " ")}</p>
                   </div>
                   <span className="text-xs text-[#2F9285]">Ver →</span>
-                </Link>
+                </button>
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {atendimentoSelecionado && (
+        <DetalhesAtendimentoModal
+          atendimento={atendimentoSelecionado}
+          onClose={() => setAtendimentoSelecionado(null)}
+        />
+      )}
     </div>
   );
 }

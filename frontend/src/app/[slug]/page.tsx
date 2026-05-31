@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { notFound } from "next/navigation";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_URL = process.env.BACKEND_URL || "https://sessaoink-api.fly.dev";
 
 type Props = { params: Promise<{ slug: string }> };
 

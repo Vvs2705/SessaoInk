@@ -6,7 +6,7 @@ import { X, User, Phone, Instagram, Image as ImageIcon, DollarSign, Calendar, Fi
 import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 const STATUS_OPCIONAL_OPCOES = [
   { value: "SOLICITADO", label: "Solicitado" },

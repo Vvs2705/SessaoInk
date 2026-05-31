@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Calendar, ChevronLeft, ChevronRight, Clock, Plus, X } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Calendar, ChevronLeft, ChevronRight, Clock, Plus, X, Loader2 } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
@@ -67,6 +67,129 @@ const STATUS_COR: Record<string, string> = {
 };
 
 // ---------------------------------------------------------------------------
+// Modal: Agendar Sessão
+// ---------------------------------------------------------------------------
+
+function AgendarSessaoModal({ onClose }: { onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [atendimentoId, setAtendimentoId] = useState("");
+  const [dataHora, setDataHora] = useState("");
+  const [duracao, setDuracao] = useState("120");
+  const [erro, setErro] = useState<string | null>(null);
+  const [sucesso, setSucesso] = useState(false);
+
+  const { data: atendimentos = [], isLoading } = useQuery<any[]>({
+    queryKey: ["atendimentos"],
+    queryFn: () => api.get("/api/v1/atendimentos/"),
+    select: (data) => data.filter((a: any) => !a.data_sessao),
+  });
+
+  const mutation = useMutation({
+    mutationFn: (payload: { atendimento_id: string; data_sessao: string; duracao_minutos: number }) =>
+      api.post("/api/v1/agenda/agendar", payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["agenda"] });
+      queryClient.invalidateQueries({ queryKey: ["agenda-proximas"] });
+      setSucesso(true);
+      setTimeout(onClose, 1200);
+    },
+    onError: (err: Error) => setErro(err.message || "Erro ao agendar sessão."),
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErro(null);
+    if (!atendimentoId) { setErro("Selecione um atendimento."); return; }
+    if (!dataHora) { setErro("Informe a data e hora."); return; }
+    mutation.mutate({
+      atendimento_id: atendimentoId,
+      data_sessao: new Date(dataHora).toISOString(),
+      duracao_minutos: parseInt(duracao) || 120,
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="w-full max-w-md bg-[#0B171C] border border-[#243337] rounded-[18px] shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#243337]">
+          <h2 className="text-base font-bold text-[#F0EADD]">Agendar Sessão</h2>
+          <button onClick={onClose} className="p-2 rounded-[10px] text-[#87938F] hover:text-[#F0EADD] hover:bg-[#102128] transition-all">
+            <X size={18} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-[#87938F] mb-1.5">Atendimento</label>
+            {isLoading ? (
+              <div className="h-10 bg-[#102128] animate-pulse rounded-[12px]" />
+            ) : atendimentos.length === 0 ? (
+              <p className="text-sm text-[#87938F] p-3 bg-[#050B12] border border-[#243337] rounded-[12px]">
+                Nenhum atendimento sem sessão.{" "}
+                <a href="/atendimentos" className="text-[#2F9285] hover:underline">Criar novo</a>
+              </p>
+            ) : (
+              <select
+                value={atendimentoId}
+                onChange={(e) => setAtendimentoId(e.target.value)}
+                className="w-full h-10 px-3 rounded-[12px] bg-[#050B12] border border-[#243337] text-[#F0EADD] text-sm focus:border-[#2F9285]/60 outline-none cursor-pointer"
+              >
+                <option value="">Selecione um atendimento...</option>
+                {atendimentos.map((a: any) => (
+                  <option key={a.id} value={a.id}>
+                    {a.tipo}{a.estilo ? ` — ${a.estilo}` : ""}{a.cliente ? ` · ${a.cliente.nome}` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-[#87938F] mb-1.5">Data e Hora</label>
+            <input
+              type="datetime-local"
+              value={dataHora}
+              onChange={(e) => setDataHora(e.target.value)}
+              className="w-full h-10 px-3 rounded-[12px] bg-[#050B12] border border-[#243337] text-[#F0EADD] text-sm focus:border-[#2F9285]/60 outline-none [color-scheme:dark]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-[#87938F] mb-1.5">Duração (minutos)</label>
+            <input
+              type="number"
+              min={15}
+              step={15}
+              value={duracao}
+              onChange={(e) => setDuracao(e.target.value)}
+              className="w-full h-10 px-3 rounded-[12px] bg-[#050B12] border border-[#243337] text-[#F0EADD] text-sm focus:border-[#2F9285]/60 outline-none"
+            />
+          </div>
+
+          {erro && (
+            <p className="text-sm text-[#E35D5B] p-3 bg-[#E35D5B]/10 border border-[#E35D5B]/30 rounded-[10px]">{erro}</p>
+          )}
+
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 h-10 rounded-[12px] border border-[#243337] text-sm text-[#87938F] hover:text-[#F0EADD] hover:bg-[#102128] transition-all">
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={mutation.isPending || sucesso}
+              className="flex-1 h-10 rounded-[12px] bg-[#2F9285] hover:bg-[#3AA99A] disabled:opacity-50 text-[#050B12] font-semibold text-sm transition-all flex items-center justify-center gap-2"
+            >
+              {mutation.isPending ? (
+                <><Loader2 size={16} className="animate-spin" /> Agendando...</>
+              ) : sucesso ? "Agendado!" : "Agendar"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Componente
 // ---------------------------------------------------------------------------
 
@@ -74,6 +197,7 @@ export default function AgendaPage() {
   const now = new Date();
   const [current, setCurrent] = useState({ year: now.getFullYear(), month: now.getMonth() });
   const [diaSelecionado, setDiaSelecionado] = useState<number | null>(now.getDate());
+  const [modalAgendar, setModalAgendar] = useState(false);
 
   const isCurrentMonth = current.year === now.getFullYear() && current.month === now.getMonth();
   const today = now.getDate();
@@ -122,7 +246,10 @@ export default function AgendaPage() {
             {isLoading ? "Carregando…" : `${agenda?.total_sessoes ?? 0} sessão${agenda?.total_sessoes !== 1 ? "ões" : ""} em ${MONTHS[current.month]}`}
           </p>
         </div>
-        <button className="flex items-center gap-2 h-10 px-4 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm transition-all">
+        <button
+          onClick={() => setModalAgendar(true)}
+          className="flex items-center gap-2 h-10 px-4 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm transition-all"
+        >
           <Plus size={16} />
           Agendar Sessão
         </button>
@@ -275,6 +402,8 @@ export default function AgendaPage() {
           </div>
         </div>
       </div>
+
+      {modalAgendar && <AgendarSessaoModal onClose={() => setModalAgendar(false)} />}
     </div>
   );
 }

@@ -487,9 +487,9 @@ export default function ConfiguracoesPage() {
                   </button>
                 </div>
 
-                <div className="bg-[#D99A3D]/5 border border-[#D99A3D]/20 rounded-[12px] p-3">
+                <div className="bg-[#2F9285]/5 border border-[#2F9285]/20 rounded-[12px] p-3">
                   <p className="text-xs text-[#87938F]">
-                    <span className="text-[#D99A3D] font-medium">Configuração SMTP necessária:</span> Para ativar os emails, o administrador do sistema precisa configurar as variáveis <code className="bg-[#050B12] px-1 rounded text-[#F0EADD]">SMTP_HOST</code>, <code className="bg-[#050B12] px-1 rounded text-[#F0EADD]">SMTP_USER</code> e <code className="bg-[#050B12] px-1 rounded text-[#F0EADD]">SMTP_PASSWORD</code> no servidor.
+                    <span className="text-[#2F9285] font-medium">✓ Serviço de email ativo.</span> Os emails são enviados automaticamente via Resend assim que um cliente preencher o formulário do portal. Basta salvar seu e-mail acima.
                   </p>
                 </div>
               </div>

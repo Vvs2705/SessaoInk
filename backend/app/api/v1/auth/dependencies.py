@@ -1,13 +1,15 @@
 """Dependências de autenticação para injeção via FastAPI."""
 
 import uuid
+from typing import Callable
+
 from fastapi import Cookie, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.security import decodificar_token
-from app.models.usuario import Usuario
+from app.models.usuario import TipoUsuario, Usuario
 
 
 async def get_usuario_atual(
@@ -52,4 +54,32 @@ async def get_estudio_id(
 ) -> uuid.UUID:
     """Retorna o estudio_id do usuário autenticado."""
     return usuario.estudio_id
+
+
+def require_role(*roles: TipoUsuario) -> Callable:
+    """Dependência de RBAC — exige que o usuário tenha um dos roles especificados.
+
+    Uso:
+        @router.get("/admin-only")
+        async def admin_only(u: Usuario = Depends(require_role(TipoUsuario.ADMIN))):
+            ...
+
+        @router.post("/financeiro")
+        async def financeiro(u: Usuario = Depends(require_role(TipoUsuario.ADMIN, TipoUsuario.ARTISTA))):
+            ...
+
+    A validação de autenticação é feita primeiro (via get_usuario_atual).
+    Retorna 403 se o role não for suficiente, 401 se não autenticado.
+    """
+    async def _verificar_role(
+        usuario: Usuario = Depends(get_usuario_atual),
+    ) -> Usuario:
+        if usuario.tipo not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Permissão insuficiente para esta operação.",
+            )
+        return usuario
+
+    return _verificar_role
 

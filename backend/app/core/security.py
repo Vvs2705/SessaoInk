@@ -37,9 +37,17 @@ def criar_refresh_token() -> str:
 
 
 def decodificar_token(token: str) -> dict[str, Any]:
-    """Decodifica e valida access token. Lança ValueError se inválido."""
+    """Decodifica e valida access token. Lança ValueError se inválido.
+
+    Valida explicitamente que `type == "access"` para impedir que refresh tokens
+    (ou qualquer outro tipo de token futuro) sejam aceitos como access tokens.
+    """
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
-        return payload
     except JWTError as e:
         raise ValueError(f"Token inválido: {e}") from e
+
+    if payload.get("type") != "access":
+        raise ValueError("Tipo de token inválido — esperado 'access'")
+
+    return payload

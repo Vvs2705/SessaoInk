@@ -87,6 +87,11 @@ class MockRedis:
 
 
 class RedisFallbackWrapper:
+    """Redis com fallback gracioso para MockRedis — SOMENTE para dev/test.
+
+    Em produção use get_redis() que retorna o cliente real sem fallback (fail-closed).
+    """
+
     _use_mock: bool = False
     _mock_instance: MockRedis | None = None
 
@@ -191,11 +196,66 @@ class RedisFallbackWrapper:
             return True
 
 
+class ProductionRedis:
+    """Wrapper Redis fail-closed — sem fallback em produção.
+
+    Qualquer falha de conexão ou operação propaga a exceção imediatamente,
+    garantindo que rate limiting e revogação de tokens nunca silenciem falhas.
+    """
+
+    def __init__(self, client: Redis):
+        self._client = client
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *args):
+        pass
+
+    async def get(self, key: str) -> str | None:
+        return await self._client.get(key)
+
+    async def set(self, key: str, value: Any, ex: int | None = None) -> None:
+        await self._client.set(key, value, ex=ex)
+
+    async def delete(self, *keys: str) -> int:
+        return await self._client.delete(*keys)
+
+    async def incr(self, key: str) -> int:
+        return await self._client.incr(key)
+
+    async def expire(self, key: str, seconds: int) -> bool:
+        return await self._client.expire(key, seconds)
+
+    async def keys(self, pattern: str) -> List[str]:
+        return await self._client.keys(pattern)
+
+    async def ping(self) -> bool:
+        return await self._client.ping()
+
+
 _global_mock_redis = None
 
 
 def get_redis() -> Any:
-    """Retorna cliente Redis com fallback gracioso para MockRedis."""
+    """Retorna cliente Redis adequado ao ambiente.
+
+    Produção (ENVIRONMENT=production):
+        - Fail-closed: Redis indisponível → exceção propagada imediatamente.
+        - Rate limiting e revogação de tokens nunca usam estado in-memory.
+
+    Desenvolvimento / teste:
+        - Fallback gracioso para MockRedis se Redis local não estiver disponível.
+    """
+    if settings.ENVIRONMENT == "production":
+        client = Redis.from_url(
+            settings.REDIS_URL,
+            encoding="utf-8",
+            decode_responses=True,
+        )
+        return ProductionRedis(client)
+
+    # Dev / test: fallback gracioso para não bloquear máquina sem Redis local
     global _global_mock_redis
     if _global_mock_redis is None:
         _global_mock_redis = MockRedis()
@@ -284,4 +344,31 @@ async def registrar_solicitacao_orcamento(ip: str) -> int:
         if total == 1:
             await r.expire(chave, ORCAMENTO_BLOQUEIO_SEGUNDOS)
         return total
+
+
+# ---------------------------------------------------------------------------
+# Gestão de sessões por usuário
+# ---------------------------------------------------------------------------
+
+
+async def revogar_todas_sessoes_usuario(usuario_id: str) -> int:
+    """Revoga todos os refresh tokens do usuário — chamado após troca de senha.
+
+    Varre chaves `refresh:*` e remove as vinculadas ao usuario_id.
+    Aceitável para a escala atual; em escala maior use um índice reverso.
+    Retorna o número de sessões revogadas.
+    """
+    async with get_redis() as r:
+        todas_chaves = await r.keys(f"{REFRESH_PREFIX}*")
+        revogadas = 0
+        for chave in todas_chaves:
+            valor = await r.get(chave)
+            if valor == usuario_id:
+                await r.delete(chave)
+                revogadas += 1
+        if revogadas:
+            logger.info(
+                f"Sessões revogadas após troca de senha: {revogadas} (usuario_id={usuario_id})"
+            )
+        return revogadas
 

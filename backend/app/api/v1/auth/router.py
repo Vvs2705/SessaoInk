@@ -21,6 +21,7 @@ from app.core.redis import (
     limpar_tentativas_login,
     obter_usuario_do_refresh,
     revogar_refresh_token,
+    revogar_todas_sessoes_usuario,
     salvar_refresh_token,
     verificar_bloqueio_login,
 )
@@ -254,3 +255,7 @@ async def alterar_senha(
 
     usuario.senha_hash = hash_senha(dados.senha_nova)
     await session.commit()
+
+    # Revogar todas as sessões ativas — um atacante que tenha comprometido
+    # uma sessão anterior perde o acesso imediatamente após a troca de senha.
+    await revogar_todas_sessoes_usuario(str(usuario.id))

@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND = process.env.BACKEND_URL || "https://sessaoink-api.fly.dev";
+const PRODUCTION = process.env.NODE_ENV === "production";
+const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL || "https://sessao-ink.vercel.app";
+
+/** Métodos que modificam estado — verificamos Origin nesses casos. */
+const CSRF_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+/** Caminhos isentos de verificação de CSRF (endpoints públicos sem sessão). */
+const CSRF_EXEMPT = [
+  "/api/v1/publico/",
+  "/api/v1/auth/login",
+];
 
 async function proxy(
   request: NextRequest,
@@ -10,13 +21,27 @@ async function proxy(
   const qs = request.nextUrl.searchParams.toString();
   // Next.js may strip trailing slash from pathname; force it back for
   // single-segment paths (collection endpoints) so FastAPI doesn't redirect.
-  const rawPathname = request.nextUrl.pathname; // e.g. /api/v1/clientes or /api/v1/clientes/
+  const rawPathname = request.nextUrl.pathname;
   const pathStr = path.join("/");
-  // If the original URL had a trailing slash OR the path is a single segment
-  // (indicating a collection endpoint like /clientes/), append the slash.
   const needsSlash = rawPathname.endsWith("/") || path.length === 1;
   const url = `${BACKEND}/api/v1/${pathStr}${needsSlash ? "/" : ""}${qs ? `?${qs}` : ""}`;
-  console.log(`[PX] pathname=${rawPathname} url=${url}`);
+
+  // ── CSRF: verificar Origin em requisições mutáveis ──────────────────────
+  // Em produção, requests de origem diferente de APP_ORIGIN são bloqueados
+  // antes mesmo de chegar ao backend. Browser SEMPRE define Origin em
+  // requisições cross-origin — se estiver ausente é uma requisição same-origin
+  // (do próprio frontend) e pode passar.
+  if (PRODUCTION && CSRF_METHODS.has(request.method)) {
+    const isExempt = CSRF_EXEMPT.some((p) => rawPathname.startsWith(p));
+    if (!isExempt) {
+      const origin = request.headers.get("origin");
+      if (origin && origin !== APP_ORIGIN) {
+        console.warn(`[CSRF] Bloqueado: origin=${origin} method=${request.method} path=${rawPathname}`);
+        return NextResponse.json({ detail: "Origem não autorizada" }, { status: 403 });
+      }
+    }
+  }
+  // ────────────────────────────────────────────────────────────────────────
 
   const accessToken = request.cookies.get("access_token")?.value;
   const incomingContentType = request.headers.get("content-type") ?? "";
@@ -27,12 +52,22 @@ async function proxy(
   const headers = new Headers();
   if (accessToken) headers.set("Cookie", `access_token=${accessToken}`);
 
+  // Encaminhar o Origin real do browser para o backend como header customizado.
+  // O backend usa X-Origin-Browser para validação CSRF em profundidade
+  // (defesa em camadas — o proxy já rejeitou a maioria, mas o backend valida também).
+  const browserOrigin = request.headers.get("origin");
+  if (browserOrigin) {
+    headers.set("X-Origin-Browser", browserOrigin);
+  } else {
+    // Requisição same-origin: informamos explicitamente ao backend
+    headers.set("X-Origin-Browser", APP_ORIGIN);
+  }
+
   const hasBody = !["GET", "HEAD", "DELETE"].includes(request.method);
 
   let body: ArrayBuffer | string | undefined;
   if (hasBody) {
     if (isMultipart) {
-      // Forward raw bytes + original Content-Type (includes multipart boundary)
       headers.set("Content-Type", incomingContentType);
       body = await request.arrayBuffer();
     } else {

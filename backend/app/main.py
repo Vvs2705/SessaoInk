@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 import sentry_sdk
@@ -8,6 +9,8 @@ from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 # Inicializar Sentry apenas se DSN configurado (produção)
 if settings.SENTRY_DSN:
@@ -39,9 +42,12 @@ from app.api.v1.usuarios.router import router as usuarios_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print(f"[START] {settings.PROJECT_NAME} - modo {settings.ENVIRONMENT}")
+    logger.info(
+        "startup",
+        extra={"project": settings.PROJECT_NAME, "environment": settings.ENVIRONMENT},
+    )
     yield
-    print("[STOP] Encerrando...")
+    logger.info("shutdown")
 
 
 app = FastAPI(
@@ -54,14 +60,67 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS
+# CORS — inclui X-CSRF-Token para validação double-submit
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization", "X-Request-ID"],
+    allow_headers=["Content-Type", "Authorization", "X-Request-ID", "X-CSRF-Token"],
 )
+
+# Métodos que modificam estado — exigem verificação de Origin
+_CSRF_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+
+# Endpoints isentos de verificação de Origin (públicos ou sem sessão)
+_CSRF_EXEMPT_PREFIXES = (
+    "/api/v1/publico/",    # portal público — sem autenticação
+    "/api/v1/auth/login",  # login — ainda não há sessão para proteger
+    "/health",
+)
+
+
+@app.middleware("http")
+async def csrf_origin_check(request: Request, call_next):
+    """Defesa CSRF em profundidade: rejeita Origin estranho em endpoints autenticados.
+
+    Arquitetura: Browser → Vercel Proxy → Fly.io (este servidor).
+    O proxy Next.js encaminha o header `X-Origin-Browser` com o Origin real do browser.
+
+    Lógica:
+      - Se X-Origin-Browser estiver presente (request passou pelo proxy) e
+        seu valor não estiver em ALLOWED_ORIGINS → 403.
+      - Se o header não estiver presente (acesso direto à API, mobile, ferramentas)
+        → permite passar (não bloqueia acesso legítimo direto).
+      - Endpoints públicos e /auth/login são isentos.
+
+    Defesa complementar: o proxy Next.js também rejeita requests mutáveis com
+    Origin não autorizado antes de chegarem aqui.
+    """
+    if request.method in _CSRF_METHODS and settings.ENVIRONMENT == "production":
+        path = request.url.path
+        is_exempt = any(path.startswith(p) for p in _CSRF_EXEMPT_PREFIXES)
+
+        if not is_exempt:
+            browser_origin = request.headers.get("x-origin-browser", "")
+            if browser_origin:
+                allowed = settings.ALLOWED_ORIGINS  # list[str]
+                origin_ok = any(browser_origin.startswith(o) for o in allowed)
+                if not origin_ok:
+                    logger.warning(
+                        "csrf_blocked",
+                        extra={
+                            "path": path,
+                            "browser_origin": browser_origin,
+                            "method": request.method,
+                        },
+                    )
+                    return JSONResponse(
+                        {"detail": "Origem não autorizada"},
+                        status_code=403,
+                    )
+
+    return await call_next(request)
 
 
 # Headers de segurança

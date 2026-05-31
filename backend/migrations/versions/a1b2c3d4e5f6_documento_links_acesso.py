@@ -30,7 +30,7 @@ def upgrade() -> None:
         'documento_links_acesso',
         sa.Column('documento_id', sa.UUID(), nullable=False),
         sa.Column('token_hash', sa.String(length=64), nullable=False),
-        sa.Column('acao', sa.Enum('VISUALIZAR', 'ASSINAR', name='acao_link', create_type=False), nullable=False),
+        sa.Column('acao', sa.Enum('VISUALIZAR', 'ASSINAR', name='acao_link', create_type=False), nullable=False),  # criado acima via op.execute
         sa.Column('expira_em', sa.DateTime(timezone=True), nullable=False),
         sa.Column('usado_em', sa.DateTime(timezone=True), nullable=True),
         sa.Column('revogado', sa.Boolean(), nullable=False, server_default=sa.text('false')),

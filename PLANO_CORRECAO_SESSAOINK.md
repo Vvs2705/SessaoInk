@@ -1,8 +1,36 @@
 # PLANO DE CORRECAO E RETOMADA - SESSAOINK
 
 Data base: 2026-05-30
+Ultima atualizacao CI/Deploy: 2026-05-31
 Status real: MVP incompleto. Nao considerar nenhum modulo como 100% concluido ate passar pelos criterios de aceite deste arquivo.
 Fonte de verdade: este arquivo substitui ROADMAP.md, _memoria/, _equipes/ e docs/ locais antigos.
+
+## STATUS CI/CD — 2026-05-31 (verificado 16h50 BRT)
+
+### GitHub Actions — VERDE ✅
+- Ultimo run: 26722162545 (commit 0bfa771) — todos os 3 jobs passando
+  - Backend: ruff lint OK, pyright OK, smoke test OK
+  - Frontend: tsc --noEmit OK, npm run build OK
+  - Secret Scan: gitleaks OK — nenhum vazamento
+
+### Vercel (frontend) — READY ✅
+- Projeto: v-stack-solution/sessao-ink
+- Ultimo deploy ha 27min — status: Ready (Production)
+- URL producao: https://sessao-ink.vercel.app
+
+### Fly.io (backend) — HEALTHY ✅
+- App: sessaoink-api | Release: v24 | Regiao: gru (Sao Paulo)
+- Health check: passing — GET /health retorna 200 {"status":"ok","project":"SessaoInk API"}
+- Maquina: auto_stop ativo (normal) — acorda automaticamente na primeira requisicao
+- ATENCAO: min_machines_running = 0 — cold start de ~2-3s no primeiro request
+  - Considerar mudar para 1 quando houver clientes reais usando o produto
+
+### Alertas de limpeza pendentes
+- .claude/ ainda presente no repo (plano pede remocao)
+- backend/test.db versionado (deve estar no .gitignore)
+- frontend/tsconfig.tsbuildinfo versionado (plano pede remocao)
+
+---
 
 ## Regra central
 

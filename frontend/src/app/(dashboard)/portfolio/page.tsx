@@ -6,7 +6,7 @@ import { Image as ImageIcon, Upload, Eye, EyeOff, Loader2, X, ShieldCheck, Trash
 import { api, ApiError } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+const API = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 interface PortfolioItem {
   id: string;

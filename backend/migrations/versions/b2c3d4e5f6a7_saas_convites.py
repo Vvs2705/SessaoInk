@@ -8,8 +8,6 @@ Create Date: 2026-05-31 00:00:00.000000
 from typing import Sequence, Union
 
 from alembic import op
-import sqlalchemy as sa
-from sqlalchemy import inspect as sa_inspect
 
 
 # revision identifiers, used by Alembic.
@@ -20,13 +18,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    conn = op.get_bind()
-    inspector = sa_inspect(conn)
-    tabelas = inspector.get_table_names()
+    # SQL puro — 100% idempotente, sem interferência do SQLAlchemy _on_table_create
 
-    # Criar enums — idempotentes
     op.execute("""
-        DO $$ BEGIN CREATE TYPE status_plano AS ENUM ('ATIVO', 'INATIVO');
+        DO $$ BEGIN CREATE TYPE status_plano AS ENUM ('ATIVO','INATIVO');
         EXCEPTION WHEN duplicate_object THEN null; END $$;
     """)
     op.execute("""
@@ -38,71 +33,66 @@ def upgrade() -> None:
         EXCEPTION WHEN duplicate_object THEN null; END $$;
     """)
 
-    # Tabela planos
-    if 'planos' not in tabelas:
-        op.create_table(
-            'planos',
-            sa.Column('id', sa.UUID(), nullable=False),
-            sa.Column('criado_em', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-            sa.Column('atualizado_em', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-            sa.Column('nome', sa.String(length=100), nullable=False),
-            sa.Column('descricao', sa.String(length=500), nullable=True),
-            sa.Column('status', sa.Enum('ATIVO', 'INATIVO', name='status_plano', create_type=False), nullable=False),
-            sa.Column('preco_mensal', sa.Float(), nullable=True),
-            sa.Column('limites', sa.JSON(), nullable=True),
-            sa.Column('externo_id', sa.String(length=200), nullable=True),
-            sa.PrimaryKeyConstraint('id'),
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS planos (
+            id           UUID         NOT NULL DEFAULT gen_random_uuid(),
+            nome         VARCHAR(100) NOT NULL,
+            descricao    VARCHAR(500),
+            status       status_plano NOT NULL DEFAULT 'ATIVO',
+            preco_mensal FLOAT,
+            limites      JSONB,
+            externo_id   VARCHAR(200),
+            criado_em    TIMESTAMPTZ  NOT NULL DEFAULT now(),
+            atualizado_em TIMESTAMPTZ NOT NULL DEFAULT now(),
+            PRIMARY KEY (id)
         )
-        op.create_index('ix_planos_id', 'planos', ['id'], unique=False)
+    """)
+    op.execute("CREATE INDEX IF NOT EXISTS ix_planos_id ON planos (id)")
 
-    # Tabela assinaturas
-    if 'assinaturas' not in tabelas:
-        op.create_table(
-            'assinaturas',
-            sa.Column('id', sa.UUID(), nullable=False),
-            sa.Column('criado_em', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-            sa.Column('atualizado_em', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-            sa.Column('estudio_id', sa.UUID(), nullable=False),
-            sa.Column('plano_id', sa.UUID(), nullable=True),
-            sa.Column('status', sa.Enum('TRIAL','ATIVA','INADIMPLENTE','CANCELADA','SUSPENSA', name='status_assinatura', create_type=False), nullable=False),
-            sa.Column('trial_expira_em', sa.DateTime(timezone=True), nullable=True),
-            sa.Column('periodo_inicio', sa.DateTime(timezone=True), nullable=True),
-            sa.Column('periodo_fim', sa.DateTime(timezone=True), nullable=True),
-            sa.Column('cancelar_no_fim', sa.Boolean(), nullable=False, server_default=sa.text('false')),
-            sa.Column('externo_id', sa.String(length=200), nullable=True),
-            sa.Column('externo_customer_id', sa.String(length=200), nullable=True),
-            sa.ForeignKeyConstraint(['estudio_id'], ['estudios.id'], ondelete='RESTRICT'),
-            sa.ForeignKeyConstraint(['plano_id'], ['planos.id']),
-            sa.PrimaryKeyConstraint('id'),
-            sa.UniqueConstraint('estudio_id'),
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS assinaturas (
+            id                   UUID              NOT NULL DEFAULT gen_random_uuid(),
+            estudio_id           UUID              NOT NULL UNIQUE,
+            plano_id             UUID,
+            status               status_assinatura NOT NULL DEFAULT 'TRIAL',
+            trial_expira_em      TIMESTAMPTZ,
+            periodo_inicio       TIMESTAMPTZ,
+            periodo_fim          TIMESTAMPTZ,
+            cancelar_no_fim      BOOLEAN NOT NULL DEFAULT false,
+            externo_id           VARCHAR(200),
+            externo_customer_id  VARCHAR(200),
+            criado_em            TIMESTAMPTZ NOT NULL DEFAULT now(),
+            atualizado_em        TIMESTAMPTZ NOT NULL DEFAULT now(),
+            PRIMARY KEY (id),
+            CONSTRAINT fk_assinatura_estudio FOREIGN KEY (estudio_id) REFERENCES estudios(id) ON DELETE RESTRICT,
+            CONSTRAINT fk_assinatura_plano   FOREIGN KEY (plano_id)   REFERENCES planos(id)
         )
-        op.create_index('ix_assinaturas_id', 'assinaturas', ['id'], unique=False)
-        op.create_index('ix_assinaturas_estudio_id', 'assinaturas', ['estudio_id'], unique=True)
+    """)
+    op.execute("CREATE INDEX IF NOT EXISTS ix_assinaturas_id         ON assinaturas (id)")
+    op.execute("CREATE UNIQUE INDEX IF NOT EXISTS ix_assinaturas_estudio_id ON assinaturas (estudio_id)")
 
-    # Tabela convites
-    if 'convites' not in tabelas:
-        op.create_table(
-            'convites',
-            sa.Column('id', sa.UUID(), nullable=False),
-            sa.Column('criado_em', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-            sa.Column('atualizado_em', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-            sa.Column('estudio_id', sa.UUID(), nullable=False),
-            sa.Column('email', sa.String(length=320), nullable=False),
-            sa.Column('role', sa.Enum('ADMIN','ARTISTA','RECEPCIONISTA', name='tipo_usuario', create_type=False), nullable=False),
-            sa.Column('token_hash', sa.String(length=64), nullable=False),
-            sa.Column('status', sa.Enum('PENDENTE','ACEITO','EXPIRADO','REVOGADO', name='status_convite', create_type=False), nullable=False),
-            sa.Column('expira_em', sa.DateTime(timezone=True), nullable=False),
-            sa.Column('aceito_em', sa.DateTime(timezone=True), nullable=True),
-            sa.Column('convidado_por_id', sa.UUID(), nullable=True),
-            sa.ForeignKeyConstraint(['convidado_por_id'], ['usuarios.id']),
-            sa.ForeignKeyConstraint(['estudio_id'], ['estudios.id'], ondelete='CASCADE'),
-            sa.PrimaryKeyConstraint('id'),
-            sa.UniqueConstraint('token_hash'),
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS convites (
+            id                UUID          NOT NULL DEFAULT gen_random_uuid(),
+            estudio_id        UUID          NOT NULL,
+            email             VARCHAR(320)  NOT NULL,
+            role              tipo_usuario  NOT NULL DEFAULT 'ARTISTA',
+            token_hash        VARCHAR(64)   NOT NULL UNIQUE,
+            status            status_convite NOT NULL DEFAULT 'PENDENTE',
+            expira_em         TIMESTAMPTZ   NOT NULL,
+            aceito_em         TIMESTAMPTZ,
+            convidado_por_id  UUID,
+            criado_em         TIMESTAMPTZ   NOT NULL DEFAULT now(),
+            atualizado_em     TIMESTAMPTZ   NOT NULL DEFAULT now(),
+            PRIMARY KEY (id),
+            CONSTRAINT fk_convite_estudio       FOREIGN KEY (estudio_id)       REFERENCES estudios(id) ON DELETE CASCADE,
+            CONSTRAINT fk_convite_convidado_por FOREIGN KEY (convidado_por_id) REFERENCES usuarios(id)
         )
-        op.create_index('ix_convites_id', 'convites', ['id'], unique=False)
-        op.create_index('ix_convites_estudio_id', 'convites', ['estudio_id'], unique=False)
-        op.create_index('ix_convites_email', 'convites', ['email'], unique=False)
-        op.create_index('ix_convites_token_hash', 'convites', ['token_hash'], unique=True)
+    """)
+    op.execute("CREATE INDEX IF NOT EXISTS ix_convites_id          ON convites (id)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_convites_estudio_id  ON convites (estudio_id)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_convites_email       ON convites (email)")
+    op.execute("CREATE UNIQUE INDEX IF NOT EXISTS ix_convites_token_hash ON convites (token_hash)")
 
 
 def downgrade() -> None:

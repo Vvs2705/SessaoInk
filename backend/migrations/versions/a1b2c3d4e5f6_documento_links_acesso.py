@@ -8,8 +8,6 @@ Create Date: 2026-05-31 00:00:00.000000
 from typing import Sequence, Union
 
 from alembic import op
-import sqlalchemy as sa
-from sqlalchemy import inspect as sa_inspect
 
 
 # revision identifiers, used by Alembic.
@@ -20,13 +18,11 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    conn = op.get_bind()
-    inspector = sa_inspect(conn)
+    # Todas as operações em SQL puro para ser 100% idempotente
+    # (SQLAlchemy _on_table_create ignora create_type=False e tenta recriar enums)
 
-    # 1. Adicionar nome_assinante — idempotente via IF NOT EXISTS
     op.execute("ALTER TABLE documentos ADD COLUMN IF NOT EXISTS nome_assinante VARCHAR(200)")
 
-    # 2. Criar enum acao_link — idempotente via bloco DO/EXCEPTION
     op.execute("""
         DO $$ BEGIN
             CREATE TYPE acao_link AS ENUM ('VISUALIZAR', 'ASSINAR');
@@ -34,35 +30,32 @@ def upgrade() -> None:
         END $$;
     """)
 
-    # 3. Criar tabela documento_links_acesso — só se não existir
-    tabelas = inspector.get_table_names()
-    if 'documento_links_acesso' not in tabelas:
-        op.create_table(
-            'documento_links_acesso',
-            sa.Column('id', sa.UUID(), nullable=False),
-            sa.Column('documento_id', sa.UUID(), nullable=False),
-            sa.Column('token_hash', sa.String(length=64), nullable=False),
-            sa.Column('acao', sa.Enum('VISUALIZAR', 'ASSINAR', name='acao_link', create_type=False), nullable=False),
-            sa.Column('expira_em', sa.DateTime(timezone=True), nullable=False),
-            sa.Column('usado_em', sa.DateTime(timezone=True), nullable=True),
-            sa.Column('revogado', sa.Boolean(), nullable=False, server_default=sa.text('false')),
-            sa.Column('ip_geracao', sa.String(length=45), nullable=True),
-            sa.Column('ip_uso', sa.String(length=45), nullable=True),
-            sa.Column('user_agent_uso', sa.String(length=500), nullable=True),
-            sa.Column('criado_em', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-            sa.Column('atualizado_em', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-            sa.ForeignKeyConstraint(['documento_id'], ['documentos.id'], ondelete='CASCADE'),
-            sa.PrimaryKeyConstraint('id'),
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS documento_links_acesso (
+            id          UUID        NOT NULL DEFAULT gen_random_uuid(),
+            documento_id UUID       NOT NULL,
+            token_hash  VARCHAR(64) NOT NULL,
+            acao        acao_link   NOT NULL,
+            expira_em   TIMESTAMPTZ NOT NULL,
+            usado_em    TIMESTAMPTZ,
+            revogado    BOOLEAN     NOT NULL DEFAULT false,
+            ip_geracao  VARCHAR(45),
+            ip_uso      VARCHAR(45),
+            user_agent_uso VARCHAR(500),
+            criado_em   TIMESTAMPTZ NOT NULL DEFAULT now(),
+            atualizado_em TIMESTAMPTZ NOT NULL DEFAULT now(),
+            PRIMARY KEY (id),
+            CONSTRAINT fk_doc_link_documento
+                FOREIGN KEY (documento_id) REFERENCES documentos(id) ON DELETE CASCADE
         )
-        op.create_index('ix_documento_links_acesso_id', 'documento_links_acesso', ['id'], unique=False)
-        op.create_index('ix_documento_links_acesso_documento_id', 'documento_links_acesso', ['documento_id'], unique=False)
-        op.create_index('ix_documento_links_acesso_token_hash', 'documento_links_acesso', ['token_hash'], unique=True)
+    """)
+
+    op.execute("CREATE INDEX IF NOT EXISTS ix_documento_links_acesso_id           ON documento_links_acesso (id)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_documento_links_acesso_documento_id  ON documento_links_acesso (documento_id)")
+    op.execute("CREATE UNIQUE INDEX IF NOT EXISTS ix_documento_links_acesso_token_hash ON documento_links_acesso (token_hash)")
 
 
 def downgrade() -> None:
-    op.execute("DROP INDEX IF EXISTS ix_documento_links_acesso_token_hash")
-    op.execute("DROP INDEX IF EXISTS ix_documento_links_acesso_documento_id")
-    op.execute("DROP INDEX IF EXISTS ix_documento_links_acesso_id")
     op.execute("DROP TABLE IF EXISTS documento_links_acesso")
     op.execute("DROP TYPE IF EXISTS acao_link")
     op.execute("ALTER TABLE documentos DROP COLUMN IF EXISTS nome_assinante")

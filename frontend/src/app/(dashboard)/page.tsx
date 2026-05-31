@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, ClipboardList, Users, Wallet, TrendingUp, AlertCircle, Loader2 } from "lucide-react";
+import { Calendar, ClipboardList, Users, Wallet, TrendingUp, AlertCircle, Copy, ExternalLink } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
+import { useState } from "react";
 import DetalhesAtendimentoModal from "./atendimentos/DetalhesAtendimentoModal";
 
 function StatCard({ label, value, icon: Icon, color, loading }: {
@@ -30,6 +31,7 @@ function StatCard({ label, value, icon: Icon, color, loading }: {
 
 export default function DashboardPage() {
   const [atendimentoSelecionado, setAtendimentoSelecionado] = useState<any | null>(null);
+  const [copiado, setCopiado] = useState(false);
 
   const { data: atendimentos, isLoading: loadAt } = useQuery({
     queryKey: ["atendimentos"],
@@ -46,6 +48,21 @@ export default function DashboardPage() {
     queryFn: () => api.get<any>("/api/v1/financeiro/resumo"),
     refetchOnMount: true,
   });
+
+  const { data: estudio } = useQuery({
+    queryKey: ["estudio"],
+    queryFn: () => api.get<any>("/api/v1/estudio/"),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const portalUrl = estudio?.slug ? `https://sessao-ink.vercel.app/${estudio.slug}` : null;
+
+  const handleCopiarPortal = () => {
+    if (!portalUrl) return;
+    navigator.clipboard.writeText(portalUrl);
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 2500);
+  };
 
   const ativos = atendimentos?.filter(a =>
     !["FINALIZADO","CANCELADO_CLIENTE","CANCELADO_ESTUDIO"].includes(a.status_operacional)
@@ -75,6 +92,45 @@ export default function DashboardPage() {
         <StatCard label="Sessões Hoje" value={String(sessoesHoje)} icon={Calendar} color="text-[#C36B3F]" loading={loadAt} />
         <StatCard label="Clientes Cadastrados" value={String(clientes?.length ?? 0)} icon={Users} color="text-[#5E9ED6]" loading={loadCli} />
         <StatCard label="Receita do Mês" value={formatCurrency(resumo?.receita_mes ?? 0)} icon={Wallet} color="text-[#54B88D]" loading={loadFin} />
+      </div>
+
+      {/* Card do Portal — destaque */}
+      <div className="mb-8 bg-[#0B171C] border border-[#2F9285]/30 rounded-[18px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-[0_0_30px_rgba(47,146,133,0.07)]">
+        <div className="flex items-start gap-4">
+          <div className="p-3 bg-[#2F9285]/10 rounded-[12px] border border-[#2F9285]/20 shrink-0">
+            <ExternalLink size={20} className="text-[#2F9285]" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-[#F0EADD]">Portal do cliente</p>
+            <p className="text-xs text-[#87938F] mt-0.5">Compartilhe este link — clientes pedem orçamento sem precisar de login</p>
+            {portalUrl ? (
+              <p className="text-xs font-mono text-[#2F9285] mt-1 truncate max-w-xs">{portalUrl}</p>
+            ) : (
+              <div className="h-3 w-40 bg-[#102128] animate-pulse rounded mt-1" />
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={handleCopiarPortal}
+            disabled={!portalUrl}
+            className="flex items-center gap-2 h-9 px-4 rounded-[12px] bg-[#2F9285] hover:bg-[#3AA99A] disabled:opacity-40 text-[#050B12] font-semibold text-xs transition-all"
+          >
+            <Copy size={13} />
+            {copiado ? "Copiado!" : "Copiar link"}
+          </button>
+          {portalUrl && (
+            <a
+              href={portalUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-2 h-9 px-3 rounded-[12px] border border-[#243337] bg-[#0B171C] hover:bg-[#102128] text-[#87938F] hover:text-[#F0EADD] text-xs transition-all"
+            >
+              <ExternalLink size={13} />
+              Ver
+            </a>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

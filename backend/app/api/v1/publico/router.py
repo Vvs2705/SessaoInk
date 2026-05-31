@@ -377,6 +377,22 @@ async def solicitar_orcamento(
 
     protocolo = f"SI{str(atendimento.id).split('-')[0].upper()}"
 
+    # Enviar email de notificação para o estúdio (silencioso se SMTP não configurado)
+    if estudio.email_notificacao:
+        from app.core.email import enviar_notificacao_orcamento
+        import asyncio
+        asyncio.create_task(enviar_notificacao_orcamento(
+            email_destino=estudio.email_notificacao,
+            nome_estudio=estudio.nome,
+            slug=slug,
+            protocolo=protocolo,
+            nome_cliente=nome,
+            whatsapp=whatsapp,
+            descricao=descricao,
+            estilo=estilo,
+            parte_corpo=parte_corpo,
+        ))
+
     return OrcamentoResponse(
         protocolo=protocolo,
         atendimento_id=str(atendimento.id),

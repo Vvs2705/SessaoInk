@@ -15,6 +15,9 @@ import {
   AlertCircle,
   ChevronRight,
   X,
+  Copy,
+  ExternalLink,
+  Bell,
 } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
@@ -32,6 +35,7 @@ interface Estudio {
   uf: string | null;
   telefone: string | null;
   instagram: string | null;
+  email_notificacao: string | null;
 }
 
 interface MembroEquipe {
@@ -370,59 +374,124 @@ export default function ConfiguracoesPage() {
 
           {/* ---- ABA: PORTAL PÚBLICO ---- */}
           {aba === "portal" && (
-            <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6 space-y-5">
-              <h2 className="text-base font-semibold text-[#F0EADD]">
-                Portal Público
-              </h2>
+            <div className="space-y-4">
+              {/* Card do link */}
+              <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6 space-y-4">
+                <h2 className="text-base font-semibold text-[#F0EADD]">
+                  Link do seu portal
+                </h2>
 
-              <div>
-                <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
-                  URL do seu portal
-                </label>
-                <div className="flex items-center gap-2 bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5">
-                  <span className="text-sm text-[#87938F] shrink-0">
-                    {process.env.NEXT_PUBLIC_APP_URL ?? "https://sessao-ink.vercel.app"}/
-                  </span>
-                  <span className="text-sm text-[#2F9285] font-medium">
-                    {estudio?.slug ?? "..."}
-                  </span>
-                </div>
-                <p className="text-xs text-[#87938F] mt-1.5">
-                  O slug não pode ser alterado após criação. Entre em contato com o suporte.
-                </p>
+                {(() => {
+                  const BASE = "https://sessao-ink.vercel.app";
+                  const portalUrl = `${BASE}/${estudio?.slug ?? ""}`;
+                  return (
+                    <>
+                      {/* URL com botões */}
+                      <div>
+                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                          URL pública — compartilhe com seus clientes
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 flex items-center gap-0 bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 min-w-0">
+                            <span className="text-sm text-[#87938F] shrink-0">sessao-ink.vercel.app/</span>
+                            <span className="text-sm text-[#2F9285] font-bold truncate">{estudio?.slug ?? "..."}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(portalUrl);
+                              showToast("sucesso", "Link copiado para a área de transferência!");
+                            }}
+                            title="Copiar link"
+                            className="shrink-0 h-10 w-10 flex items-center justify-center rounded-[10px] bg-[#2F9285]/10 border border-[#2F9285]/30 hover:bg-[#2F9285] hover:text-[#050B12] text-[#2F9285] transition-all"
+                          >
+                            <Copy size={15} />
+                          </button>
+                          <a
+                            href={portalUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            title="Abrir portal"
+                            className="shrink-0 h-10 w-10 flex items-center justify-center rounded-[10px] bg-[#0B171C] border border-[#243337] hover:bg-[#102128] text-[#87938F] hover:text-[#F0EADD] transition-all"
+                          >
+                            <ExternalLink size={15} />
+                          </a>
+                        </div>
+                        <p className="text-xs text-[#87938F] mt-1.5">
+                          O slug não pode ser alterado após criação. Entre em contato com o suporte se necessário.
+                        </p>
+                      </div>
+
+                      {/* O que o cliente vê */}
+                      <div className="bg-[#050B12] border border-[#243337] rounded-[14px] p-4 space-y-2">
+                        <p className="text-xs font-semibold text-[#87938F] uppercase tracking-wider">O que seu cliente vê no portal</p>
+                        <div className="flex flex-col gap-1.5 text-xs text-[#87938F]">
+                          <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#2F9285] shrink-0" />Perfil do estúdio com foto, bio e localização</div>
+                          <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#2F9285] shrink-0" />Portfólio público de trabalhos</div>
+                          <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#2F9285] shrink-0" />Flash arts disponíveis para agendamento</div>
+                          <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#2F9285] shrink-0" />Formulário de pedido de orçamento</div>
+                        </div>
+                      </div>
+
+                      <div className="bg-[#2F9285]/5 border border-[#2F9285]/15 rounded-[12px] p-3">
+                        <p className="text-xs text-[#87938F]">
+                          <span className="text-[#2F9285] font-medium">Como compartilhar:</span> Cole o link na bio do Instagram, envie pelo WhatsApp ou crie um QR Code em qr-code-generator.com. O cliente preenche o formulário e o pedido aparece automaticamente em Atendimentos.
+                        </p>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
 
-              <div className="border border-[#243337] rounded-[14px] overflow-hidden">
-                <div className="px-4 py-3 bg-[#050B12] border-b border-[#243337]">
-                  <p className="text-xs font-medium text-[#87938F]">Preview do portal</p>
+              {/* Card de notificação por email */}
+              <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Bell size={16} className="text-[#2F9285]" />
+                  <h2 className="text-base font-semibold text-[#F0EADD]">
+                    Notificações por e-mail
+                  </h2>
                 </div>
-                <div className="p-4">
-                  <a
-                    href={`${process.env.NEXT_PUBLIC_APP_URL ?? "https://sessao-ink.vercel.app"}/${estudio?.slug ?? "demo"}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center justify-between p-3 bg-[#050B12] rounded-[10px] hover:bg-[#102128] transition-colors group"
+                <p className="text-sm text-[#87938F]">
+                  Cadastre um e-mail para receber uma notificação toda vez que um cliente preencher o formulário de orçamento.
+                </p>
+
+                <div>
+                  <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                    E-mail para receber orçamentos
+                  </label>
+                  <input
+                    type="email"
+                    value={val("email_notificacao")}
+                    onChange={(e) => handleCampoEstudio("email_notificacao", e.target.value)}
+                    placeholder="seuemail@exemplo.com"
+                    className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                  />
+                  <p className="text-xs text-[#87938F] mt-1.5">
+                    Deixe em branco para desativar as notificações.
+                  </p>
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleSalvarEstudio}
+                    disabled={!formEditado || atualizarEstudio.isPending}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm font-medium transition-all",
+                      formEditado
+                        ? "bg-[#2F9285] text-[#050B12] hover:bg-[#2F9285]/90"
+                        : "bg-[#243337] text-[#87938F] cursor-not-allowed"
+                    )}
                   >
-                    <div>
-                      <p className="text-sm font-medium text-[#F0EADD]">
-                        {estudio?.nome ?? "Seu Estúdio"}
-                      </p>
-                      <p className="text-xs text-[#2F9285] mt-0.5">
-                        {(process.env.NEXT_PUBLIC_APP_URL ?? "https://sessao-ink.vercel.app").replace("https://", "")}/{estudio?.slug ?? "demo"} →
-                      </p>
-                    </div>
-                    <ChevronRight
-                      size={16}
-                      className="text-[#87938F] group-hover:text-[#2F9285] transition-colors"
-                    />
-                  </a>
+                    <Save size={14} />
+                    {atualizarEstudio.isPending ? "Salvando..." : "Salvar"}
+                  </button>
                 </div>
-              </div>
 
-              <div className="bg-[#2F9285]/5 border border-[#2F9285]/15 rounded-[14px] p-4">
-                <p className="text-xs text-[#87938F]">
-                  <span className="text-[#2F9285] font-medium">Dica:</span> Compartilhe o link do portal com seus clientes no WhatsApp e Instagram. Eles podem solicitar orçamentos diretamente sem precisar de login.
-                </p>
+                <div className="bg-[#D99A3D]/5 border border-[#D99A3D]/20 rounded-[12px] p-3">
+                  <p className="text-xs text-[#87938F]">
+                    <span className="text-[#D99A3D] font-medium">Configuração SMTP necessária:</span> Para ativar os emails, o administrador do sistema precisa configurar as variáveis <code className="bg-[#050B12] px-1 rounded text-[#F0EADD]">SMTP_HOST</code>, <code className="bg-[#050B12] px-1 rounded text-[#F0EADD]">SMTP_USER</code> e <code className="bg-[#050B12] px-1 rounded text-[#F0EADD]">SMTP_PASSWORD</code> no servidor.
+                  </p>
+                </div>
               </div>
             </div>
           )}

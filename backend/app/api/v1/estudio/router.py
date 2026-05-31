@@ -29,6 +29,7 @@ class EstudioResponse(BaseModel):
     uf: Optional[str] = None
     telefone: Optional[str] = None
     instagram: Optional[str] = None
+    email_notificacao: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -40,6 +41,7 @@ class EstudioAtualizarRequest(BaseModel):
     uf: Optional[str] = None
     telefone: Optional[str] = None
     instagram: Optional[str] = None
+    email_notificacao: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------

@@ -35,10 +35,16 @@ from app.models.usuario import Usuario
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-# Configuração de cookies — cross-origin (Vercel → Fly.io) exige SameSite=None + Secure
+# Configuração de cookies.
+# SameSite=Lax em todos os ambientes: os cookies vivem em sessao-ink.vercel.app
+# (mesmo domínio que o frontend), portanto a comunicação browser→proxy é
+# same-site. O proxy encaminha os cookies ao backend via fetch server-to-server,
+# sem envolvimento do browser. SameSite=Lax elimina CSRF nativamente sem precisar
+# de tokens adicionais. Secure=True obrigatório em produção (exigido pelo browser
+# para cookies usados em HTTPS).
 _PRODUCTION = settings.ENVIRONMENT == "production"
 COOKIE_SECURE = _PRODUCTION
-COOKIE_SAMESITE = "none" if _PRODUCTION else "lax"
+COOKIE_SAMESITE = "lax"
 ACCESS_COOKIE_MAX_AGE = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
 REFRESH_COOKIE_MAX_AGE = settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600
 

@@ -6,13 +6,17 @@ async function proxy(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
-  await params; // consume params (required in Next.js 15)
-  // Use the original pathname to preserve trailing slashes.
-  // params.path strips the trailing slash (e.g. /clientes/ → ["clientes"]),
-  // which causes FastAPI to issue a 307 redirect that drops the Cookie header.
-  const originalPath = request.nextUrl.pathname.replace(/^\/api\/v1\//, "");
+  const { path } = await params;
   const qs = request.nextUrl.searchParams.toString();
-  const url = `${BACKEND}/api/v1/${originalPath}${qs ? `?${qs}` : ""}`;
+  // Next.js may strip trailing slash from pathname; force it back for
+  // single-segment paths (collection endpoints) so FastAPI doesn't redirect.
+  const rawPathname = request.nextUrl.pathname; // e.g. /api/v1/clientes or /api/v1/clientes/
+  const pathStr = path.join("/");
+  // If the original URL had a trailing slash OR the path is a single segment
+  // (indicating a collection endpoint like /clientes/), append the slash.
+  const needsSlash = rawPathname.endsWith("/") || path.length === 1;
+  const url = `${BACKEND}/api/v1/${pathStr}${needsSlash ? "/" : ""}${qs ? `?${qs}` : ""}`;
+  console.log(`[PX] pathname=${rawPathname} url=${url}`);
 
   const accessToken = request.cookies.get("access_token")?.value;
   const incomingContentType = request.headers.get("content-type") ?? "";

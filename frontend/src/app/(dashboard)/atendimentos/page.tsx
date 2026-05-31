@@ -5,7 +5,7 @@ import DetalhesAtendimentoModal from "./DetalhesAtendimentoModal";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ClipboardList, Plus, Search, X } from "lucide-react";
 import { api } from "@/lib/api/client";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
   SOLICITADO:        { label: "Solicitado",      cls: "bg-[#5E9ED6]/15 text-[#5E9ED6] border-[#5E9ED6]/30" },
@@ -427,7 +427,7 @@ export default function AtendimentosPage() {
                 <div className="flex items-center gap-4 shrink-0 text-right">
                   {a.valor_total && (
                     <p className="text-sm font-bold text-[#F0EADD]">
-                      R$ {Number(a.valor_total).toFixed(2).replace(".", ",")}
+                      {formatCurrency(a.valor_total)}
                     </p>
                   )}
                   <p className="text-xs text-[#87938F]">{formatData(a.data_sessao)}</p>
@@ -462,7 +462,7 @@ export default function AtendimentosPage() {
                         {a.estilo && <p className="text-xs text-[#87938F] mt-0.5">{a.estilo}</p>}
                         {a.valor_total && (
                           <p className="text-xs font-bold text-[#2F9285] mt-1">
-                            R$ {Number(a.valor_total).toFixed(2).replace(".", ",")}
+                            {formatCurrency(a.valor_total)}
                           </p>
                         )}
                       </div>

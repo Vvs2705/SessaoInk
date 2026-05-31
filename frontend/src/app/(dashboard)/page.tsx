@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Calendar, ClipboardList, Users, Wallet, TrendingUp, AlertCircle, Loader2 } from "lucide-react";
 import { api } from "@/lib/api/client";
+import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 import DetalhesAtendimentoModal from "./atendimentos/DetalhesAtendimentoModal";
 
@@ -43,6 +44,7 @@ export default function DashboardPage() {
   const { data: resumo, isLoading: loadFin } = useQuery({
     queryKey: ["financeiro-resumo"],
     queryFn: () => api.get<any>("/api/v1/financeiro/resumo"),
+    refetchOnMount: true,
   });
 
   const ativos = atendimentos?.filter(a =>
@@ -72,7 +74,7 @@ export default function DashboardPage() {
         <StatCard label="Atendimentos Ativos" value={String(ativos)} icon={ClipboardList} color="text-[#2F9285]" loading={loadAt} />
         <StatCard label="Sessões Hoje" value={String(sessoesHoje)} icon={Calendar} color="text-[#C36B3F]" loading={loadAt} />
         <StatCard label="Clientes Cadastrados" value={String(clientes?.length ?? 0)} icon={Users} color="text-[#5E9ED6]" loading={loadCli} />
-        <StatCard label="Receita do Mês" value={`R$ ${(resumo?.receita_mes ?? 0).toFixed(2).replace(".", ",")}`} icon={Wallet} color="text-[#54B88D]" loading={loadFin} />
+        <StatCard label="Receita do Mês" value={formatCurrency(resumo?.receita_mes ?? 0)} icon={Wallet} color="text-[#54B88D]" loading={loadFin} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

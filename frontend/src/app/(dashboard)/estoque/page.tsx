@@ -7,7 +7,7 @@ import {
   Trash2, Minus, ChevronUp, ChevronDown,
 } from "lucide-react";
 import { api } from "@/lib/api/client";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency, formatQuantity, getQuantityStep } from "@/lib/utils";
 
 interface EstoqueItem {
   id: string;
@@ -141,10 +141,7 @@ export default function EstoquePage() {
     }
   };
 
-  const formatCurrency = (val: number | null) =>
-    val !== null && val !== undefined
-      ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val)
-      : "-";
+  // formatCurrency e formatQuantity vêm de utils
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -177,7 +174,7 @@ export default function EstoquePage() {
           <div className="flex flex-wrap gap-2 mt-2">
             {alertas.map((a) => (
               <span key={a.id} className="text-xs px-2.5 py-1 rounded-full bg-[#D99A3D]/15 text-[#D99A3D] border border-[#D99A3D]/30 font-medium">
-                {a.nome} — {a.quantidade_atual} {a.unidade}
+                {a.nome} — {formatQuantity(a.quantidade_atual, a.unidade)} {a.unidade}
               </span>
             ))}
           </div>
@@ -264,11 +261,11 @@ export default function EstoquePage() {
                         "font-bold tabular-nums",
                         item.alerta_minimo ? "text-[#D99A3D]" : "text-[#F0EADD]"
                       )}>
-                        {item.quantidade_atual} {item.unidade}
+                        {formatQuantity(item.quantidade_atual, item.unidade)} {item.unidade}
                       </span>
                     </td>
                     <td className="px-5 py-3 text-center text-[#87938F]">
-                      {item.quantidade_minima} {item.unidade}
+                      {formatQuantity(item.quantidade_minima, item.unidade)} {item.unidade}
                     </td>
                     <td className="px-5 py-3 text-right text-[#87938F]">
                       {formatCurrency(item.preco_custo)}
@@ -368,7 +365,7 @@ export default function EstoquePage() {
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[#87938F]">Qtd. Atual</label>
                   <input
-                    type="number" step="0.01" min="0"
+                    type="number" step={getQuantityStep(unidade)} min="0"
                     placeholder="0"
                     value={quantAtual} onChange={(e) => setQuantAtual(e.target.value)}
                     className="w-full h-10 px-3 rounded-[10px] bg-[#050B12] border border-[#243337] text-sm text-[#F0EADD] focus:border-[#2F9285]/60 outline-none transition-all"
@@ -377,7 +374,7 @@ export default function EstoquePage() {
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[#87938F]">Qtd. Mínima</label>
                   <input
-                    type="number" step="0.01" min="0"
+                    type="number" step={getQuantityStep(unidade)} min="0"
                     placeholder="0"
                     value={quantMin} onChange={(e) => setQuantMin(e.target.value)}
                     className="w-full h-10 px-3 rounded-[10px] bg-[#050B12] border border-[#243337] text-sm text-[#F0EADD] focus:border-[#2F9285]/60 outline-none transition-all"
@@ -477,7 +474,7 @@ export default function EstoquePage() {
                   Quantidade ({movItem.unidade})
                 </label>
                 <input
-                  type="number" step="0.01" min="0.01" required
+                  type="number" step={getQuantityStep(movItem.unidade)} min={getQuantityStep(movItem.unidade)} required
                   placeholder="Ex: 10"
                   value={delta} onChange={(e) => setDelta(e.target.value)}
                   className="w-full h-10 px-3 rounded-[10px] bg-[#050B12] border border-[#243337] text-sm text-[#F0EADD] focus:border-[#2F9285]/60 outline-none transition-all"
@@ -490,7 +487,10 @@ export default function EstoquePage() {
                 <div className="flex items-center justify-between p-3 bg-[#050B12] rounded-[10px] border border-[#2F9285]/20">
                   <span className="text-xs text-[#87938F]">Novo total</span>
                   <span className="font-bold text-[#2F9285] tabular-nums">
-                    {(movItem.quantidade_atual + (deltaDir === "saida" ? -parseFloat(delta) : parseFloat(delta))).toFixed(2)} {movItem.unidade}
+                    {formatQuantity(
+                      movItem.quantidade_atual + (deltaDir === "saida" ? -parseFloat(delta) : parseFloat(delta)),
+                      movItem.unidade
+                    )} {movItem.unidade}
                   </span>
                 </div>
               )}

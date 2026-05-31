@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Wallet, TrendingUp, Clock, Plus, Loader2, X, Calendar, DollarSign, CreditCard, Check, Trash2, Edit2 } from "lucide-react";
+import { Wallet, TrendingUp, Clock, Plus, Loader2, X, Calendar, DollarSign, CreditCard, Check, Trash2, Edit2, RefreshCw, AlertCircle } from "lucide-react";
 import { api } from "@/lib/api/client";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 interface ResumoFinanceiro {
   receita_mes: number;
@@ -57,7 +57,6 @@ export default function FinanceiroPage() {
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<"entradas" | "pendencias" | "resumo">("resumo");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<LancamentoItem | null>(null);
 
@@ -69,15 +68,33 @@ export default function FinanceiroPage() {
   const [formaPagamento, setFormaPagamento] = useState("PIX");
   const [dataPrevista, setDataPrevista] = useState("");
 
-  const { data: resumo, isLoading: isLoadingResumo } = useQuery<ResumoFinanceiro>({
+  const {
+    data: resumo,
+    isLoading: isLoadingResumo,
+    isError: isErrorResumo,
+    refetch: refetchResumo,
+  } = useQuery<ResumoFinanceiro>({
     queryKey: ["financeiro-resumo"],
     queryFn: () => api.get("/api/v1/financeiro/resumo"),
+    refetchOnMount: true,
   });
 
-  const { data: lancamentos = [], isLoading: isLoadingLancamentos } = useQuery<LancamentoItem[]>({
+  const {
+    data: lancamentos = [],
+    isLoading: isLoadingLancamentos,
+    isError: isErrorLancamentos,
+    refetch: refetchLancamentos,
+  } = useQuery<LancamentoItem[]>({
     queryKey: ["financeiro-lancamentos"],
     queryFn: () => api.get("/api/v1/financeiro/"),
+    refetchOnMount: true,
   });
+
+  const isError = isErrorResumo || isErrorLancamentos;
+  const handleRefresh = () => {
+    refetchResumo();
+    refetchLancamentos();
+  };
 
   const addLancamentoMutation = useMutation({
     mutationFn: (dados: any) => api.post("/api/v1/financeiro/", dados),
@@ -139,7 +156,7 @@ export default function FinanceiroPage() {
     setErrorText(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorText(null);
 
@@ -149,38 +166,29 @@ export default function FinanceiroPage() {
       return;
     }
 
-    setLoading(true);
-    try {
-      if (editingItem) {
-        await updateLancamentoMutation.mutateAsync({
-          id: editingItem.id,
-          tipo,
-          status,
-          descricao: descricao.trim() || "",
-          valor: valNum,
-          forma_pagamento: formaPagamento || undefined,
-          data_prevista: dataPrevista ? new Date(dataPrevista).toISOString() : undefined,
-        });
-      } else {
-        await addLancamentoMutation.mutateAsync({
-          tipo,
-          status,
-          descricao: descricao.trim() || undefined,
-          valor: valNum,
-          forma_pagamento: formaPagamento || undefined,
-          data_prevista: dataPrevista ? new Date(dataPrevista).toISOString() : undefined,
-        });
-      }
-    } catch (e) {
-      // Handled by onError
-    } finally {
-      setLoading(false);
+    if (editingItem) {
+      updateLancamentoMutation.mutate({
+        id: editingItem.id,
+        tipo,
+        status,
+        descricao: descricao.trim() || "",
+        valor: valNum,
+        forma_pagamento: formaPagamento || undefined,
+        data_prevista: dataPrevista ? new Date(dataPrevista).toISOString() : undefined,
+      });
+    } else {
+      addLancamentoMutation.mutate({
+        tipo,
+        status,
+        descricao: descricao.trim() || undefined,
+        valor: valNum,
+        forma_pagamento: formaPagamento || undefined,
+        data_prevista: dataPrevista ? new Date(dataPrevista).toISOString() : undefined,
+      });
     }
   };
 
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val);
-  };
+  const isSaving = addLancamentoMutation.isPending || updateLancamentoMutation.isPending;
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "-";
@@ -227,14 +235,37 @@ export default function FinanceiroPage() {
           <h1 className="text-2xl font-bold text-[#F0EADD]">Financeiro</h1>
           <p className="text-sm text-[#87938F] mt-1">Controle de receitas, sinais e comissões do estúdio</p>
         </div>
-        <button
-          onClick={handleOpenModal}
-          className="flex items-center gap-2 h-10 px-4 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm transition-all shrink-0"
-        >
-          <Plus size={16} />
-          Novo Lançamento
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={handleRefresh}
+            title="Atualizar dados"
+            className="flex items-center gap-2 h-10 px-3 rounded-[14px] border border-[#243337] bg-[#0B171C] hover:bg-[#102128] text-[#87938F] hover:text-[#F0EADD] text-sm transition-all"
+          >
+            <RefreshCw size={15} className={cn(isLoadingResumo || isLoadingLancamentos ? "animate-spin" : "")} />
+          </button>
+          <button
+            onClick={handleOpenModal}
+            className="flex items-center gap-2 h-10 px-4 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm transition-all"
+          >
+            <Plus size={16} />
+            Novo Lançamento
+          </button>
+        </div>
       </div>
+
+      {/* Banner de erro de conexão */}
+      {isError && (
+        <div className="flex items-center gap-3 p-4 mb-6 rounded-[14px] bg-[#E35D5B]/10 border border-[#E35D5B]/30 text-sm text-[#E35D5B]">
+          <AlertCircle size={16} className="shrink-0" />
+          <span>Falha ao carregar dados financeiros. Verifique sua conexão ou tente novamente.</span>
+          <button
+            onClick={handleRefresh}
+            className="ml-auto text-xs font-semibold underline hover:no-underline"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -529,17 +560,18 @@ export default function FinanceiroPage() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 h-10 rounded-[12px] border border-[#243337] hover:bg-[#102128] text-[#F0EADD] font-semibold text-sm transition-all"
+                  disabled={isSaving}
+                  className="flex-1 h-10 rounded-[12px] border border-[#243337] hover:bg-[#102128] text-[#F0EADD] font-semibold text-sm transition-all disabled:opacity-50"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={isSaving}
                   className="flex-1 h-10 rounded-[12px] bg-[#2F9285] hover:bg-[#3AA99A] disabled:opacity-60 text-[#050B12] font-semibold text-sm transition-all flex items-center justify-center gap-2"
                 >
-                  {loading && <Loader2 size={16} className="animate-spin" />}
-                  {loading ? "Salvando..." : "Salvar"}
+                  {isSaving && <Loader2 size={16} className="animate-spin" />}
+                  {isSaving ? "Salvando..." : "Salvar"}
                 </button>
               </div>
             </form>

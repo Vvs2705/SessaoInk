@@ -18,7 +18,9 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const params = useSearchParams();
-  const from = params.get("from") ?? "/";
+  // Sanitizar: só aceitar paths de página, nunca /api/ ou caminhos externos
+  const rawFrom = params.get("from") ?? "/";
+  const from = rawFrom.startsWith("/") && !rawFrom.startsWith("/api/") ? rawFrom : "/";
   const [showPass, setShowPass] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 

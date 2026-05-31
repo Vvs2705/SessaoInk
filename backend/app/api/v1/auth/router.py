@@ -33,9 +33,10 @@ from app.models.usuario import Usuario
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-# Configuração de cookies
-COOKIE_SECURE = False  # True apenas em HTTPS/produção
-COOKIE_SAMESITE = "lax"
+# Configuração de cookies — cross-origin (Vercel → Fly.io) exige SameSite=None + Secure
+_PRODUCTION = settings.ENVIRONMENT == "production"
+COOKIE_SECURE = _PRODUCTION
+COOKIE_SAMESITE = "none" if _PRODUCTION else "lax"
 ACCESS_COOKIE_MAX_AGE = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
 REFRESH_COOKIE_MAX_AGE = settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600
 

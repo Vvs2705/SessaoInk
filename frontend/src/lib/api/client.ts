@@ -3,7 +3,9 @@
  * Inclui tratamento de erros, retry e interceptors.
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// URL base: vazia em produção (usa proxy Next.js em /api/v1/) ou a URL direta do backend.
+// Definir NEXT_PUBLIC_API_URL="" no Vercel para ativar o proxy mode.
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 export class ApiError extends Error {
   constructor(

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/registro", "/senha", "/_next", "/favicon", "/api/auth"];
+// Rotas de API nunca são interceptadas — elas retornam JSON 401, não redirect.
+const PUBLIC_PATHS = ["/login", "/registro", "/senha", "/_next", "/favicon", "/api/"];
 const PUBLIC_PORTAL = /^\/[a-z0-9-]+($|\/)/; // /[slug] e sub-rotas públicas
 
 export function middleware(request: NextRequest) {

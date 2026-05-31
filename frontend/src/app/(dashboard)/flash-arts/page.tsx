@@ -93,6 +93,14 @@ export default function FlashArtsPage() {
     setErrorText(null);
   };
 
+  const uploadFlashArt = async (formData: FormData): Promise<Response> => {
+    return fetch(`${API}/api/v1/flash-arts/`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorText(null);
@@ -116,11 +124,19 @@ export default function FlashArtsPage() {
       if (tamanho) formData.append("tamanho_sugerido", tamanho);
       if (local) formData.append("local_recomendado", local);
 
-      const res = await fetch(`${API}/api/v1/flash-arts/`, {
-        method: "POST",
-        credentials: "include",
-        body: formData,
-      });
+      let res = await uploadFlashArt(formData);
+
+      if (res.status === 401) {
+        const refreshed = await fetch(`${API}/api/v1/auth/refresh`, {
+          method: "POST",
+          credentials: "include",
+        });
+        if (!refreshed.ok) {
+          window.location.href = "/login";
+          return;
+        }
+        res = await uploadFlashArt(formData);
+      }
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: "Erro desconhecido ao criar." }));

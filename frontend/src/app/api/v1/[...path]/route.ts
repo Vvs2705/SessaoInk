@@ -11,6 +11,7 @@ async function proxy(
   const url = `${BACKEND}/api/v1/${path.join("/")}${qs ? `?${qs}` : ""}`;
 
   const accessToken = request.cookies.get("access_token")?.value;
+  console.log(`[proxy] ${request.method} ${url} | cookie present: ${!!accessToken} | all cookies: ${request.headers.get("cookie")?.substring(0, 80)}`);
   const incomingContentType = request.headers.get("content-type") ?? "";
   const isMultipart =
     incomingContentType.includes("multipart/form-data") ||

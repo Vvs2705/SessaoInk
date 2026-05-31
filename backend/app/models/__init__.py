@@ -8,6 +8,8 @@ from app.models.atendimento import (
 from app.models.portfolio import Portfolio, FlashArt, VisibilidadePortfolio, StatusFlash
 from app.models.financeiro import Lancamento, EstoqueItem, TipoLancamento
 from app.models.documento import Documento, TipoDocumento
+from app.models.saas import Plano, Assinatura, StatusPlano, StatusAssinatura  # noqa
+from app.models.convite import Convite, StatusConvite  # noqa
 
 __all__ = [
     "Estudio",
@@ -19,4 +21,7 @@ __all__ = [
     "StatusFinanceiro",
     "TipoAtendimento",
     "FormaPagamento",
+    "Plano",
+    "Assinatura",
+    "Convite",
 ]

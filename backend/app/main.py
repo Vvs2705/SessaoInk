@@ -2,13 +2,18 @@ import logging
 from contextlib import asynccontextmanager
 
 import sentry_sdk
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.database import get_session
+from app.core.logging_config import configure_logging
+
+configure_logging(settings.ENVIRONMENT)
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +43,7 @@ from app.api.v1.busca.router import router as busca_router
 from app.api.v1.agenda.router import router as agenda_router
 from app.api.v1.relatorios.router import router as relatorios_router
 from app.api.v1.usuarios.router import router as usuarios_router
+from app.api.v1.convites.router import router as convites_router
 
 
 @asynccontextmanager
@@ -154,13 +160,41 @@ app.include_router(busca_router, prefix="/api/v1")
 app.include_router(agenda_router, prefix="/api/v1")
 app.include_router(relatorios_router, prefix="/api/v1")
 app.include_router(usuarios_router, prefix="/api/v1")
+app.include_router(convites_router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["health"])
-async def health_check():
-    return JSONResponse({
-        "status": "ok",
-        "project": settings.PROJECT_NAME,
-        "environment": settings.ENVIRONMENT,
-        "debug": settings.DEBUG,
-    })
+async def health():
+    """Liveness check — a API está de pé."""
+    return {"status": "ok", "project": settings.PROJECT_NAME}
+
+
+@app.get("/ready", tags=["health"])
+async def readiness(session: AsyncSession = Depends(get_session)):
+    """Readiness check — banco e dependências prontos."""
+    from sqlalchemy import text
+    from app.core.redis import get_redis
+    checks = {}
+
+    # Checar banco
+    try:
+        await session.execute(text("SELECT 1"))
+        checks["database"] = "ok"
+    except Exception as e:
+        checks["database"] = f"error: {e}"
+
+    # Checar Redis
+    try:
+        async with get_redis() as r:
+            await r.ping()
+        checks["redis"] = "ok"
+    except Exception as e:
+        checks["redis"] = f"error: {e}"
+
+    all_ok = all(v == "ok" for v in checks.values())
+    status_code = 200 if all_ok else 503
+
+    return JSONResponse(
+        {"status": "ready" if all_ok else "degraded", "checks": checks},
+        status_code=status_code,
+    )

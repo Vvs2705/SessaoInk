@@ -80,7 +80,7 @@ _CSRF_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 
 # Endpoints isentos de verificação de Origin (públicos ou sem sessão)
 _CSRF_EXEMPT_PREFIXES = (
-    "/api/v1/publico/",    # portal público — sem autenticação
+    "/api/v1/public/",     # portal público — sem autenticação
     "/api/v1/auth/login",  # login — ainda não há sessão para proteger
     "/health",
 )

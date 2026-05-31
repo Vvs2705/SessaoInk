@@ -10,7 +10,9 @@ import {
   AlertCircle,
   Upload,
   X,
+  ChevronRight,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
@@ -61,6 +63,7 @@ export default function OrcamentoPage() {
   const searchParams = useSearchParams();
   const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug ?? "";
 
+  const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormState>({
     nome: "",
     whatsapp: "",
@@ -77,6 +80,7 @@ export default function OrcamentoPage() {
     const descParam = searchParams.get("descricao");
     if (descParam) {
       setForm((prev) => ({ ...prev, descricao: descParam }));
+      setStep(2); // Jump to step 2 directly since description is filled from portfólio
     }
   }, [searchParams]);
 
@@ -87,7 +91,6 @@ export default function OrcamentoPage() {
   const [emailConfirm, setEmailConfirm] = useState("");
   const [website, setWebsite] = useState("");
 
-  // Limpar previews ao desmontar para evitar memory leaks
   useEffect(() => {
     return () => {
       imagens.forEach((img) => URL.revokeObjectURL(img.preview));
@@ -140,16 +143,36 @@ export default function OrcamentoPage() {
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((prev) => ({ ...prev, [k]: v }));
 
-  const podeEnviar =
-    form.nome.trim() &&
-    form.whatsapp.trim() &&
-    form.descricao.trim() &&
-    form.aceite_privacidade &&
-    form.aceite_termos;
+  // Step Validation
+  const canGoToStep2 = form.nome.trim().length >= 2 && form.whatsapp.trim().length >= 8;
+  const canGoToStep3 = form.descricao.trim().length >= 10;
+  const canGoToStep4 = true; // Imagens are optional
+  const canSubmit = form.aceite_privacidade && form.aceite_termos;
+
+  const nextStep = () => {
+    setErro(null);
+    if (step === 1 && !canGoToStep2) {
+      setErro("Preencha seu nome e um WhatsApp válido.");
+      return;
+    }
+    if (step === 2 && !canGoToStep3) {
+      setErro("Descreva sua ideia com um pouco mais de detalhes (mínimo 10 caracteres).");
+      return;
+    }
+    setStep((s) => s + 1);
+  };
+
+  const prevStep = () => {
+    setErro(null);
+    setStep((s) => s - 1);
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!podeEnviar) return;
+    if (!canSubmit) {
+      setErro("É necessário aceitar os termos de uso e privacidade.");
+      return;
+    }
 
     setEnviando(true);
     setErro(null);
@@ -178,7 +201,6 @@ export default function OrcamentoPage() {
       formData.append("email_confirm", emailConfirm);
       formData.append("website", website);
 
-      // Adicionar imagens
       imagens.forEach((img) => {
         formData.append("imagens", img.file);
       });
@@ -203,13 +225,12 @@ export default function OrcamentoPage() {
       const data: OrcamentoResponse = await res.json();
       setResultado(data);
     } catch (err) {
-      setErro(err instanceof Error ? err.message : "Erro ao enviar. Tente novamente.");
+      setErro(err instanceof Error ? err.message : "Erro ao enviar orçamento.");
     } finally {
       setEnviando(false);
     }
   }
 
-  /* ── Sucesso ── */
   if (resultado) {
     return (
       <div className="min-h-screen bg-[#050B12] flex items-center justify-center p-6">
@@ -217,58 +238,68 @@ export default function OrcamentoPage() {
           <div className="w-16 h-16 rounded-full bg-[#2F9285]/15 flex items-center justify-center mx-auto mb-5 shadow-[0_0_30px_rgba(47,146,133,0.25)]">
             <CheckCircle size={30} className="text-[#2F9285]" />
           </div>
-          <h1 className="text-2xl font-bold text-[#F0EADD] mb-2">
-            Orçamento enviado!
-          </h1>
-          <p className="text-sm text-[#87938F] mb-6 leading-relaxed">
-            {resultado.mensagem}
-          </p>
+          <h1 className="text-2xl font-bold text-[#F0EADD] mb-2">Orçamento enviado!</h1>
+          <p className="text-sm text-[#87938F] mb-6 leading-relaxed">{resultado.mensagem}</p>
           <div className="bg-[#0B171C] border border-[#243337] rounded-[16px] p-5 mb-7">
-            <p className="text-xs text-[#87938F] mb-1.5 uppercase tracking-wider">
-              Protocolo
-            </p>
-            <p className="font-mono font-bold text-[#2F9285] text-2xl tracking-widest">
-              {resultado.protocolo}
-            </p>
-            <p className="text-[10px] text-[#87938F]/60 mt-2">
-              Guarde este número para acompanhar seu pedido
-            </p>
+            <p className="text-xs text-[#87938F] mb-1.5 uppercase tracking-wider">Protocolo</p>
+            <p className="font-mono font-bold text-[#2F9285] text-2xl tracking-widest">{resultado.protocolo}</p>
+            <p className="text-[10px] text-[#87938F]/60 mt-2">Guarde este número para acompanhar seu pedido</p>
           </div>
           <a
             href={`/${slug}`}
             className="inline-flex items-center gap-1.5 text-sm text-[#2F9285] hover:text-[#3AA99A] transition-colors"
           >
-            <ArrowLeft size={14} />
-            Voltar ao perfil do estúdio
+            <ArrowLeft size={14} /> Voltar ao perfil do estúdio
           </a>
         </div>
       </div>
     );
   }
 
-  /* ── Formulário ── */
   return (
     <div className="min-h-screen bg-[#050B12] px-4 py-10">
       <div className="max-w-lg mx-auto">
+        
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6">
           <a
             href={`/${slug}`}
-            className="inline-flex items-center gap-1.5 text-sm text-[#87938F] hover:text-[#F0EADD] transition-colors mb-6"
+            className="inline-flex items-center gap-1.5 text-sm text-[#87938F] hover:text-[#F0EADD] transition-colors mb-4"
           >
-            <ArrowLeft size={14} />
-            Voltar ao perfil
+            <ArrowLeft size={14} /> Voltar ao perfil
           </a>
-          <h1 className="text-2xl font-extrabold text-[#F0EADD]">
-            Pedir Orçamento
-          </h1>
+          <h1 className="text-2xl font-extrabold text-[#F0EADD]">Solicitar Orçamento</h1>
           <p className="text-sm text-[#87938F] mt-1">
             Estúdio <span className="text-[#2F9285]">@{slug}</span>
           </p>
         </div>
 
+        {/* Progress bar */}
+        <div className="flex items-center gap-2 mb-8 bg-[#0B171C] border border-[#243337] p-3 rounded-[16px]">
+          {[1, 2, 3, 4].map((s) => (
+            <div key={s} className="flex-1 flex items-center gap-1.5">
+              <div
+                className={cn(
+                  "w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center transition-colors shrink-0",
+                  step >= s
+                    ? "bg-[#2F9285] text-[#050B12]"
+                    : "bg-[#050B12] border border-[#243337] text-[#87938F]"
+                )}
+              >
+                {s}
+              </div>
+              <div
+                className={cn(
+                  "h-1 rounded transition-colors flex-1 hidden sm:block",
+                  step > s ? "bg-[#2F9285]" : "bg-[#243337]"
+                )}
+              />
+            </div>
+          ))}
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Honeypot fields to prevent spam */}
+          {/* Honeypot */}
           <div className="hidden" aria-hidden="true" style={{ display: "none", position: "absolute", left: "-9999px" }}>
             <input
               type="text"
@@ -288,230 +319,174 @@ export default function OrcamentoPage() {
             />
           </div>
 
-          {/* ── Dados pessoais ── */}
-          <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-[#87938F] uppercase tracking-wider">
-              Seus dados
-            </h2>
-
-            <div>
-              <label className={labelClass}>
-                Nome completo <span className="text-[#C36B3F]">*</span>
-              </label>
-              <input
-                type="text"
-                value={form.nome}
-                onChange={(e) => set("nome", e.target.value)}
-                placeholder="Seu nome completo"
-                required
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <label className={labelClass}>
-                WhatsApp <span className="text-[#C36B3F]">*</span>
-              </label>
-              <input
-                type="tel"
-                value={form.whatsapp}
-                onChange={(e) => set("whatsapp", e.target.value)}
-                placeholder="(11) 99999-9999"
-                required
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <label className={labelClass}>
-                Instagram{" "}
-                <span className="text-[#87938F] font-normal">(opcional)</span>
-              </label>
-              <input
-                type="text"
-                value={form.instagram}
-                onChange={(e) => set("instagram", e.target.value)}
-                placeholder="@seuinstagram"
-                className={inputClass}
-              />
-            </div>
-          </div>
-
-          {/* ── Sobre a tatuagem ── */}
-          <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-[#87938F] uppercase tracking-wider">
-              Sobre a tatuagem
-            </h2>
-
-            <div>
-              <label className={labelClass}>
-                Descrição da tatuagem <span className="text-[#C36B3F]">*</span>
-              </label>
-              <textarea
-                value={form.descricao}
-                onChange={(e) => set("descricao", e.target.value)}
-                placeholder="Descreva sua ideia com o máximo de detalhes possível..."
-                rows={4}
-                required
-                className="w-full px-3.5 py-2.5 rounded-[14px] bg-[#050B12] border border-[#243337] text-[#F0EADD] text-sm placeholder-[#87938F]/70 focus:outline-none focus:border-[#2F9285]/60 resize-none transition-colors"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
+          {/* PASSO 1: Identificação */}
+          {step === 1 && (
+            <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4">
+              <h2 className="text-sm font-semibold text-[#87938F] uppercase tracking-wider">Identificação</h2>
               <div>
-                <label className={labelClass}>Estilo</label>
-                <div className="relative">
-                  <select
-                    value={form.estilo}
-                    onChange={(e) => set("estilo", e.target.value)}
-                    className={selectClass}
-                  >
-                    <option value="">Selecionar</option>
-                    {ESTILOS.map((e) => (
-                      <option key={e} value={e}>
-                        {e}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#87938F]">
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                      <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className={labelClass}>Parte do corpo</label>
+                <label className={labelClass}>Nome completo <span className="text-[#C36B3F]">*</span></label>
                 <input
                   type="text"
-                  value={form.parte_corpo}
-                  onChange={(e) => set("parte_corpo", e.target.value)}
-                  placeholder="Ex: antebraço"
+                  value={form.nome}
+                  onChange={(e) => set("nome", e.target.value)}
+                  placeholder="Seu nome completo"
+                  required
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>WhatsApp <span className="text-[#C36B3F]">*</span></label>
+                <input
+                  type="tel"
+                  value={form.whatsapp}
+                  onChange={(e) => set("whatsapp", e.target.value)}
+                  placeholder="(11) 99999-9999"
+                  required
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Instagram <span className="text-[#87938F] font-normal">(opcional)</span></label>
+                <input
+                  type="text"
+                  value={form.instagram}
+                  onChange={(e) => set("instagram", e.target.value)}
+                  placeholder="@seuinstagram"
                   className={inputClass}
                 />
               </div>
             </div>
+          )}
 
-            <div>
-              <label className={labelClass}>Tamanho aproximado</label>
-              <input
-                type="text"
-                value={form.tamanho_cm}
-                onChange={(e) => set("tamanho_cm", e.target.value)}
-                placeholder="Ex: 10 a 15 cm"
-                className={inputClass}
-              />
-            </div>
-          </div>
-
-          {/* ── Fotos de referência ── */}
-          <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-sm font-semibold text-[#87938F] uppercase tracking-wider">
-                Fotos de referência
-              </h2>
-              <span className="text-xs text-[#87938F]">opcional</span>
-            </div>
-
-            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[#243337] hover:border-[#2F9285]/50 bg-[#050B12] rounded-[14px] cursor-pointer transition-colors group">
-              <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                <Upload className="w-8 h-8 text-[#87938F] group-hover:text-[#2F9285] transition-colors mb-2" />
-                <p className="text-sm text-[#F0EADD] font-medium mb-1">
-                  Carregar fotos de referência
-                </p>
-                <p className="text-xs text-[#87938F]">
-                  Selecione uma ou mais imagens
-                </p>
+          {/* PASSO 2: A Tattoo */}
+          {step === 2 && (
+            <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4">
+              <h2 className="text-sm font-semibold text-[#87938F] uppercase tracking-wider">A Tattoo</h2>
+              <div>
+                <label className={labelClass}>Descrição da ideia <span className="text-[#C36B3F]">*</span></label>
+                <textarea
+                  value={form.descricao}
+                  onChange={(e) => set("descricao", e.target.value)}
+                  placeholder="Descreva o que quer tatuar, tamanho aproximado, referências..."
+                  rows={4}
+                  required
+                  className="w-full px-3.5 py-2.5 rounded-[14px] bg-[#050B12] border border-[#243337] text-[#F0EADD] text-sm placeholder-[#87938F]/70 focus:outline-none focus:border-[#2F9285]/60 resize-none transition-colors"
+                />
               </div>
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-            </label>
-
-            {imagens.length > 0 && (
-              <div className="grid grid-cols-3 gap-3 mt-4">
-                {imagens.map((img, index) => (
-                  <div key={index} className="relative aspect-square rounded-[12px] overflow-hidden border border-[#243337] bg-[#050B12]">
-                    <img
-                      src={img.preview}
-                      alt={`Referência ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removerImagem(index)}
-                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/70 hover:bg-black text-[#F0EADD] flex items-center justify-center transition-colors border border-[#243337]/50"
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>Estilo</label>
+                  <div className="relative">
+                    <select
+                      value={form.estilo}
+                      onChange={(e) => set("estilo", e.target.value)}
+                      className={selectClass}
                     >
-                      <X size={14} />
-                    </button>
+                      <option value="">Selecionar</option>
+                      {ESTILOS.map((e) => (
+                        <option key={e} value={e}>{e}</option>
+                      ))}
+                    </select>
                   </div>
-                ))}
+                </div>
+                <div>
+                  <label className={labelClass}>Local do corpo</label>
+                  <input
+                    type="text"
+                    value={form.parte_corpo}
+                    onChange={(e) => set("parte_corpo", e.target.value)}
+                    placeholder="Ex: braço"
+                    className={inputClass}
+                  />
+                </div>
               </div>
-            )}
-          </div>
-
-          {/* ── Privacidade ── */}
-          <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-[#87938F] uppercase tracking-wider">
-              Privacidade
-            </h2>
-
-            <div className="flex items-start gap-2.5 p-3.5 rounded-[12px] bg-[#2F9285]/5 border border-[#2F9285]/15">
-              <Shield size={14} className="text-[#2F9285] mt-0.5 shrink-0" />
-              <p className="text-xs text-[#87938F] leading-relaxed">
-                Seus dados são usados exclusivamente para responder ao seu
-                pedido de orçamento e nunca serão compartilhados com terceiros.
-              </p>
+              <div>
+                <label className={labelClass}>Tamanho aproximado (cm)</label>
+                <input
+                  type="text"
+                  value={form.tamanho_cm}
+                  onChange={(e) => set("tamanho_cm", e.target.value)}
+                  placeholder="Ex: 15cm"
+                  className={inputClass}
+                />
+              </div>
             </div>
+          )}
 
-            {[
-              {
-                key: "aceite_privacidade" as const,
-                label: "Li e aceito a Política de Privacidade",
-              },
-              {
-                key: "aceite_termos" as const,
-                label: "Li e aceito os Termos de Uso da plataforma SessãoInk",
-              },
-            ].map(({ key, label }) => (
-              <label
-                key={key}
-                className="flex items-start gap-3 cursor-pointer group"
-              >
-                <div className="relative mt-0.5 shrink-0">
+          {/* PASSO 3: Fotos de Referência */}
+          {step === 3 && (
+            <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-sm font-semibold text-[#87938F] uppercase tracking-wider">Fotos de referência</h2>
+                <span className="text-xs text-[#87938F]">opcional</span>
+              </div>
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[#243337] hover:border-[#2F9285]/50 bg-[#050B12] rounded-[14px] cursor-pointer transition-colors group">
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <Upload className="w-8 h-8 text-[#87938F] group-hover:text-[#2F9285] transition-colors mb-2" />
+                  <p className="text-sm text-[#F0EADD] font-medium mb-1">Carregar referências</p>
+                  <p className="text-xs text-[#87938F]">Envie até 5 imagens (JPG, PNG, WEBP)</p>
+                </div>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+              </label>
+              {imagens.length > 0 && (
+                <div className="grid grid-cols-3 gap-3 mt-4">
+                  {imagens.map((img, index) => (
+                    <div key={index} className="relative aspect-square rounded-[12px] overflow-hidden border border-[#243337]">
+                      <img src={img.preview} alt="preview" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removerImagem(index)}
+                        className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/80 hover:bg-black text-white flex items-center justify-center"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* PASSO 4: Envio & Privacidade */}
+          {step === 4 && (
+            <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4">
+              <h2 className="text-sm font-semibold text-[#87938F] uppercase tracking-wider">Termos & Envio</h2>
+              <div className="flex items-start gap-2.5 p-3.5 rounded-[12px] bg-[#2F9285]/5 border border-[#2F9285]/15">
+                <Shield size={14} className="text-[#2F9285] mt-0.5 shrink-0" />
+                <p className="text-xs text-[#87938F] leading-relaxed">
+                  Seus dados são protegidos e serão utilizados exclusivamente para retornar o contato sobre o seu pedido.
+                </p>
+              </div>
+
+              {[
+                {
+                  key: "aceite_privacidade" as const,
+                  label: "Li e aceito a Política de Privacidade do estúdio",
+                },
+                {
+                  key: "aceite_termos" as const,
+                  label: "Li e aceito os Termos de Uso da plataforma SessãoInk",
+                },
+              ].map(({ key, label }) => (
+                <label key={key} className="flex items-start gap-3 cursor-pointer group">
                   <input
                     type="checkbox"
                     checked={form[key]}
                     onChange={(e) => set(key, e.target.checked)}
-                    className="sr-only peer"
+                    className="mt-1"
                   />
-                  <div className="w-4 h-4 rounded-[4px] border border-[#243337] bg-[#050B12] peer-checked:bg-[#2F9285] peer-checked:border-[#2F9285] transition-colors flex items-center justify-center">
-                    {form[key] && (
-                      <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
-                        <path
-                          d="M1 3.5L3.5 6L8 1"
-                          stroke="#050B12"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    )}
-                  </div>
-                </div>
-                <span className="text-sm text-[#87938F] group-hover:text-[#B8C2BF] transition-colors leading-snug">
-                  {label}
-                </span>
-              </label>
-            ))}
-          </div>
+                  <span className="text-sm text-[#87938F] group-hover:text-[#B8C2BF] transition-colors">{label}</span>
+                </label>
+              ))}
+            </div>
+          )}
 
-          {/* Erro */}
           {erro && (
             <div className="flex items-start gap-2.5 p-3.5 rounded-[12px] bg-[#C36B3F]/10 border border-[#C36B3F]/25">
               <AlertCircle size={15} className="text-[#C36B3F] mt-0.5 shrink-0" />
@@ -519,26 +494,40 @@ export default function OrcamentoPage() {
             </div>
           )}
 
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={!podeEnviar || enviando}
-            className="w-full h-12 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] disabled:opacity-40 disabled:cursor-not-allowed text-[#050B12] font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-[0_0_24px_rgba(47,146,133,0.2)] hover:shadow-[0_0_32px_rgba(47,146,133,0.35)]"
-          >
-            {enviando ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Enviando...
-              </>
-            ) : (
-              "Enviar pedido de orçamento"
+          {/* Ações do formulário */}
+          <div className="flex gap-3">
+            {step > 1 && (
+              <button
+                type="button"
+                onClick={prevStep}
+                className="flex-1 h-12 rounded-[14px] border border-[#243337] bg-[#050B12] hover:bg-[#102128] text-[#87938F] hover:text-[#F0EADD] text-sm font-semibold transition-all"
+              >
+                Voltar
+              </button>
             )}
-          </button>
-
-          <p className="text-center text-xs text-[#87938F]/60 pb-4">
-            Campos com{" "}
-            <span className="text-[#C36B3F]">*</span> são obrigatórios
-          </p>
+            
+            {step < 4 ? (
+              <button
+                type="button"
+                onClick={nextStep}
+                className="flex-1 h-12 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] text-sm font-bold transition-all flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(47,146,133,0.15)]"
+              >
+                Avançar <ChevronRight size={15} />
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!canSubmit || enviando}
+                className="flex-1 h-12 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] disabled:opacity-40 text-[#050B12] font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-[0_0_24px_rgba(47,146,133,0.25)]"
+              >
+                {enviando ? (
+                  <><Loader2 size={16} className="animate-spin" /> Enviando...</>
+                ) : (
+                  "Enviar Pedido"
+                )}
+              </button>
+            )}
+          </div>
         </form>
       </div>
     </div>

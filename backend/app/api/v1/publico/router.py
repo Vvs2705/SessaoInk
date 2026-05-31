@@ -438,8 +438,8 @@ async def _validar_token_doc(
         select(DocumentoLinkAcesso).where(
             DocumentoLinkAcesso.token_hash == token_hash,
             DocumentoLinkAcesso.acao == acao,
-            not DocumentoLinkAcesso.revogado,
-            DocumentoLinkAcesso.usado_em is None,
+            DocumentoLinkAcesso.revogado == False,
+            DocumentoLinkAcesso.usado_em == None,
             DocumentoLinkAcesso.expira_em > datetime.now(UTC),
         )
     )
@@ -462,7 +462,7 @@ async def obter_documento_por_token(
     link = await session.scalar(
         select(DocumentoLinkAcesso).where(
             DocumentoLinkAcesso.token_hash == token_hash,
-            not DocumentoLinkAcesso.revogado,
+            DocumentoLinkAcesso.revogado == False,
             DocumentoLinkAcesso.expira_em > datetime.now(UTC),
         )
     )

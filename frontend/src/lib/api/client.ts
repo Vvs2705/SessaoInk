@@ -1,10 +1,4 @@
-/**
- * Cliente HTTP base para comunicação com a API SessãoInk.
- * Inclui tratamento de erros, retry e interceptors.
- */
-
 // URL base: vazia em produção (usa proxy Next.js em /api/v1/) ou a URL direta do backend.
-// Definir NEXT_PUBLIC_API_URL="" no Vercel para ativar o proxy mode.
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 export class ApiError extends Error {
@@ -31,38 +25,75 @@ async function handleResponse<T>(res: Response): Promise<T> {
   throw new ApiError(res.status, detail);
 }
 
-export const api = {
-  get: <T>(path: string, init?: RequestInit) =>
-    fetch(`${API_URL}${path}`, {
-      method: "GET",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      ...init,
-    }).then((r) => handleResponse<T>(r)),
-
-  post: <T>(path: string, body?: unknown, init?: RequestInit) =>
-    fetch(`${API_URL}${path}`, {
+async function tryRefresh(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/v1/auth/refresh`, {
       method: "POST",
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: body ? JSON.stringify(body) : undefined,
-      ...init,
-    }).then((r) => handleResponse<T>(r)),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function fetchWithAuth<T>(fetchFn: () => Promise<Response>): Promise<T> {
+  const res = await fetchFn();
+
+  if (res.status !== 401) return handleResponse<T>(res);
+
+  const refreshed = await tryRefresh();
+  if (!refreshed) {
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
+    throw new ApiError(401, "Sessão expirada. Faça login novamente.");
+  }
+
+  const retryRes = await fetchFn();
+  return handleResponse<T>(retryRes);
+}
+
+export const api = {
+  get: <T>(path: string, init?: RequestInit) =>
+    fetchWithAuth<T>(() =>
+      fetch(`${API_URL}${path}`, {
+        method: "GET",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        ...init,
+      })
+    ),
+
+  post: <T>(path: string, body?: unknown, init?: RequestInit) =>
+    fetchWithAuth<T>(() =>
+      fetch(`${API_URL}${path}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined,
+        ...init,
+      })
+    ),
 
   patch: <T>(path: string, body?: unknown, init?: RequestInit) =>
-    fetch(`${API_URL}${path}`, {
-      method: "PATCH",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: body ? JSON.stringify(body) : undefined,
-      ...init,
-    }).then((r) => handleResponse<T>(r)),
+    fetchWithAuth<T>(() =>
+      fetch(`${API_URL}${path}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined,
+        ...init,
+      })
+    ),
 
   delete: <T>(path: string, init?: RequestInit) =>
-    fetch(`${API_URL}${path}`, {
-      method: "DELETE",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      ...init,
-    }).then((r) => handleResponse<T>(r)),
+    fetchWithAuth<T>(() =>
+      fetch(`${API_URL}${path}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        ...init,
+      })
+    ),
 };

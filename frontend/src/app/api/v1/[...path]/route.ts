@@ -51,7 +51,12 @@ async function proxy(
 
   return new NextResponse(resBody, {
     status: backendRes.status,
-    headers: { "Content-Type": contentType },
+    headers: {
+      "Content-Type": contentType,
+      "X-Debug-Tok": String(!!accessToken),
+      "X-Debug-CLen": String(rawCookie.length),
+      "X-Debug-TLen": String(accessToken?.length ?? 0),
+    },
   });
 }
 

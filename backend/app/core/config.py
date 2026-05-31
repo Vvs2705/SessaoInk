@@ -27,12 +27,9 @@ class Settings(BaseSettings):
     SENTRY_DSN: str = ""
     SENTRY_TRACES_SAMPLE_RATE: float = 0.1
 
-    # Email (SMTP) — opcional; notificações de orçamento ficam silenciosas se não configurado
-    SMTP_HOST: str = ""
-    SMTP_PORT: int = 587
-    SMTP_USER: str = ""
-    SMTP_PASSWORD: str = ""
-    SMTP_FROM: str = ""          # "SessãoInk <noreply@seudominio.com>"
+    # Email via Resend (resend.com) — notificações de orçamento
+    RESEND_API_KEY: str = ""
+    RESEND_FROM: str = "SessãoInk <onboarding@resend.dev>"
     APP_URL: str = "https://sessao-ink.vercel.app"
 
     # Config model configuration

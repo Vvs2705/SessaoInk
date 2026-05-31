@@ -50,7 +50,7 @@ jobs:
       # Vercel usa --legacy-peer-deps internamente; replicamos aqui
       - run: npm ci --legacy-peer-deps
       - name: Lint
-        run: npm run lint
+        run: npm run lint -- --no-cache
       - name: Type check
         run: npx tsc --noEmit
       - name: Build

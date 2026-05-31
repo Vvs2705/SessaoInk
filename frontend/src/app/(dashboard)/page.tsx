@@ -6,7 +6,6 @@ import { Calendar, ClipboardList, Users, Wallet, TrendingUp, AlertCircle, Copy, 
 import { api } from "@/lib/api/client";
 import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
-import { useState } from "react";
 import DetalhesAtendimentoModal from "./atendimentos/DetalhesAtendimentoModal";
 
 function StatCard({ label, value, icon: Icon, color, loading }: {

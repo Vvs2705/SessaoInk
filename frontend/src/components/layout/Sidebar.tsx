@@ -97,7 +97,7 @@ export function Sidebar() {
           <button
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-medium transition-all text-[#87938F] hover:bg-[#E35D5B]/10 hover:text-[#E35D5B]"
             onClick={async () => {
-              await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/logout`, { method: "POST", credentials: "include" });
+              await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ""}/api/v1/auth/logout`, { method: "POST", credentials: "include" });
               window.location.href = "/login";
             }}
           >

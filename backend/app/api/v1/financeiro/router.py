@@ -9,10 +9,10 @@ from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.auth.dependencies import get_usuario_atual
+from app.api.v1.auth.dependencies import get_usuario_atual, require_role
 from app.core.database import get_session
 from app.models.financeiro import Lancamento, TipoLancamento, StatusLancamento, FormaPagamentoFin
-from app.models.usuario import Usuario
+from app.models.usuario import TipoUsuario, Usuario
 from app.models.atendimento import Atendimento
 
 router = APIRouter(prefix="/financeiro", tags=["financeiro"])
@@ -242,7 +242,7 @@ async def atualizar_lancamento(
 async def deletar_lancamento(
     id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
-    usuario: Usuario = Depends(get_usuario_atual),
+    usuario: Usuario = Depends(require_role(TipoUsuario.ADMIN)),
 ):
     result = await session.execute(
         select(Lancamento).where(

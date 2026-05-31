@@ -43,3 +43,25 @@ class Documento(Base, UUIDMixin, TimestampMixin):
     data_assinatura: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     ip_assinatura: Mapped[str | None] = mapped_column(String(45), nullable=True)
     trilha_aceite: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    nome_assinante: Mapped[str | None] = mapped_column(String(200), nullable=True)
+
+
+class AcaoLink(str, enum.Enum):
+    VISUALIZAR = "VISUALIZAR"
+    ASSINAR = "ASSINAR"
+
+
+class DocumentoLinkAcesso(Base, UUIDMixin, TimestampMixin):
+    __tablename__ = "documento_links_acesso"
+
+    documento_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("documentos.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    acao: Mapped[AcaoLink] = mapped_column(Enum(AcaoLink, name="acao_link"), nullable=False)
+    expira_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    usado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revogado: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    ip_geracao: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    ip_uso: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    user_agent_uso: Mapped[str | None] = mapped_column(String(500), nullable=True)

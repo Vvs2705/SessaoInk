@@ -1,7 +1,9 @@
 """Router de Documentos e Termos."""
 
+import hashlib
+import secrets
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -10,8 +12,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.auth.dependencies import get_usuario_atual
+from app.core.config import settings
 from app.core.database import get_session
-from app.models.documento import Documento, TipoDocumento
+from app.models.documento import AcaoLink, Documento, DocumentoLinkAcesso, TipoDocumento
 from app.models.usuario import Usuario
 from app.models.cliente import Cliente
 from app.models.atendimento import Atendimento
@@ -137,3 +140,37 @@ async def deletar_documento(
         raise HTTPException(404, "Documento não encontrado")
     await session.delete(doc)
     return None
+
+
+@router.post("/{id}/gerar-link", response_model=dict)
+async def gerar_link_documento(
+    id: uuid.UUID,
+    acao: AcaoLink = AcaoLink.ASSINAR,
+    horas: int = 72,
+    session: AsyncSession = Depends(get_session),
+    usuario: Usuario = Depends(get_usuario_atual),
+):
+    """Gera link seguro de acesso ao documento para compartilhar com cliente."""
+    doc = await session.scalar(
+        select(Documento).where(
+            Documento.id == id, Documento.estudio_id == usuario.estudio_id
+        )
+    )
+    if not doc:
+        raise HTTPException(404, "Documento não encontrado")
+
+    token_raw = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(token_raw.encode()).hexdigest()
+    expira = datetime.now(timezone.utc) + timedelta(hours=max(1, min(horas, 720)))
+
+    link = DocumentoLinkAcesso(
+        documento_id=id,
+        token_hash=token_hash,
+        acao=acao,
+        expira_em=expira,
+    )
+    session.add(link)
+    await session.flush()
+
+    url = f"{settings.APP_URL}/documento/{token_raw}"
+    return {"url": url, "token": token_raw, "expira_em": expira.isoformat(), "acao": acao}

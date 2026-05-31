@@ -98,7 +98,18 @@ async def upload_foto(
     with open(caminho, "wb") as f:
         f.write(conteudo)
 
-    # 5. Criar registro no banco
+    # 5. Strip EXIF metadata para proteger privacidade
+    try:
+        from PIL import Image
+        img = Image.open(caminho)
+        data = list(img.getdata())
+        img_sem_exif = Image.new(img.mode, img.size)
+        img_sem_exif.putdata(data)
+        img_sem_exif.save(caminho)
+    except Exception:
+        pass  # Se Pillow falhar, manter arquivo original
+
+    # 6. Criar registro no banco
     item = Portfolio(
         estudio_id=usuario.estudio_id,
         artista_id=usuario.id,

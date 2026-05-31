@@ -1,6 +1,9 @@
 """Router do Portal Público — sem autenticação."""
 
-from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile, Request
+import hashlib
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, Form, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 from pathlib import Path
 from pydantic import BaseModel, EmailStr
@@ -9,14 +12,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 
 import uuid
-from datetime import datetime
 from app.core.config import settings
 from app.core.database import get_session
 from app.core.redis import verificar_limite_orcamento, registrar_solicitacao_orcamento
 from app.models.usuario import Estudio
 from app.models.atendimento import Atendimento, AtendimentoImagem, StatusOperacional, TipoAtendimento
 from app.models.portfolio import Portfolio, VisibilidadePortfolio, FlashArt, StatusFlash
-from app.models.documento import Documento
+from app.models.documento import AcaoLink, Documento, DocumentoLinkAcesso
 
 router = APIRouter(prefix="/public", tags=["portal-público"])
 
@@ -284,6 +286,16 @@ async def solicitar_orcamento(
     if not aceite_privacidade or not aceite_termos:
         raise HTTPException(400, "É necessário aceitar a política de privacidade e os termos de uso")
 
+    # 3. Validação de comprimento dos campos
+    if len(nome.strip()) < 2 or len(nome) > 200:
+        raise HTTPException(400, "Nome inválido (2-200 caracteres)")
+    if len(whatsapp.strip()) < 8 or len(whatsapp) > 30:
+        raise HTTPException(400, "WhatsApp inválido")
+    if descricao and len(descricao) > 2000:
+        raise HTTPException(400, "Descrição muito longa (máx 2000 caracteres)")
+    if observacoes and len(observacoes) > 1000:
+        raise HTTPException(400, "Observações muito longas (máx 1000 caracteres)")
+
     # 3. Registrar solicitação no Redis
     await registrar_solicitacao_orcamento(ip)
 
@@ -410,21 +422,48 @@ class PublicDocumentoResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class AssinarDocumentoRequest(BaseModel):
-    ip: str
-    user_agent: str
-    nome_assinante: str
+async def _validar_token_doc(
+    token: str,
+    session: AsyncSession,
+    acao: AcaoLink,
+) -> tuple[Documento, DocumentoLinkAcesso]:
+    """Valida token de acesso ao documento. Retorna (doc, link) ou lança 404."""
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    link = await session.scalar(
+        select(DocumentoLinkAcesso).where(
+            DocumentoLinkAcesso.token_hash == token_hash,
+            DocumentoLinkAcesso.acao == acao,
+            DocumentoLinkAcesso.revogado == False,
+            DocumentoLinkAcesso.usado_em == None,
+            DocumentoLinkAcesso.expira_em > datetime.now(timezone.utc),
+        )
+    )
+    if not link:
+        raise HTTPException(404, "Link inválido, expirado ou já utilizado")
+    doc = await session.get(Documento, link.documento_id)
+    if not doc:
+        raise HTTPException(404, "Documento não encontrado")
+    return doc, link
 
 
-@router.get("/documentos/{doc_id}", response_model=PublicDocumentoResponse)
-async def obter_documento_publico(
-    doc_id: uuid.UUID,
+@router.get("/documentos/token/{token}", response_model=PublicDocumentoResponse)
+async def obter_documento_por_token(
+    token: str,
     session: AsyncSession = Depends(get_session),
 ):
-    result = await session.execute(
-        select(Documento).where(Documento.id == doc_id)
+    """Acessa documento via token seguro de tempo limitado."""
+    # Aceita token de VISUALIZAR ou ASSINAR para leitura
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    link = await session.scalar(
+        select(DocumentoLinkAcesso).where(
+            DocumentoLinkAcesso.token_hash == token_hash,
+            DocumentoLinkAcesso.revogado == False,
+            DocumentoLinkAcesso.expira_em > datetime.now(timezone.utc),
+        )
     )
-    doc = result.scalar_one_or_none()
+    if not link:
+        raise HTTPException(404, "Link inválido ou expirado")
+    doc = await session.get(Documento, link.documento_id)
     if not doc:
         raise HTTPException(404, "Documento não encontrado")
     return PublicDocumentoResponse(
@@ -437,30 +476,41 @@ async def obter_documento_publico(
     )
 
 
-@router.post("/documentos/{doc_id}/assinar", status_code=200)
-async def assinar_documento_publico(
-    doc_id: uuid.UUID,
-    dados: AssinarDocumentoRequest,
+@router.post("/documentos/token/{token}/assinar", status_code=200)
+async def assinar_documento_por_token(
+    token: str,
+    request: Request,
+    nome_assinante: str = Form(...),
     session: AsyncSession = Depends(get_session),
 ):
-    from datetime import timezone
-    result = await session.execute(
-        select(Documento).where(Documento.id == doc_id)
-    )
-    doc = result.scalar_one_or_none()
-    if not doc:
-        raise HTTPException(404, "Documento não encontrado")
+    """Assina documento via token seguro. Captura IP/UA do request, não do body."""
+    doc, link = await _validar_token_doc(token, session, AcaoLink.ASSINAR)
+
     if doc.assinado:
         raise HTTPException(400, "Documento já está assinado")
 
+    now = datetime.now(timezone.utc)
+    ip = (
+        request.headers.get("x-forwarded-for", "")
+        .split(",")[0]
+        .strip()
+        or (request.client.host if request.client else "unknown")
+    )
+    ua = request.headers.get("user-agent", "")
+
     doc.assinado = True
-    doc.data_assinatura = datetime.now(timezone.utc)
-    doc.ip_assinatura = dados.ip
+    doc.data_assinatura = now
+    doc.ip_assinatura = ip
+    doc.nome_assinante = nome_assinante
     doc.trilha_aceite = {
-        "user_agent": dados.user_agent,
-        "nome_assinante": dados.nome_assinante,
-        "assinado_em": doc.data_assinatura.isoformat(),
+        "user_agent": ua,
+        "nome_assinante": nome_assinante,
+        "assinado_em": now.isoformat(),
     }
+
+    link.usado_em = now
+    link.ip_uso = ip
+    link.user_agent_uso = ua
 
     await session.commit()
     return {"message": "Documento assinado com sucesso"}

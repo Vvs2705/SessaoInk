@@ -1,144 +1,175 @@
-# PLANO DE FINALIZAÇÃO ATÉ 100% — SessãoInk
+# PLANO DE FINALIZACAO ATE 100% - SessaoInk
 
-> Auditoria ORQUESTRADOR de 2026-06-01 (modo verificação, sem ações corretivas).
-> Este arquivo lista o que FALTA e COMO concluir cada item até 100% dos dois
-> documentos (`SESSAOINK_ORDEM_CORRECAO_TECNICA` + `RELATORIO_AUDITORIA`).
-> Siga o **loop de qualidade** do `HANDOFF_ANTIGRAVITY.md` §2 em cada item.
-
----
-
-## ✅ JÁ CONCLUÍDO E VERIFICADO (CI verde, prod v32)
-
-- **P0-01,03,04,05,06,07,08,09,10** (sessão anterior).
-- **P1-05** correlation_id ponta a ponta (`7bdb189`).
-- **P1-01** tenant helpers `services/tenant.py` + routers refatorados + testes (`b67d6f3`).
-- **P2-03** índices compostos (migration `e4f5a6b7c8d9`) (`b67d6f3`).
-- **P2-02** Docker/SBOM scan (Trivy + CycloneDX, advisory) (`b67d6f3`).
-- **P1-02** `requirements.lock` (lock de runtime) (`95e612c`).
-- **P1-03** LGPD infra: model `consentimento.py`, `services/lgpd.py`, config 180d,
-  migration `f5a6b7c8d9e0` (`95e612c`). ⚠️ ver gap LGPD-1 abaixo.
-- CI bloqueante: **94 testes**, migrations em Postgres limpo, prod `/ready` OK.
-
-**Estado:** HEAD `95e612c` · backend Fly **v32** · migration head `f5a6b7c8d9e0`.
+> Fonte unica de verdade desde 2026-06-01. O plano antigo
+> `PLANO_CORRECAO_SESSAOINK.md` foi removido do repositorio e nao deve ser
+> usado para retomadas.
 
 ---
 
-## ❌ O QUE FALTA PARA 100% (ordenado por prioridade)
+## JA CONCLUIDO E VERIFICADO
 
-### 🔴 PRIORIDADE 1 — Segurança / Compliance (bloqueadores reais)
+Estado confirmado em 2026-06-01:
 
-#### LGPD-1 — Anonimização nunca é executada (gap crítico de compliance)
-- **Problema:** `app/services/lgpd.py::anonimizar_orcamentos_publicos_expirados()`
-  existe mas **não é chamada em lugar nenhum** (sem cron, sem endpoint, sem job).
-  A "retenção automática após 180 dias" (decisão do usuário) **não está ativa**.
-- **Como corrigir (escolher 1):**
-  - (a) Endpoint admin `POST /api/v1/admin/lgpd/anonimizar` (`require_role(ADMIN)`)
-    que invoca a função — disparo manual/externo via cron da plataforma.
-  - (b) Job agendado: GitHub Action (cron diário) chamando o endpoint (a), OU
-    APScheduler no startup do FastAPI (cuidado com múltiplas instâncias).
-  - **Recomendado:** (a) + GitHub Action diária autenticada. Simples e auditável.
-- **Aceite:** rodar o gatilho anonimiza orçamentos não convertidos com > 180 dias
-  (remove nome/whatsapp/IP/imagens), gera evento de auditoria `lgpd.anonymized`,
-  e é idempotente. Teste de integração com data simulada.
-- **Arquivos:** novo `app/api/v1/admin/router.py` (ou em auditoria), `.github/workflows/lgpd-retention.yml`, `tests/integration/test_lgpd.py`.
+- GitHub `main` em `41039a9` (`fix: corrigir connect-src em producao`).
+- CI verde no run `26767041667`: Backend, Frontend, Migrations, Secret Scan,
+  Security Scan e Docker/SBOM.
+- Backend Fly `sessaoink-api` em producao, machine version 33, `/ready` OK:
+  `{"status":"ready","checks":{"database":"ok","redis":"ok"}}`.
+- Frontend Vercel em producao, deploy mais recente `sessao-5pgnru5o5...`
+  Ready, dominio publico `https://sessao-ink.vercel.app` respondendo 307 para
+  `/login?from=%2F`.
+- CSP publico confirmado sem `unsafe-eval` e com `connect-src` apontando para
+  `https://sessaoink-api.fly.dev`, sem fallback para localhost.
 
-#### P0-02 — CSRF double-submit (não implementado)
-- **Estado atual:** defesa via SameSite=Lax + validação de Origin em 2 camadas
-  (proxy + backend `X-Origin-Browser`) — **aceitável** pelo RELATORIO P0-03, mas a
-  ORDEM exige double-submit. Hoje só existe o header em `allow_headers` (CORS).
-- **Como corrigir (rollout SEGURO, isolado — validar fluxo logado com o usuário):**
-  1. Backend: setar cookie `csrf_token` (não-HttpOnly, Secure em prod, SameSite=Lax)
-     em login/refresh; limpar em logout/logout-all.
-  2. Middleware backend: em POST/PUT/PATCH/DELETE exigir `X-CSRF-Token == csrf_token`.
-     **Tolerante** (só exige se o cookie existir) por 1 ciclo de deploy p/ não deslogar
-     todos; depois estrito. Endpoints `/public/*` e `/auth/login` isentos.
-  3. Frontend: ler `csrf_token` de `document.cookie` e injetar `X-CSRF-Token` em
-     **todas** as mutações. ⚠️ AUDITAR TODOS os call-sites de fetch antes de exigir.
-  4. Proxy `login/route.ts` já encaminha Set-Cookie (split) → cookie chega ao browser.
-- **Aceite:** POST/PUT/PATCH/DELETE autenticado sem header válido → 403; GET/HEAD isentos;
-  endpoints públicos isentos; fluxo logado real testado pós-deploy.
-- **Arquivos:** `backend/app/main.py` (middleware), `auth/router.py` (cookie),
-  `frontend/src/lib/api/client.ts` + call-sites, `tests/integration/test_csrf.py`.
+Itens fechados nesta rodada:
 
----
+- LGPD-1: endpoint admin + workflow GitHub Action + testes + auditoria
+  `lgpd.anonymized`.
+- P0-02 parcial/rollout seguro: CSRF double-submit tolerante com cookie,
+  header no frontend e testes.
+- P1-03: `backend/openapi.json`, `docs/api.md`, script e gate de CI.
+- P0-03 incremental: owner-check granular para ARTISTA em agenda,
+  atendimentos, portfolio e flash.
+- P1-07 primeira etapa: removido `unsafe-eval` do CSP; `unsafe-inline` de script
+  e style ainda ficam para a etapa com nonce/hash.
+- DevEx inicial: `.pre-commit-config.yaml`, `CHANGELOG.md`, template de release
+  e handoff curto para o Antigravity.
+- Housekeeping: documentos antigos removidos e plano final versionado.
 
-### 🟡 PRIORIDADE 2 — Hardening / Contratos
+Commits relevantes:
 
-#### P1-07 (doc2) — CSP: remover `unsafe-inline` / `unsafe-eval`
-- **Estado:** `frontend/next.config.*` ainda tem `script-src 'self' 'unsafe-eval'
-  'unsafe-inline'` e `style-src 'self' 'unsafe-inline'`.
-- **Como corrigir:** migrar para nonce/hash; testar Next.js 15 + Sentry/PostHog
-  (alguns exigem ajustes). Remover `unsafe-eval` primeiro (mais perigoso), depois
-  `unsafe-inline` de script. Manter `style-src unsafe-inline` só se Tailwind exigir.
-- **Aceite:** app funciona sem erros de CSP no console; build verde; validado em staging.
-- **Risco:** ALTO (pode quebrar runtime) — isolar e testar visualmente.
-
-#### P1-03 (doc2) — Contratos OpenAPI versionados
-- **Estado:** sem `openapi.json` versionado nem `docs/api.md`.
-- **Como corrigir:** script que exporta o schema do FastAPI (`app.openapi()`) para
-  `backend/openapi.json` em build/CI; opcional gerar tipos no frontend. Documentar erros
-  padronizados (401/403/404/422/409/429) em `docs/api.md`.
-- **Aceite:** `openapi.json` versionado e atualizado no CI; `docs/api.md` criado.
-
-#### P0-03 incremental — Owner-check granular ARTISTA
-- **Estado:** RBAC por papel feito; falta checagem de **instância** (ARTISTA só acessa
-  o próprio recurso vinculado a `usuario.id`).
-- **Como corrigir:** nos helpers de tenant/owner, validar `artista_id == usuario.id`
-  para ARTISTA em portfólio/flash/agenda próprios. +testes parametrizados.
+- `9493fbc` - `feat: concluir hardening LGPD CSRF e contratos`
+- `2685c5a` - `fix: estabilizar gates de CI`
+- `585b8d1` - `fix: normalizar ordem do schema OpenAPI`
+- `80d8a96` - `fix: endurecer CSP do frontend`
+- `41039a9` - `fix: corrigir connect-src em producao`
 
 ---
 
-### 🟢 PRIORIDADE 3 — Produto / MVP (RELATORIO P1-04/P1-05)
+## BLOQUEIO OPERACIONAL CONHECIDO
 
-#### MVP-1 — Completar fluxos funcionais e estados de UX
-- **Escopo (validar por tela, com teste E2E mínimo):** autenticação, clientes, agenda
-  (conflito de horário), atendimentos (`/atendimentos/[id]`), financeiro (pago/estorno),
-  documentos (aceite/auditoria), portfólio/flash (publicar/despublicar), portal público
-  (orçamento, rate limit, anti-spam, validação).
-- **Estados obrigatórios em cada tela:** carregando, vazio, erro, sucesso, sem permissão.
-- **Aceite:** cada fluxo com UI funcional + validação backend + erro amigável + smoke E2E.
-- **Obs:** maior esforço; quebrar por tela; não-bloqueante de segurança.
+### LGPD workflow ainda nao operacional
 
----
+O codigo e o deploy estao prontos, mas o dry-run manual do workflow falhou em
+`Validar secrets obrigatorios` porque o repositorio possui apenas
+`NEON_API_KEY`.
 
-### ⚪ PRIORIDADE 4 — Observabilidade / DevEx (P2/P3)
+Secrets faltantes no GitHub:
 
-- **P2-01 dashboards:** eventos PostHog (registro, login, lead, orçamento, atendimento,
-  pagamento, documento aceito) + alertas Sentry (5xx, `/ready` 503, latência, pico de login).
-- **P2-04 docs:** `docs/api.md` (ver acima); diagrama em `docs/architecture.md` (já há base).
-- **P3-01 DevEx:** `.pre-commit-config.yaml` (ruff + ruff-format), já há Makefile.
-- **P3-02 releases:** versionamento semântico + `CHANGELOG.md` + tags/releases GitHub.
-- **P1-04 backups (resto):** runbook já existe; falta **evidência de restore testado** e
-  decisão de **object storage** (S3/R2) para uploads (volume Fly não tem PITR).
+- `SESSAOINK_ADMIN_EMAIL`
+- `SESSAOINK_ADMIN_PASSWORD`
+
+Aceite pendente:
+
+- Configurar os secrets acima ou trocar o workflow para token de servico.
+- Rodar `LGPD Retention` com `dry_run=true` e confirmar sucesso.
+- Depois rodar sem `dry_run` apenas quando o usuario confirmar que pode tocar
+  dados reais.
 
 ---
 
-## 🧹 HOUSEKEEPING (working tree atual — não-commitado)
-- 2 arquivos DELETADOS sem commit: `PLANO_CORRECAO_SESSAOINK.md` e
-  `"AUDITORIA TÉCNICA PROFUNDA ... SESSÃOINK.MD"`. Decidir: commitar a remoção ou
-  restaurar (`git checkout -- <arquivo>`).
-- `HANDOFF_ANTIGRAVITY.md` e este `PLANO_FINALIZACAO_100.md` estão untracked —
-  commitar se quiser versioná-los.
-- Confirmar que **v32 reflete o último commit** `95e612c` (deploy ~02:45, commit 02:37 →
-  provavelmente sim; validar com um `flyctl deploy` se houver dúvida, pois `/ready` está OK).
+## O QUE FALTA PARA 100%
+
+### Prioridade 1 - Seguranca / Compliance
+
+#### CSRF strict mode
+
+Estado atual: modo tolerante em producao para nao quebrar sessoes existentes.
+
+Proximo passo:
+
+1. Validar fluxo logado real em producao: login, criar/editar cliente, agenda,
+   atendimento, financeiro, documentos, portfolio/flash e logout.
+2. Confirmar que todas as mutacoes enviam `X-CSRF-Token`.
+3. Alterar middleware para modo estrito em POST/PUT/PATCH/DELETE autenticado.
+4. Validar local, commit, push, CI verde e deploy se necessario.
+
+Aceite:
+
+- Mutacao autenticada sem header valido retorna 403.
+- GET/HEAD e endpoints publicos continuam isentos.
+- Fluxo logado real continua funcional.
+
+### Prioridade 2 - Hardening
+
+#### CSP com nonce/hash
+
+Estado atual:
+
+- `unsafe-eval` removido.
+- `script-src 'unsafe-inline'` ainda presente.
+- `style-src 'unsafe-inline'` ainda presente por compatibilidade.
+
+Proximo passo:
+
+1. Migrar scripts inline para nonce/hash.
+2. Testar Next.js 15, Sentry e PostHog em runtime real.
+3. Remover `script-src 'unsafe-inline'`.
+4. Manter `style-src 'unsafe-inline'` somente se ainda necessario.
+
+Aceite:
+
+- App sem erros CSP no console.
+- Build e CI verdes.
+- Header publico sem `unsafe-eval` e sem `script-src 'unsafe-inline'`.
+
+### Prioridade 3 - Produto / MVP
+
+#### MVP-1 - Fluxos funcionais e estados de UX
+
+Validar e completar por tela:
+
+- Autenticacao.
+- Clientes.
+- Agenda, incluindo conflito de horario.
+- Atendimentos e `/atendimentos/[id]`.
+- Financeiro, incluindo pago/estorno.
+- Documentos, aceite e auditoria.
+- Portfolio/flash, publicar/despublicar.
+- Portal publico, orcamento, rate limit, anti-spam e validacao.
+
+Estados obrigatorios por tela:
+
+- Carregando.
+- Vazio.
+- Erro.
+- Sucesso.
+- Sem permissao.
+
+Aceite:
+
+- UI funcional.
+- Validacao backend coerente.
+- Erro amigavel.
+- Smoke E2E minimo por fluxo.
+
+### Prioridade 4 - Observabilidade / DevEx
+
+- P2-01 dashboards: eventos PostHog para registro, login, lead, orcamento,
+  atendimento, pagamento e documento aceito.
+- Alertas Sentry: 5xx, `/ready` 503, latencia e pico de login.
+- P2-04 docs: complementar `docs/architecture.md` se necessario.
+- P3-02 releases: criar tag/release GitHub quando o usuario autorizar.
+- P1-04 backups: registrar evidencia de restore testado.
+- P1-04 uploads: decidir object storage (S3/R2) para arquivos; volume Fly nao
+  entrega PITR para uploads.
 
 ---
 
-## 📋 ORDEM RECOMENDADA ATÉ 100%
-1. **LGPD-1** (compliance — função existe, só falta o gatilho) — rápido e alto valor.
-2. **P0-02 CSRF double-submit** (isolado, validar fluxo logado).
-3. **Owner-check ARTISTA** + **OpenAPI/docs**.
-4. **CSP** (isolado, testar visual).
-5. **MVP flows + estados de UX** (por tela).
-6. **P2/P3** (dashboards, pre-commit, releases, evidência de restore, object storage).
+## ORDEM RECOMENDADA A PARTIR DE AGORA
 
-## CONTAGEM
-- **Documento 1 (ORDEM):** P0 9/10 (falta P0-02) + P1 5/5 infra (LGPD precisa do gatilho
-  LGPD-1) → faltam **~2 itens** (CSRF + ativar LGPD).
-- **Documento 2 (AUDITORIA):** faltam **~9** (CSRF, CSP, OpenAPI/docs, fluxos MVP, estados
-  UX, dashboards, pré-commit, releases, evidência de restore/object storage).
-- **Segurança crítica:** ~95% pronta; os 2 itens da Prioridade 1 fecham o essencial.
+1. Configurar os secrets do workflow LGPD e rodar dry-run.
+2. Validar fluxo logado real e fechar CSRF strict mode.
+3. Isolar CSP nonce/hash e remover `script-src 'unsafe-inline'`.
+4. Executar MVP-1 por telas, com smoke E2E minimo.
+5. Fechar observabilidade, restore testado e decisao de object storage.
 
-> Regras: validar local antes de commit · push após commit · CI verde (5 jobs) ·
-> deploy só com runtime alterado · `/ready` OK · atualizar `memory/hardening_p0_progress.md`.
-> Itens de auth/CSRF/CSP/fluxos = ISOLAR e validar fluxo logado com o usuário.
+## REGRAS DE EXECUCAO
+
+- Validar local antes de commit.
+- Push apos commit.
+- Confirmar CI verde.
+- Deploy backend apenas quando runtime/backend/migration mudar.
+- Confirmar `/ready` apos deploy backend.
+- Itens de auth, dados reais, pagamento ou deploy exigem confirmacao do usuario
+  antes de tocar producao.

@@ -3,36 +3,26 @@
 import io
 
 from httpx import AsyncClient
+from PIL import Image
 
 # ── Helpers de imagem de teste ────────────────────────────────────────────────
+# O pipeline de upload seguro (P0-04) decodifica a imagem com Pillow, então os
+# fixtures precisam ser imagens REAIS (decodificáveis), não apenas headers válidos.
 
 def jpeg_minimo() -> bytes:
-    """JPEG mínimo válido (magic bytes corretos + SOF mínimo)."""
-    return (
-        b"\xff\xd8\xff\xe0"   # SOI + APP0 marker
-        b"\x00\x10"            # APP0 length (16)
-        b"JFIF\x00"            # identifier
-        b"\x01\x01"            # version 1.1
-        b"\x00"                # aspect ratio units
-        b"\x00\x01\x00\x01"   # X/Y density
-        b"\x00\x00"            # thumbnail size
-        b"\xff\xd9"            # EOI
-    )
+    """JPEG real mínimo (decodificável pelo Pillow)."""
+    img = Image.new("RGB", (4, 4), (200, 100, 50))
+    out = io.BytesIO()
+    img.save(out, format="JPEG")
+    return out.getvalue()
 
 
 def png_minimo() -> bytes:
-    """PNG mínimo válido (magic bytes corretos)."""
-    import struct
-    import zlib
-    sig = b"\x89PNG\r\n\x1a\n"
-
-    def chunk(kind: bytes, data: bytes) -> bytes:
-        c = kind + data
-        return struct.pack(">I", len(data)) + c + struct.pack(">I", zlib.crc32(c) & 0xFFFFFFFF)
-
-    ihdr = struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0)  # 1x1 RGB
-    idat = zlib.compress(b"\x00\xFF\xFF\xFF")              # 1 pixel branco
-    return sig + chunk(b"IHDR", ihdr) + chunk(b"IDAT", idat) + chunk(b"IEND", b"")
+    """PNG real mínimo (decodificável pelo Pillow)."""
+    img = Image.new("RGB", (4, 4), (255, 255, 255))
+    out = io.BytesIO()
+    img.save(out, format="PNG")
+    return out.getvalue()
 
 
 def arquivo_invalido() -> bytes:

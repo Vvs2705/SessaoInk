@@ -12,25 +12,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.auth.dependencies import get_usuario_atual
 from app.core.config import settings
 from app.core.database import get_session
+from app.core.upload_security import processar_upload
 from app.models.portfolio import FlashArt, StatusFlash
 from app.models.usuario import Usuario
 
 router = APIRouter(prefix="/flash-arts", tags=["flash-arts"])
-
-# Tipos MIME permitidos e seus magic bytes
-ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp"}
-MAX_SIZE = settings.UPLOAD_MAX_SIZE_MB * 1024 * 1024  # 15MB
-
-
-def detectar_extensao(conteudo: bytes) -> str:
-    """Detecta extensão pelo magic bytes. Retorna None se não reconhecido."""
-    if conteudo[:3] == b"\xff\xd8\xff":
-        return "jpg"
-    if conteudo[:4] == b"\x89PNG":
-        return "png"
-    if b"WEBP" in conteudo[0:12]:
-        return "webp"
-    return ""
 
 
 class FlashArtResponse(BaseModel):
@@ -72,41 +58,13 @@ async def criar_flash_art(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    # 1. Verificar MIME
-    if arquivo.content_type not in ALLOWED_MIME:
-        raise HTTPException(415, f"Tipo não permitido: {arquivo.content_type}")
+    # Pipeline seguro compartilhado (P0-04): tamanho, magic bytes, MIME,
+    # strip de EXIF e nome de arquivo seguro.
+    nome_arquivo, _imagem = await processar_upload(
+        arquivo, str(usuario.estudio_id), "flash_arts"
+    )
 
-    # 2. Verificar tamanho
-    conteudo = await arquivo.read(MAX_SIZE + 1)
-    if len(conteudo) > MAX_SIZE:
-        raise HTTPException(413, f"Arquivo muito grande (máx {settings.UPLOAD_MAX_SIZE_MB}MB)")
-
-    # 3. Magic bytes
-    ext = detectar_extensao(conteudo)
-    if not ext:
-        raise HTTPException(415, "Formato de imagem não reconhecido")
-
-    # 4. Salvar com UUID no path seguro
-    nome_arquivo = f"{uuid.uuid4()}.{ext}"
-    dir_upload = Path(settings.STORAGE_PATH) / "uploads" / str(usuario.estudio_id) / "flash_arts"
-    dir_upload.mkdir(parents=True, exist_ok=True)
-    caminho = dir_upload / nome_arquivo
-
-    with open(caminho, "wb") as f:
-        f.write(conteudo)
-
-    # 5. Strip EXIF metadata para proteger privacidade
-    try:
-        from PIL import Image
-        img = Image.open(caminho)
-        data = list(img.getdata())
-        img_sem_exif = Image.new(img.mode, img.size)
-        img_sem_exif.putdata(data)
-        img_sem_exif.save(caminho)
-    except Exception:
-        pass  # Se Pillow falhar, manter arquivo original
-
-    # 6. Criar registro no banco
+    # Criar registro no banco
     flash = FlashArt(
         estudio_id=usuario.estudio_id,
         artista_id=usuario.id,

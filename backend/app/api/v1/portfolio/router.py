@@ -12,29 +12,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.auth.dependencies import get_usuario_atual
 from app.core.config import settings
 from app.core.database import get_session
+from app.core.upload_security import processar_upload
 from app.models.portfolio import Portfolio, VisibilidadePortfolio
 from app.models.usuario import Usuario
 
 router = APIRouter(prefix="/portfolio", tags=["portfolio"])
-
-# Tipos MIME permitidos e seus magic bytes
-ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp"}
-MAGIC = {
-    b"\xff\xd8\xff": "jpg",
-    b"\x89PNG": "png",
-}
-MAX_SIZE = settings.UPLOAD_MAX_SIZE_MB * 1024 * 1024  # 15MB
-
-
-def detectar_extensao(conteudo: bytes) -> str:
-    """Detecta extensão pelo magic bytes. Retorna None se não reconhecido."""
-    if conteudo[:3] == b"\xff\xd8\xff":
-        return "jpg"
-    if conteudo[:4] == b"\x89PNG":
-        return "png"
-    if b"WEBP" in conteudo[0:12]:
-        return "webp"
-    return ""
 
 
 class PortfolioResponse(BaseModel):
@@ -72,42 +54,14 @@ async def upload_foto(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    """Upload de foto do portfólio com validação de tipo e tamanho."""
-    # 1. Verificar MIME declarado
-    if arquivo.content_type not in ALLOWED_MIME:
-        raise HTTPException(415, f"Tipo não permitido: {arquivo.content_type}")
+    """Upload de foto do portfólio — pipeline seguro compartilhado (P0-04)."""
+    # Validação de tamanho, magic bytes, MIME, strip de EXIF e nome seguro:
+    # tudo centralizado em upload_security.processar_upload.
+    nome_arquivo, _imagem = await processar_upload(
+        arquivo, str(usuario.estudio_id), "portfolio"
+    )
 
-    # 2. Ler arquivo e verificar tamanho
-    conteudo = await arquivo.read(MAX_SIZE + 1)
-    if len(conteudo) > MAX_SIZE:
-        raise HTTPException(413, f"Arquivo muito grande (máx {settings.UPLOAD_MAX_SIZE_MB}MB)")
-
-    # 3. Verificar magic bytes
-    ext = detectar_extensao(conteudo)
-    if not ext:
-        raise HTTPException(415, "Formato de imagem não reconhecido")
-
-    # 4. Salvar com UUID no path seguro
-    nome_arquivo = f"{uuid.uuid4()}.{ext}"
-    dir_upload = Path(settings.STORAGE_PATH) / "uploads" / str(usuario.estudio_id) / "portfolio"
-    dir_upload.mkdir(parents=True, exist_ok=True)
-    caminho = dir_upload / nome_arquivo
-
-    with open(caminho, "wb") as f:
-        f.write(conteudo)
-
-    # 5. Strip EXIF metadata para proteger privacidade
-    try:
-        from PIL import Image
-        img = Image.open(caminho)
-        data = list(img.getdata())
-        img_sem_exif = Image.new(img.mode, img.size)
-        img_sem_exif.putdata(data)
-        img_sem_exif.save(caminho)
-    except Exception:
-        pass  # Se Pillow falhar, manter arquivo original
-
-    # 6. Criar registro no banco
+    # Criar registro no banco
     item = Portfolio(
         estudio_id=usuario.estudio_id,
         artista_id=usuario.id,

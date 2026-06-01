@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.database import get_session
 from app.core.redis import registrar_solicitacao_orcamento, verificar_limite_orcamento
+from app.core.upload_security import processar_upload
 from app.models.atendimento import (
     Atendimento,
     AtendimentoImagem,
@@ -332,7 +333,6 @@ async def solicitar_orcamento(
     await session.flush()
 
     # Salvar imagens fisicamente se houver
-    import uuid
     if imagens:
         # 1. Validar quantidade
         # Filtrar imagens enviadas vazias
@@ -340,37 +340,17 @@ async def solicitar_orcamento(
         if len(imagens_validas) > 5:
             raise HTTPException(400, "Você pode enviar no máximo 5 imagens de referência.")
 
-        ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp"}
-        MAX_SIZE = settings.UPLOAD_MAX_SIZE_MB * 1024 * 1024  # 15MB
-
         salvos_no_disco = []
-        upload_dir = Path(settings.STORAGE_PATH) / "uploads" / str(estudio.id) / "atendimentos" / str(atendimento.id)
+        subdirs = (str(estudio.id), "atendimentos", str(atendimento.id))
+        upload_dir = Path(settings.STORAGE_PATH).joinpath("uploads", *subdirs)
 
         try:
             for imagem in imagens_validas:
-                # 2. Validar content_type
-                if imagem.content_type not in ALLOWED_MIME:
-                    raise HTTPException(415, f"Tipo de arquivo não permitido: {imagem.filename}. Use JPG, PNG ou WEBP.")
-
-                # 3. Ler conteúdo e validar tamanho
-                conteudo = await imagem.read()
-                if len(conteudo) > MAX_SIZE:
-                    raise HTTPException(413, f"O arquivo {imagem.filename} excede o tamanho máximo de {settings.UPLOAD_MAX_SIZE_MB}MB.")
-
-                # Gerar nome de arquivo único e seguro
-                ext = Path(imagem.filename).suffix.lower()
-                if ext not in {".jpg", ".jpeg", ".png", ".webp"}:
-                    ext = ".jpg" # fallback/segurança
-                novo_nome = f"{uuid.uuid4()}{ext}"
-
-                upload_dir.mkdir(parents=True, exist_ok=True)
-                caminho_arquivo = upload_dir / novo_nome
-
-                # Salvar o arquivo
-                with open(caminho_arquivo, "wb") as f:
-                    f.write(conteudo)
-
-                salvos_no_disco.append(caminho_arquivo)
+                # Pipeline seguro compartilhado (P0-04) — mesma validação do upload
+                # privado: tamanho, magic bytes, MIME consistente, strip de EXIF,
+                # nome de arquivo seguro. Upload público NÃO é exceção de segurança.
+                novo_nome, _img = await processar_upload(imagem, *subdirs)
+                salvos_no_disco.append(upload_dir / novo_nome)
 
                 # Registrar no banco de dados
                 atendimento_imagem = AtendimentoImagem(

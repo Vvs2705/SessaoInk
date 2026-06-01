@@ -5,11 +5,22 @@ const BACKEND = process.env.BACKEND_URL || "https://sessaoink-api.fly.dev";
 export async function POST(request: NextRequest) {
   const body = await request.text();
 
+  // Encaminhar o IP real do browser para o backend (rate limit de login por IP).
+  // A Vercel define x-forwarded-for/x-real-ip na borda; sem repassar, o backend
+  // veria apenas o IP do servidor Vercel e todos os logins dividiriam o bucket.
+  const clientIp =
+    request.headers.get("x-forwarded-for") ??
+    request.headers.get("x-real-ip") ??
+    "";
+
+  const fwdHeaders: Record<string, string> = { "Content-Type": "application/json" };
+  if (clientIp) fwdHeaders["X-Forwarded-For"] = clientIp;
+
   let backendRes: Response;
   try {
     backendRes = await fetch(`${BACKEND}/api/v1/auth/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: fwdHeaders,
       body,
     });
   } catch {

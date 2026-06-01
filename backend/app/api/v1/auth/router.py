@@ -24,6 +24,7 @@ from app.core.redis import (
     salvar_refresh_token,
     verificar_bloqueio_login,
 )
+from app.core.request_context import get_client_ip
 from app.core.security import (
     criar_access_token,
     criar_refresh_token,
@@ -59,7 +60,9 @@ async def login(
 
     Rate limiting: 5 tentativas falhas por IP → bloqueio de 15 minutos (ADR-009).
     """
-    ip = request.client.host if request.client else "unknown"
+    # IP real do browser (via proxy Vercel/Fly) — não o IP do servidor Vercel.
+    # Sem isso, o rate limit compartilharia o mesmo bucket para todos os usuários.
+    ip = get_client_ip(request)
 
     # Verificar bloqueio por excesso de tentativas
     if await verificar_bloqueio_login(ip):

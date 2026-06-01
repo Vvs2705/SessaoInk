@@ -63,6 +63,12 @@ async function proxy(
     headers.set("X-Origin-Browser", APP_ORIGIN);
   }
 
+  // Encaminhar o IP real do browser (rate limit e auditoria por IP no backend).
+  const clientIp =
+    request.headers.get("x-forwarded-for") ??
+    request.headers.get("x-real-ip");
+  if (clientIp) headers.set("X-Forwarded-For", clientIp);
+
   const hasBody = !["GET", "HEAD", "DELETE"].includes(request.method);
 
   let body: ArrayBuffer | string | undefined;

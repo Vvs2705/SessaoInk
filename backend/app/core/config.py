@@ -15,6 +15,11 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     ALLOWED_ORIGINS: str | list[str] = ["http://localhost:3000"]
 
+    # Trusted proxy — o backend roda atrás de Vercel (proxy) + Fly edge.
+    # Quando True, `get_client_ip` confia em X-Forwarded-For/Fly-Client-IP.
+    # Desligue apenas se o backend passar a receber tráfego direto não confiável.
+    TRUSTED_PROXY_ENABLED: bool = True
+
     # Database
     DATABASE_URL: str
     REDIS_URL: str

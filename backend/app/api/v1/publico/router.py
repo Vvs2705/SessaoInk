@@ -2,7 +2,7 @@
 
 import hashlib
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
@@ -22,10 +22,17 @@ from app.models.atendimento import (
     StatusOperacional,
     TipoAtendimento,
 )
+from app.models.consentimento import Consentimento
 from app.models.documento import AcaoLink, Documento, DocumentoLinkAcesso
 from app.models.portfolio import FlashArt, Portfolio, StatusFlash, VisibilidadePortfolio
 from app.models.usuario import Estudio
 from app.services.audit import log_event
+
+
+def _hash_lgpd(value: str | None) -> str | None:
+    if not value:
+        return None
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 router = APIRouter(prefix="/public", tags=["portal-público"])
 
@@ -320,6 +327,9 @@ async def solicitar_orcamento(
     if observacoes:
         notas += f"\nObservações: {observacoes}"
 
+    now = datetime.now(UTC)
+    retencao_ate = now + timedelta(days=settings.LGPD_ORCAMENTO_RETENCAO_DIAS)
+
     # Criar atendimento automaticamente
     atendimento = Atendimento(
         estudio_id=estudio.id,
@@ -330,9 +340,24 @@ async def solicitar_orcamento(
         estilo=estilo,
         tamanho_cm=tamanho_cm,
         notas_privadas=notas,
+        orcamento_publico=True,
+        lgpd_retencao_ate=retencao_ate,
     )
     session.add(atendimento)
     await session.flush()
+
+    consentimento = Consentimento(
+        estudio_id=estudio.id,
+        atendimento_id=atendimento.id,
+        origem="orcamento_publico",
+        aceite_privacidade=aceite_privacidade,
+        aceite_termos=aceite_termos,
+        versao_privacidade=settings.LGPD_PRIVACIDADE_VERSAO,
+        versao_termos=settings.LGPD_TERMOS_VERSAO,
+        ip_hash=_hash_lgpd(get_client_ip(request)),
+        user_agent_hash=_hash_lgpd(get_user_agent(request)),
+    )
+    session.add(consentimento)
 
     # Salvar imagens fisicamente se houver
     if imagens:

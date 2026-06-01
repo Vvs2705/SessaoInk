@@ -30,8 +30,8 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - name: Instalar dependências (runtime + dev pinadas)
-        run: pip install --upgrade pip && pip install -r requirements.txt -r requirements-dev.txt
+      - name: Instalar dependências (runtime lock + dev pinadas)
+        run: pip install --upgrade pip && pip install -r requirements.lock -r requirements-dev.txt
       - name: Lint (ruff) — bloqueante
         run: ruff check .
       - name: Type check (pyright) — bloqueante
@@ -76,7 +76,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install --upgrade pip && pip install -r requirements.txt
+      - run: pip install --upgrade pip && pip install -r requirements.lock
       - name: alembic upgrade head — banco limpo
         run: alembic upgrade head
       - name: alembic upgrade head idempotente (segunda execução)
@@ -117,7 +117,7 @@ jobs:
         # Advisory por ora: vulnerabilidades transitivas do ecossistema Python
         # exigem triagem de exploitabilidade antes de bloquear merge.
         continue-on-error: true
-        run: pip install pip-audit && pip-audit -r backend/requirements.txt
+        run: pip install pip-audit && pip-audit -r backend/requirements.lock
 
   docker-sbom:
     name: Docker/SBOM Scan (advisory)

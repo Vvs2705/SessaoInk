@@ -9,6 +9,7 @@ from app.models.atendimento import (  # noqa: F401
 )
 from app.models.audit_log import AuditLog  # noqa: F401
 from app.models.cliente import Cliente  # noqa: F401
+from app.models.consentimento import Consentimento  # noqa: F401
 from app.models.convite import Convite, StatusConvite  # noqa: F401
 from app.models.documento import (  # noqa: F401
     AcaoLink,
@@ -45,4 +46,5 @@ __all__ = [
     "Assinatura",
     "Convite",
     "AuditLog",
+    "Consentimento",
 ]

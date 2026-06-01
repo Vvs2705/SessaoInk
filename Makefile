@@ -27,7 +27,7 @@ test:
 
 # Espelha o job Backend do CI (lint + types + testes + smoke)
 check-back:
-	cd backend && ruff check . && pyright && pytest -q
+	cd backend && pip install -r requirements.lock -r requirements-dev.txt && ruff check . && pyright && pytest -q
 
 docker-up:
 	docker compose up --build

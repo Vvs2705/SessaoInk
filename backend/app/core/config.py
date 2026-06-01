@@ -53,6 +53,11 @@ class Settings(BaseSettings):
     RESEND_FROM: str = "SessãoInk <onboarding@resend.dev>"
     APP_URL: str = "https://sessao-ink.vercel.app"
 
+    # LGPD
+    LGPD_ORCAMENTO_RETENCAO_DIAS: int = 180
+    LGPD_PRIVACIDADE_VERSAO: str = "2026-06-01"
+    LGPD_TERMOS_VERSAO: str = "2026-06-01"
+
     # Config model configuration
     model_config = SettingsConfigDict(
         env_file=".env",

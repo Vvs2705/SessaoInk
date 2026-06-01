@@ -1,0 +1,7286 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SessãoInk API",
+    "description": "API de gestão para tatuadores e estúdios de tatuagem",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login",
+        "description": "Autentica usuário e define cookies httpOnly.\n\nRate limiting: 5 tentativas falhas por IP → bloqueio de 15 minutos (ADR-009).",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Logout",
+        "description": "Invalida cookies e revoga refresh token no Redis.",
+        "operationId": "logout_api_v1_auth_logout_post",
+        "parameters": [
+          {
+            "name": "refresh_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Refresh Token"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout-all": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Logout All",
+        "description": "Sair de todos os dispositivos — revoga TODAS as sessões do usuário.",
+        "operationId": "logout_all_api_v1_auth_logout_all_post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Me",
+        "description": "Retorna os dados do usuário autenticado.",
+        "operationId": "me_api_v1_auth_me_get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__api__v1__auth__schemas__UsuarioResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Refresh",
+        "description": "Troca refresh_token por novo access_token (rotação de token).",
+        "operationId": "refresh_api_v1_auth_refresh_post",
+        "parameters": [
+          {
+            "name": "refresh_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Refresh Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/alterar-senha": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Alterar Senha",
+        "description": "Altera a senha do usuário autenticado.",
+        "operationId": "alterar_senha_api_v1_auth_alterar_senha_post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SenhaAlterarRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/clientes/": {
+      "get": {
+        "tags": [
+          "clientes"
+        ],
+        "summary": "Listar Clientes",
+        "operationId": "listar_clientes_api_v1_clientes__get",
+        "parameters": [
+          {
+            "name": "busca",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Busca"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClienteResponse"
+                  },
+                  "title": "Response Listar Clientes Api V1 Clientes  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "clientes"
+        ],
+        "summary": "Criar Cliente",
+        "operationId": "criar_cliente_api_v1_clientes__post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClienteCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClienteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/clientes/{id}": {
+      "get": {
+        "tags": [
+          "clientes"
+        ],
+        "summary": "Obter Cliente",
+        "operationId": "obter_cliente_api_v1_clientes__id__get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClienteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "clientes"
+        ],
+        "summary": "Atualizar Cliente",
+        "operationId": "atualizar_cliente_api_v1_clientes__id__patch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClienteUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClienteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "clientes"
+        ],
+        "summary": "Arquivar Cliente",
+        "operationId": "arquivar_cliente_api_v1_clientes__id__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/atendimentos/": {
+      "get": {
+        "tags": [
+          "atendimentos"
+        ],
+        "summary": "Listar Atendimentos",
+        "operationId": "listar_atendimentos_api_v1_atendimentos__get",
+        "parameters": [
+          {
+            "name": "status_op",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/StatusOperacional"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status Op"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AtendimentoResponse"
+                  },
+                  "title": "Response Listar Atendimentos Api V1 Atendimentos  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "atendimentos"
+        ],
+        "summary": "Criar Atendimento",
+        "operationId": "criar_atendimento_api_v1_atendimentos__post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtendimentoCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtendimentoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/atendimentos/{id}": {
+      "get": {
+        "tags": [
+          "atendimentos"
+        ],
+        "summary": "Obter Atendimento",
+        "operationId": "obter_atendimento_api_v1_atendimentos__id__get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtendimentoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "atendimentos"
+        ],
+        "summary": "Atualizar Atendimento",
+        "operationId": "atualizar_atendimento_api_v1_atendimentos__id__patch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtendimentoUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtendimentoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "atendimentos"
+        ],
+        "summary": "Arquivar Atendimento",
+        "operationId": "arquivar_atendimento_api_v1_atendimentos__id__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/atendimentos/{id}/status": {
+      "patch": {
+        "tags": [
+          "atendimentos"
+        ],
+        "summary": "Alterar Status",
+        "operationId": "alterar_status_api_v1_atendimentos__id__status_patch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtendimentoStatusUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtendimentoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/atendimentos/{id}/imagens": {
+      "get": {
+        "tags": [
+          "atendimentos"
+        ],
+        "summary": "Listar Imagens Atendimento",
+        "operationId": "listar_imagens_atendimento_api_v1_atendimentos__id__imagens_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Response Listar Imagens Atendimento Api V1 Atendimentos  Id  Imagens Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/atendimentos/{id}/imagens/{filename}": {
+      "get": {
+        "tags": [
+          "atendimentos"
+        ],
+        "summary": "Obter Imagem Atendimento",
+        "operationId": "obter_imagem_atendimento_api_v1_atendimentos__id__imagens__filename__get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Filename"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/flash-arts/": {
+      "get": {
+        "tags": [
+          "flash-arts"
+        ],
+        "summary": "Listar Flash Arts",
+        "operationId": "listar_flash_arts_api_v1_flash_arts__get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FlashArtResponse"
+                  },
+                  "title": "Response Listar Flash Arts Api V1 Flash Arts  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "flash-arts"
+        ],
+        "summary": "Criar Flash Art",
+        "operationId": "criar_flash_art_api_v1_flash_arts__post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_criar_flash_art_api_v1_flash_arts__post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlashArtResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/flash-arts/{id}/imagem": {
+      "get": {
+        "tags": [
+          "flash-arts"
+        ],
+        "summary": "Servir Imagem",
+        "description": "Serve imagem autenticada da flash art.",
+        "operationId": "servir_imagem_api_v1_flash_arts__id__imagem_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/flash-arts/{id}/status": {
+      "patch": {
+        "tags": [
+          "flash-arts"
+        ],
+        "summary": "Alterar Status Flash",
+        "operationId": "alterar_status_flash_api_v1_flash_arts__id__status_patch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "status_novo",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/StatusFlash"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlashArtResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/flash-arts/{id}": {
+      "delete": {
+        "tags": [
+          "flash-arts"
+        ],
+        "summary": "Arquivar Flash Art",
+        "operationId": "arquivar_flash_art_api_v1_flash_arts__id__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/financeiro/": {
+      "get": {
+        "tags": [
+          "financeiro"
+        ],
+        "summary": "Listar Lancamentos",
+        "operationId": "listar_lancamentos_api_v1_financeiro__get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LancamentoResponse"
+                  },
+                  "title": "Response Listar Lancamentos Api V1 Financeiro  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "financeiro"
+        ],
+        "summary": "Criar Lancamento",
+        "operationId": "criar_lancamento_api_v1_financeiro__post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LancamentoCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LancamentoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/financeiro/resumo": {
+      "get": {
+        "tags": [
+          "financeiro"
+        ],
+        "summary": "Resumo Financeiro",
+        "operationId": "resumo_financeiro_api_v1_financeiro_resumo_get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/financeiro/{id}": {
+      "patch": {
+        "tags": [
+          "financeiro"
+        ],
+        "summary": "Atualizar Lancamento",
+        "operationId": "atualizar_lancamento_api_v1_financeiro__id__patch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LancamentoUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LancamentoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "financeiro"
+        ],
+        "summary": "Deletar Lancamento",
+        "operationId": "deletar_lancamento_api_v1_financeiro__id__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/estoque/": {
+      "get": {
+        "tags": [
+          "estoque"
+        ],
+        "summary": "Listar Estoque",
+        "operationId": "listar_estoque_api_v1_estoque__get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EstoqueItemResponse"
+                  },
+                  "title": "Response Listar Estoque Api V1 Estoque  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "estoque"
+        ],
+        "summary": "Criar Item",
+        "operationId": "criar_item_api_v1_estoque__post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstoqueItemCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstoqueItemResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/estoque/alertas": {
+      "get": {
+        "tags": [
+          "estoque"
+        ],
+        "summary": "Alertas Estoque",
+        "operationId": "alertas_estoque_api_v1_estoque_alertas_get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EstoqueItemResponse"
+                  },
+                  "title": "Response Alertas Estoque Api V1 Estoque Alertas Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/estoque/{id}/quantidade": {
+      "patch": {
+        "tags": [
+          "estoque"
+        ],
+        "summary": "Atualizar Quantidade",
+        "description": "Adiciona ou remove quantidade do estoque (delta positivo = entrada, negativo = saída).",
+        "operationId": "atualizar_quantidade_api_v1_estoque__id__quantidade_patch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarQuantidadeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstoqueItemResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/estoque/{id}": {
+      "delete": {
+        "tags": [
+          "estoque"
+        ],
+        "summary": "Arquivar Item",
+        "description": "Soft delete — marca o item como inativo (ADR-004).",
+        "operationId": "arquivar_item_api_v1_estoque__id__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/{slug}": {
+      "get": {
+        "tags": [
+          "portal-público"
+        ],
+        "summary": "Perfil Publico",
+        "operationId": "perfil_publico_api_v1_public__slug__get",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstudioPublicoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/{slug}/portfolio": {
+      "get": {
+        "tags": [
+          "portal-público"
+        ],
+        "summary": "Portfolio Publico",
+        "description": "Retorna itens do portfólio com visibilidade PUBLICO e autorização — sem autenticação.",
+        "operationId": "portfolio_publico_api_v1_public__slug__portfolio_get",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PortfolioPublicoItem"
+                  },
+                  "title": "Response Portfolio Publico Api V1 Public  Slug  Portfolio Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/{slug}/portfolio/{portfolio_id}/imagem": {
+      "get": {
+        "tags": [
+          "portal-público"
+        ],
+        "summary": "Imagem Portfolio Publico",
+        "description": "Serve a imagem pública do portfólio sem autenticação.",
+        "operationId": "imagem_portfolio_publico_api_v1_public__slug__portfolio__portfolio_id__imagem_get",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          },
+          {
+            "name": "portfolio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Portfolio Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/{slug}/flash-arts": {
+      "get": {
+        "tags": [
+          "portal-público"
+        ],
+        "summary": "Flash Arts Publicas",
+        "description": "Retorna flash arts disponíveis do estúdio — sem autenticação.",
+        "operationId": "flash_arts_publicas_api_v1_public__slug__flash_arts_get",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FlashArtPublicaResponse"
+                  },
+                  "title": "Response Flash Arts Publicas Api V1 Public  Slug  Flash Arts Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/{slug}/flash-arts/{flash_id}/imagem": {
+      "get": {
+        "tags": [
+          "portal-público"
+        ],
+        "summary": "Imagem Flash Art Publica",
+        "description": "Serve imagem pública de flash art — sem autenticação.",
+        "operationId": "imagem_flash_art_publica_api_v1_public__slug__flash_arts__flash_id__imagem_get",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          },
+          {
+            "name": "flash_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Flash Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/{slug}/orcamento": {
+      "post": {
+        "tags": [
+          "portal-público"
+        ],
+        "summary": "Solicitar Orcamento",
+        "operationId": "solicitar_orcamento_api_v1_public__slug__orcamento_post",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_solicitar_orcamento_api_v1_public__slug__orcamento_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrcamentoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/documentos/token/{token}": {
+      "get": {
+        "tags": [
+          "portal-público"
+        ],
+        "summary": "Obter Documento Por Token",
+        "description": "Acessa documento via token seguro de tempo limitado.",
+        "operationId": "obter_documento_por_token_api_v1_public_documentos_token__token__get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicDocumentoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/documentos/token/{token}/assinar": {
+      "post": {
+        "tags": [
+          "portal-público"
+        ],
+        "summary": "Assinar Documento Por Token",
+        "description": "Assina documento via token seguro. Captura IP/UA do request, não do body.",
+        "operationId": "assinar_documento_por_token_api_v1_public_documentos_token__token__assinar_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_assinar_documento_por_token_api_v1_public_documentos_token__token__assinar_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/portfolio/": {
+      "get": {
+        "tags": [
+          "portfolio"
+        ],
+        "summary": "Listar Portfolio",
+        "operationId": "listar_portfolio_api_v1_portfolio__get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PortfolioResponse"
+                  },
+                  "title": "Response Listar Portfolio Api V1 Portfolio  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/portfolio/upload": {
+      "post": {
+        "tags": [
+          "portfolio"
+        ],
+        "summary": "Upload Foto",
+        "description": "Upload de foto do portfólio — pipeline seguro compartilhado (P0-04).",
+        "operationId": "upload_foto_api_v1_portfolio_upload_post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_foto_api_v1_portfolio_upload_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/portfolio/{id}/imagem": {
+      "get": {
+        "tags": [
+          "portfolio"
+        ],
+        "summary": "Servir Imagem",
+        "description": "Serve imagem autenticada — nunca expõe o caminho real.",
+        "operationId": "servir_imagem_api_v1_portfolio__id__imagem_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/portfolio/{id}": {
+      "delete": {
+        "tags": [
+          "portfolio"
+        ],
+        "summary": "Arquivar Portfolio",
+        "description": "Soft delete — oculta a foto (ADR-004).",
+        "operationId": "arquivar_portfolio_api_v1_portfolio__id__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/portfolio/{id}/visibilidade": {
+      "patch": {
+        "tags": [
+          "portfolio"
+        ],
+        "summary": "Alterar Visibilidade",
+        "description": "Publica ou torna privada uma imagem. Exige autorização explícita para publicar.",
+        "operationId": "alterar_visibilidade_api_v1_portfolio__id__visibilidade_patch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "visibilidade",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/VisibilidadePortfolio"
+            }
+          },
+          {
+            "name": "autorizado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Autorizado"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documentos/": {
+      "get": {
+        "tags": [
+          "documentos"
+        ],
+        "summary": "Listar Documentos",
+        "operationId": "listar_documentos_api_v1_documentos__get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentoResponse"
+                  },
+                  "title": "Response Listar Documentos Api V1 Documentos  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "documentos"
+        ],
+        "summary": "Criar Documento",
+        "operationId": "criar_documento_api_v1_documentos__post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentoCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documentos/{id}": {
+      "get": {
+        "tags": [
+          "documentos"
+        ],
+        "summary": "Obter Documento",
+        "operationId": "obter_documento_api_v1_documentos__id__get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "documentos"
+        ],
+        "summary": "Deletar Documento",
+        "description": "Remove o documento permanentemente.",
+        "operationId": "deletar_documento_api_v1_documentos__id__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documentos/{id}/gerar-link": {
+      "post": {
+        "tags": [
+          "documentos"
+        ],
+        "summary": "Gerar Link Documento",
+        "description": "Gera link seguro de acesso ao documento para compartilhar com cliente.",
+        "operationId": "gerar_link_documento_api_v1_documentos__id__gerar_link_post",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "acao",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/AcaoLink",
+              "default": "ASSINAR"
+            }
+          },
+          {
+            "name": "horas",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 72,
+              "title": "Horas"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Gerar Link Documento Api V1 Documentos  Id  Gerar Link Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/estudio/": {
+      "get": {
+        "tags": [
+          "estudio"
+        ],
+        "summary": "Obter Estudio",
+        "description": "Retorna os dados do estúdio do usuário autenticado.",
+        "operationId": "obter_estudio_api_v1_estudio__get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstudioResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "estudio"
+        ],
+        "summary": "Atualizar Estudio",
+        "description": "Atualiza dados do estúdio. Apenas ADMIN pode alterar.",
+        "operationId": "atualizar_estudio_api_v1_estudio__patch",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstudioAtualizarRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstudioResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/estudio/equipe": {
+      "get": {
+        "tags": [
+          "estudio"
+        ],
+        "summary": "Listar Equipe",
+        "description": "Lista todos os usuários ativos do estúdio.",
+        "operationId": "listar_equipe_api_v1_estudio_equipe_get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Listar Equipe Api V1 Estudio Equipe Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/busca/": {
+      "get": {
+        "tags": [
+          "busca"
+        ],
+        "summary": "Buscar",
+        "description": "Busca global em clientes, atendimentos e flash arts do estúdio.\n\nRetorna até `limite` resultados por entidade.",
+        "operationId": "buscar_api_v1_busca__get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "description": "Termo de busca (mínimo 2 caracteres)",
+              "title": "Q"
+            },
+            "description": "Termo de busca (mínimo 2 caracteres)"
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 20,
+              "minimum": 1,
+              "default": 5,
+              "title": "Limite"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuscaResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agenda/": {
+      "get": {
+        "tags": [
+          "agenda"
+        ],
+        "summary": "Listar Agenda",
+        "operationId": "listar_agenda_api_v1_agenda__get",
+        "parameters": [
+          {
+            "name": "ano",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 2035,
+              "minimum": 2020,
+              "title": "Ano"
+            }
+          },
+          {
+            "name": "mes",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 12,
+              "minimum": 1,
+              "title": "Mes"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgendaMesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agenda/agendar": {
+      "post": {
+        "tags": [
+          "agenda"
+        ],
+        "summary": "Agendar Sessao",
+        "operationId": "agendar_sessao_api_v1_agenda_agendar_post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgendarSessaoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessaoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agenda/proximas": {
+      "get": {
+        "tags": [
+          "agenda"
+        ],
+        "summary": "Proximas Sessoes",
+        "operationId": "proximas_sessoes_api_v1_agenda_proximas_get",
+        "parameters": [
+          {
+            "name": "dias",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 30,
+              "minimum": 1,
+              "default": 7,
+              "title": "Dias"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SessaoResponse"
+                  },
+                  "title": "Response Proximas Sessoes Api V1 Agenda Proximas Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/relatorios/resumo": {
+      "get": {
+        "tags": [
+          "relatorios"
+        ],
+        "summary": "Resumo Financeiro",
+        "description": "Resumo financeiro e operacional do estúdio.\n\nCompara o período atual com o período anterior de mesmo tamanho.",
+        "operationId": "resumo_financeiro_api_v1_relatorios_resumo_get",
+        "parameters": [
+          {
+            "name": "periodo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 7,
+              "description": "Período em dias",
+              "default": 30,
+              "title": "Periodo"
+            },
+            "description": "Período em dias"
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumoFinanceiro"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/relatorios/por-status": {
+      "get": {
+        "tags": [
+          "relatorios"
+        ],
+        "summary": "Relatorio Por Status",
+        "description": "Contagem de atendimentos ativos agrupados por status operacional.",
+        "operationId": "relatorio_por_status_api_v1_relatorios_por_status_get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelatorioStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/relatorios/temporal": {
+      "get": {
+        "tags": [
+          "relatorios"
+        ],
+        "summary": "Relatorio Temporal",
+        "description": "Receita agrupada por dia nos últimos N dias.",
+        "operationId": "relatorio_temporal_api_v1_relatorios_temporal_get",
+        "parameters": [
+          {
+            "name": "periodo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "description": "Período em dias",
+              "default": 30,
+              "title": "Periodo"
+            },
+            "description": "Período em dias"
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelatorioTemporalResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/usuarios/me": {
+      "get": {
+        "tags": [
+          "usuarios"
+        ],
+        "summary": "Obter Usuario Atual",
+        "description": "Retorna os dados do usuário autenticado.",
+        "operationId": "obter_usuario_atual_api_v1_usuarios_me_get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__api__v1__usuarios__router__UsuarioResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "usuarios"
+        ],
+        "summary": "Atualizar Usuario Atual",
+        "description": "Atualiza o nome do usuário autenticado.",
+        "operationId": "atualizar_usuario_atual_api_v1_usuarios_me_patch",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarUsuarioRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__api__v1__usuarios__router__UsuarioResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/convites/": {
+      "post": {
+        "tags": [
+          "convites"
+        ],
+        "summary": "Criar Convite",
+        "description": "Cria um convite para o estúdio. Apenas ADMIN pode convidar.",
+        "operationId": "criar_convite_api_v1_convites__post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConviteCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConviteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "convites"
+        ],
+        "summary": "Listar Convites",
+        "description": "Lista todos os convites do estúdio. Apenas ADMIN.",
+        "operationId": "listar_convites_api_v1_convites__get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConviteResponse"
+                  },
+                  "title": "Response Listar Convites Api V1 Convites  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/convites/{convite_id}": {
+      "delete": {
+        "tags": [
+          "convites"
+        ],
+        "summary": "Revogar Convite",
+        "description": "Revoga um convite pendente. Apenas ADMIN.",
+        "operationId": "revogar_convite_api_v1_convites__convite_id__delete",
+        "parameters": [
+          {
+            "name": "convite_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Convite Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/convites/aceitar/{token}": {
+      "post": {
+        "tags": [
+          "convites"
+        ],
+        "summary": "Aceitar Convite",
+        "description": "Endpoint público — valida token e cria o usuário no estúdio.",
+        "operationId": "aceitar_convite_api_v1_convites_aceitar__token__post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AceitarConviteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AceitarConviteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auditoria/": {
+      "get": {
+        "tags": [
+          "auditoria"
+        ],
+        "summary": "Listar Auditoria",
+        "description": "Lista eventos de auditoria do PRÓPRIO estúdio (ADMIN). Paginado, mais recentes primeiro.\n\nIsolamento de tenant: a consulta é sempre restrita ao estudio_id do ADMIN\nautenticado — nunca expõe auditoria de outro estúdio.",
+        "operationId": "listar_auditoria_api_v1_auditoria__get",
+        "parameters": [
+          {
+            "name": "acao",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtra por ação exata",
+              "title": "Acao"
+            },
+            "description": "Filtra por ação exata"
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limite"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditLogResponse"
+                  },
+                  "title": "Response Listar Auditoria Api V1 Auditoria  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health",
+        "description": "Liveness check — a API está de pé.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Readiness",
+        "description": "Readiness check — banco e dependências prontos.",
+        "operationId": "readiness_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AcaoLink": {
+        "type": "string",
+        "enum": [
+          "VISUALIZAR",
+          "ASSINAR"
+        ],
+        "title": "AcaoLink"
+      },
+      "AceitarConviteRequest": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "senha": {
+            "type": "string",
+            "title": "Senha"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome",
+          "senha"
+        ],
+        "title": "AceitarConviteRequest"
+      },
+      "AceitarConviteResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoUsuario"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nome",
+          "email",
+          "tipo"
+        ],
+        "title": "AceitarConviteResponse"
+      },
+      "AgendaMesResponse": {
+        "properties": {
+          "ano": {
+            "type": "integer",
+            "title": "Ano"
+          },
+          "mes": {
+            "type": "integer",
+            "title": "Mes"
+          },
+          "total_sessoes": {
+            "type": "integer",
+            "title": "Total Sessoes"
+          },
+          "sessoes": {
+            "items": {
+              "$ref": "#/components/schemas/SessaoResponse"
+            },
+            "type": "array",
+            "title": "Sessoes"
+          },
+          "dias_com_sessao": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Dias Com Sessao"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ano",
+          "mes",
+          "total_sessoes",
+          "sessoes",
+          "dias_com_sessao"
+        ],
+        "title": "AgendaMesResponse"
+      },
+      "AgendarSessaoRequest": {
+        "properties": {
+          "atendimento_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Atendimento Id"
+          },
+          "data_sessao": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Data Sessao"
+          },
+          "duracao_minutos": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duracao Minutos",
+            "default": 120
+          }
+        },
+        "type": "object",
+        "required": [
+          "atendimento_id",
+          "data_sessao"
+        ],
+        "title": "AgendarSessaoRequest"
+      },
+      "AtendimentoCreate": {
+        "properties": {
+          "cliente_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cliente Id"
+          },
+          "artista_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artista Id"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoAtendimento",
+            "default": "TATUAGEM"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "parte_corpo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parte Corpo"
+          },
+          "estilo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estilo"
+          },
+          "tamanho_cm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tamanho Cm"
+          },
+          "valor_total": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Total"
+          },
+          "valor_sinal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Sinal"
+          },
+          "forma_pagamento": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FormaPagamento"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "notas_privadas": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notas Privadas"
+          },
+          "data_sessao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Sessao"
+          },
+          "duracao_minutos": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duracao Minutos"
+          }
+        },
+        "type": "object",
+        "title": "AtendimentoCreate"
+      },
+      "AtendimentoImagemResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "atendimento_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Atendimento Id"
+          },
+          "imagem_path": {
+            "type": "string",
+            "title": "Imagem Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "atendimento_id",
+          "imagem_path"
+        ],
+        "title": "AtendimentoImagemResponse"
+      },
+      "AtendimentoResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "estudio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Estudio Id"
+          },
+          "cliente_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cliente Id"
+          },
+          "artista_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artista Id"
+          },
+          "status_operacional": {
+            "$ref": "#/components/schemas/StatusOperacional"
+          },
+          "status_financeiro": {
+            "$ref": "#/components/schemas/StatusFinanceiro"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoAtendimento"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "parte_corpo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parte Corpo"
+          },
+          "estilo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estilo"
+          },
+          "tamanho_cm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tamanho Cm"
+          },
+          "valor_total": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Total"
+          },
+          "valor_sinal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Sinal"
+          },
+          "notas_privadas": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notas Privadas"
+          },
+          "data_sessao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Sessao"
+          },
+          "ativo": {
+            "type": "boolean",
+            "title": "Ativo"
+          },
+          "cliente": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClienteAtendimentoResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "imagens": {
+            "items": {
+              "$ref": "#/components/schemas/AtendimentoImagemResponse"
+            },
+            "type": "array",
+            "title": "Imagens",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "estudio_id",
+          "cliente_id",
+          "artista_id",
+          "status_operacional",
+          "status_financeiro",
+          "tipo",
+          "descricao",
+          "parte_corpo",
+          "estilo",
+          "valor_total",
+          "valor_sinal",
+          "data_sessao",
+          "ativo"
+        ],
+        "title": "AtendimentoResponse"
+      },
+      "AtendimentoStatusUpdate": {
+        "properties": {
+          "status_operacional": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StatusOperacional"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status_financeiro": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StatusFinanceiro"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "AtendimentoStatusUpdate"
+      },
+      "AtendimentoUpdate": {
+        "properties": {
+          "cliente_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cliente Id"
+          },
+          "artista_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artista Id"
+          },
+          "tipo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TipoAtendimento"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status_operacional": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StatusOperacional"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status_financeiro": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StatusFinanceiro"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "parte_corpo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parte Corpo"
+          },
+          "estilo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estilo"
+          },
+          "tamanho_cm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tamanho Cm"
+          },
+          "valor_total": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Total"
+          },
+          "valor_sinal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Sinal"
+          },
+          "forma_pagamento": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FormaPagamento"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "notas_privadas": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notas Privadas"
+          },
+          "data_sessao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Sessao"
+          },
+          "duracao_minutos": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duracao Minutos"
+          }
+        },
+        "type": "object",
+        "title": "AtendimentoUpdate"
+      },
+      "AtualizarQuantidadeRequest": {
+        "properties": {
+          "delta": {
+            "type": "number",
+            "title": "Delta"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "delta"
+        ],
+        "title": "AtualizarQuantidadeRequest"
+      },
+      "AtualizarUsuarioRequest": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome"
+        ],
+        "title": "AtualizarUsuarioRequest"
+      },
+      "AuditLogResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "acao": {
+            "type": "string",
+            "title": "Acao"
+          },
+          "actor_usuario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Usuario Id"
+          },
+          "actor_tipo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Tipo"
+          },
+          "entidade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entidade"
+          },
+          "entidade_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entidade Id"
+          },
+          "ip": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip"
+          },
+          "created_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created Em"
+          },
+          "dados": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dados"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "acao",
+          "actor_usuario_id",
+          "actor_tipo",
+          "entidade",
+          "entidade_id",
+          "ip",
+          "created_em",
+          "dados"
+        ],
+        "title": "AuditLogResponse"
+      },
+      "Body_assinar_documento_por_token_api_v1_public_documentos_token__token__assinar_post": {
+        "properties": {
+          "nome_assinante": {
+            "type": "string",
+            "title": "Nome Assinante"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome_assinante"
+        ],
+        "title": "Body_assinar_documento_por_token_api_v1_public_documentos_token__token__assinar_post"
+      },
+      "Body_criar_flash_art_api_v1_flash_arts__post": {
+        "properties": {
+          "arquivo": {
+            "type": "string",
+            "format": "binary",
+            "title": "Arquivo"
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "preco": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preco"
+          },
+          "tamanho_sugerido": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tamanho Sugerido"
+          },
+          "local_recomendado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Local Recomendado"
+          }
+        },
+        "type": "object",
+        "required": [
+          "arquivo",
+          "titulo"
+        ],
+        "title": "Body_criar_flash_art_api_v1_flash_arts__post"
+      },
+      "Body_solicitar_orcamento_api_v1_public__slug__orcamento_post": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "whatsapp": {
+            "type": "string",
+            "title": "Whatsapp"
+          },
+          "instagram": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instagram"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "estilo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estilo"
+          },
+          "parte_corpo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parte Corpo"
+          },
+          "tamanho_cm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tamanho Cm"
+          },
+          "observacoes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observacoes"
+          },
+          "aceite_privacidade": {
+            "type": "boolean",
+            "title": "Aceite Privacidade"
+          },
+          "aceite_termos": {
+            "type": "boolean",
+            "title": "Aceite Termos"
+          },
+          "email_confirm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Confirm"
+          },
+          "website": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website"
+          },
+          "imagens": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "binary"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imagens"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome",
+          "whatsapp",
+          "aceite_privacidade",
+          "aceite_termos"
+        ],
+        "title": "Body_solicitar_orcamento_api_v1_public__slug__orcamento_post"
+      },
+      "Body_upload_foto_api_v1_portfolio_upload_post": {
+        "properties": {
+          "arquivo": {
+            "type": "string",
+            "format": "binary",
+            "title": "Arquivo"
+          },
+          "titulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Titulo"
+          },
+          "estilo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estilo"
+          },
+          "parte_corpo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parte Corpo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "arquivo"
+        ],
+        "title": "Body_upload_foto_api_v1_portfolio_upload_post"
+      },
+      "BuscaResponse": {
+        "properties": {
+          "q": {
+            "type": "string",
+            "title": "Q"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "clientes": {
+            "items": {
+              "$ref": "#/components/schemas/ResultadoCliente"
+            },
+            "type": "array",
+            "title": "Clientes"
+          },
+          "atendimentos": {
+            "items": {
+              "$ref": "#/components/schemas/ResultadoAtendimento"
+            },
+            "type": "array",
+            "title": "Atendimentos"
+          },
+          "flash_arts": {
+            "items": {
+              "$ref": "#/components/schemas/ResultadoFlashArt"
+            },
+            "type": "array",
+            "title": "Flash Arts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "q",
+          "total",
+          "clientes",
+          "atendimentos",
+          "flash_arts"
+        ],
+        "title": "BuscaResponse"
+      },
+      "CategoriaEstoque": {
+        "type": "string",
+        "enum": [
+          "TINTA",
+          "AGULHA",
+          "LUVA",
+          "PAPEL",
+          "PRODUTO",
+          "OUTRO"
+        ],
+        "title": "CategoriaEstoque"
+      },
+      "ClienteAtendimentoResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "telefone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefone"
+          },
+          "instagram": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instagram"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nome"
+        ],
+        "title": "ClienteAtendimentoResponse"
+      },
+      "ClienteCreate": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "telefone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefone"
+          },
+          "instagram": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instagram"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "data_nascimento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Nascimento"
+          },
+          "observacoes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observacoes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome"
+        ],
+        "title": "ClienteCreate"
+      },
+      "ClienteResponse": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "telefone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefone"
+          },
+          "instagram": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instagram"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "data_nascimento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Nascimento"
+          },
+          "observacoes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observacoes"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "estudio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Estudio Id"
+          },
+          "ativo": {
+            "type": "boolean",
+            "title": "Ativo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome",
+          "id",
+          "estudio_id",
+          "ativo"
+        ],
+        "title": "ClienteResponse"
+      },
+      "ClienteUpdate": {
+        "properties": {
+          "nome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome"
+          },
+          "telefone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefone"
+          },
+          "instagram": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instagram"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "data_nascimento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Nascimento"
+          },
+          "observacoes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observacoes"
+          }
+        },
+        "type": "object",
+        "title": "ClienteUpdate"
+      },
+      "ConviteCreate": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "role": {
+            "$ref": "#/components/schemas/TipoUsuario",
+            "default": "ARTISTA"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "ConviteCreate"
+      },
+      "ConviteResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "estudio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Estudio Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "role": {
+            "$ref": "#/components/schemas/TipoUsuario"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusConvite"
+          },
+          "expira_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expira Em"
+          },
+          "aceito_em": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aceito Em"
+          },
+          "criado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Criado Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "estudio_id",
+          "email",
+          "role",
+          "status",
+          "expira_em",
+          "criado_em"
+        ],
+        "title": "ConviteResponse"
+      },
+      "DocumentoCreate": {
+        "properties": {
+          "tipo": {
+            "$ref": "#/components/schemas/TipoDocumento"
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "conteudo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conteudo"
+          },
+          "versao": {
+            "type": "string",
+            "title": "Versao",
+            "default": "1.0"
+          },
+          "cliente_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cliente Id"
+          },
+          "atendimento_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atendimento Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tipo",
+          "titulo"
+        ],
+        "title": "DocumentoCreate"
+      },
+      "DocumentoResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoDocumento"
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "conteudo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conteudo"
+          },
+          "versao": {
+            "type": "string",
+            "title": "Versao"
+          },
+          "assinado": {
+            "type": "boolean",
+            "title": "Assinado"
+          },
+          "data_assinatura": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Assinatura"
+          },
+          "cliente_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cliente Id"
+          },
+          "atendimento_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atendimento Id"
+          },
+          "criado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Criado Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tipo",
+          "titulo",
+          "conteudo",
+          "versao",
+          "assinado",
+          "data_assinatura",
+          "cliente_id",
+          "atendimento_id",
+          "criado_em"
+        ],
+        "title": "DocumentoResponse"
+      },
+      "EstoqueItemCreate": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "categoria": {
+            "$ref": "#/components/schemas/CategoriaEstoque"
+          },
+          "unidade": {
+            "type": "string",
+            "title": "Unidade",
+            "default": "un"
+          },
+          "quantidade_atual": {
+            "type": "number",
+            "title": "Quantidade Atual",
+            "default": 0
+          },
+          "quantidade_minima": {
+            "type": "number",
+            "title": "Quantidade Minima",
+            "default": 0
+          },
+          "preco_custo": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preco Custo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome",
+          "categoria"
+        ],
+        "title": "EstoqueItemCreate"
+      },
+      "EstoqueItemResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "categoria": {
+            "$ref": "#/components/schemas/CategoriaEstoque"
+          },
+          "unidade": {
+            "type": "string",
+            "title": "Unidade"
+          },
+          "quantidade_atual": {
+            "type": "number",
+            "title": "Quantidade Atual"
+          },
+          "quantidade_minima": {
+            "type": "number",
+            "title": "Quantidade Minima"
+          },
+          "preco_custo": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preco Custo"
+          },
+          "ativo": {
+            "type": "boolean",
+            "title": "Ativo"
+          },
+          "alerta_minimo": {
+            "type": "boolean",
+            "title": "Alerta Minimo",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nome",
+          "categoria",
+          "unidade",
+          "quantidade_atual",
+          "quantidade_minima",
+          "preco_custo",
+          "ativo"
+        ],
+        "title": "EstoqueItemResponse"
+      },
+      "EstudioAtualizarRequest": {
+        "properties": {
+          "nome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome"
+          },
+          "bio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bio"
+          },
+          "cidade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cidade"
+          },
+          "uf": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uf"
+          },
+          "telefone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefone"
+          },
+          "instagram": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instagram"
+          },
+          "email_notificacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Notificacao"
+          }
+        },
+        "type": "object",
+        "title": "EstudioAtualizarRequest"
+      },
+      "EstudioPublicoResponse": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "bio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bio"
+          },
+          "cidade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cidade"
+          },
+          "uf": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uf"
+          },
+          "instagram": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instagram"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slug",
+          "nome",
+          "bio",
+          "cidade",
+          "uf",
+          "instagram"
+        ],
+        "title": "EstudioPublicoResponse"
+      },
+      "EstudioResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "bio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bio"
+          },
+          "cidade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cidade"
+          },
+          "uf": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uf"
+          },
+          "telefone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefone"
+          },
+          "instagram": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instagram"
+          },
+          "email_notificacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Notificacao"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nome",
+          "slug"
+        ],
+        "title": "EstudioResponse"
+      },
+      "FlashArtPublicaResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "preco": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preco"
+          },
+          "tamanho_sugerido": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tamanho Sugerido"
+          },
+          "local_recomendado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Local Recomendado"
+          },
+          "has_imagem": {
+            "type": "boolean",
+            "title": "Has Imagem"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "titulo",
+          "descricao",
+          "preco",
+          "tamanho_sugerido",
+          "local_recomendado",
+          "has_imagem"
+        ],
+        "title": "FlashArtPublicaResponse"
+      },
+      "FlashArtResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "estudio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Estudio Id"
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "imagem_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imagem Path"
+          },
+          "preco": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preco"
+          },
+          "tamanho_sugerido": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tamanho Sugerido"
+          },
+          "local_recomendado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Local Recomendado"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusFlash"
+          },
+          "ativo": {
+            "type": "boolean",
+            "title": "Ativo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "estudio_id",
+          "titulo",
+          "descricao",
+          "imagem_path",
+          "preco",
+          "tamanho_sugerido",
+          "local_recomendado",
+          "status",
+          "ativo"
+        ],
+        "title": "FlashArtResponse"
+      },
+      "FormaPagamento": {
+        "type": "string",
+        "enum": [
+          "PIX",
+          "DINHEIRO",
+          "CARTAO_DEBITO",
+          "CARTAO_CREDITO",
+          "TRANSFERENCIA",
+          "OUTRO"
+        ],
+        "title": "FormaPagamento"
+      },
+      "FormaPagamentoFin": {
+        "type": "string",
+        "enum": [
+          "PIX",
+          "DINHEIRO",
+          "CARTAO_DEBITO",
+          "CARTAO_CREDITO",
+          "TRANSFERENCIA",
+          "OUTRO"
+        ],
+        "title": "FormaPagamentoFin"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LancamentoCreate": {
+        "properties": {
+          "tipo": {
+            "$ref": "#/components/schemas/TipoLancamento"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "valor": {
+            "type": "number",
+            "title": "Valor"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StatusLancamento"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "forma_pagamento": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FormaPagamentoFin"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "data_prevista": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Prevista"
+          },
+          "atendimento_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atendimento Id"
+          },
+          "artista_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artista Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tipo",
+          "valor"
+        ],
+        "title": "LancamentoCreate"
+      },
+      "LancamentoResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoLancamento"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "valor": {
+            "type": "number",
+            "title": "Valor"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusLancamento"
+          },
+          "forma_pagamento": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FormaPagamentoFin"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "data_prevista": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Prevista"
+          },
+          "data_realizada": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Realizada"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tipo",
+          "descricao",
+          "valor",
+          "status",
+          "forma_pagamento",
+          "data_prevista",
+          "data_realizada"
+        ],
+        "title": "LancamentoResponse"
+      },
+      "LancamentoUpdate": {
+        "properties": {
+          "tipo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TipoLancamento"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "valor": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StatusLancamento"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "forma_pagamento": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FormaPagamentoFin"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "data_prevista": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Prevista"
+          },
+          "atendimento_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atendimento Id"
+          },
+          "artista_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artista Id"
+          }
+        },
+        "type": "object",
+        "title": "LancamentoUpdate"
+      },
+      "LoginRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "senha": {
+            "type": "string",
+            "title": "Senha"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "senha"
+        ],
+        "title": "LoginRequest"
+      },
+      "OrcamentoResponse": {
+        "properties": {
+          "protocolo": {
+            "type": "string",
+            "title": "Protocolo"
+          },
+          "atendimento_id": {
+            "type": "string",
+            "title": "Atendimento Id"
+          },
+          "mensagem": {
+            "type": "string",
+            "title": "Mensagem"
+          }
+        },
+        "type": "object",
+        "required": [
+          "protocolo",
+          "atendimento_id",
+          "mensagem"
+        ],
+        "title": "OrcamentoResponse"
+      },
+      "PortfolioPublicoItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "titulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Titulo"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "estilo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estilo"
+          },
+          "parte_corpo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parte Corpo"
+          },
+          "imagem_path": {
+            "type": "string",
+            "title": "Imagem Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "titulo",
+          "descricao",
+          "estilo",
+          "parte_corpo",
+          "imagem_path"
+        ],
+        "title": "PortfolioPublicoItem"
+      },
+      "PortfolioResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "imagem_path": {
+            "type": "string",
+            "title": "Imagem Path"
+          },
+          "titulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Titulo"
+          },
+          "estilo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estilo"
+          },
+          "parte_corpo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parte Corpo"
+          },
+          "visibilidade": {
+            "$ref": "#/components/schemas/VisibilidadePortfolio"
+          },
+          "autorizado_publicacao": {
+            "type": "boolean",
+            "title": "Autorizado Publicacao"
+          },
+          "ativo": {
+            "type": "boolean",
+            "title": "Ativo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "imagem_path",
+          "titulo",
+          "estilo",
+          "parte_corpo",
+          "visibilidade",
+          "autorizado_publicacao",
+          "ativo"
+        ],
+        "title": "PortfolioResponse"
+      },
+      "PublicDocumentoResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "conteudo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conteudo"
+          },
+          "assinado": {
+            "type": "boolean",
+            "title": "Assinado"
+          },
+          "data_assinatura": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Assinatura"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tipo",
+          "titulo",
+          "conteudo",
+          "assinado"
+        ],
+        "title": "PublicDocumentoResponse"
+      },
+      "ReceitaPorDia": {
+        "properties": {
+          "data": {
+            "type": "string",
+            "title": "Data"
+          },
+          "receita": {
+            "type": "number",
+            "title": "Receita"
+          },
+          "atendimentos": {
+            "type": "integer",
+            "title": "Atendimentos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "receita",
+          "atendimentos"
+        ],
+        "title": "ReceitaPorDia"
+      },
+      "RelatorioStatusResponse": {
+        "properties": {
+          "total_ativos": {
+            "type": "integer",
+            "title": "Total Ativos"
+          },
+          "por_status": {
+            "items": {
+              "$ref": "#/components/schemas/StatusCount"
+            },
+            "type": "array",
+            "title": "Por Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_ativos",
+          "por_status"
+        ],
+        "title": "RelatorioStatusResponse"
+      },
+      "RelatorioTemporalResponse": {
+        "properties": {
+          "periodo_dias": {
+            "type": "integer",
+            "title": "Periodo Dias"
+          },
+          "dados": {
+            "items": {
+              "$ref": "#/components/schemas/ReceitaPorDia"
+            },
+            "type": "array",
+            "title": "Dados"
+          }
+        },
+        "type": "object",
+        "required": [
+          "periodo_dias",
+          "dados"
+        ],
+        "title": "RelatorioTemporalResponse"
+      },
+      "ResultadoAtendimento": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tipo": {
+            "type": "string",
+            "title": "Tipo",
+            "default": "atendimento"
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "subtitulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subtitulo"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "titulo",
+          "status"
+        ],
+        "title": "ResultadoAtendimento"
+      },
+      "ResultadoCliente": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tipo": {
+            "type": "string",
+            "title": "Tipo",
+            "default": "cliente"
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "subtitulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subtitulo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "titulo"
+        ],
+        "title": "ResultadoCliente"
+      },
+      "ResultadoFlashArt": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tipo": {
+            "type": "string",
+            "title": "Tipo",
+            "default": "flash_art"
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "subtitulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subtitulo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "titulo"
+        ],
+        "title": "ResultadoFlashArt"
+      },
+      "ResumoFinanceiro": {
+        "properties": {
+          "periodo_dias": {
+            "type": "integer",
+            "title": "Periodo Dias"
+          },
+          "receita_total": {
+            "type": "number",
+            "title": "Receita Total"
+          },
+          "receita_periodo": {
+            "type": "number",
+            "title": "Receita Periodo"
+          },
+          "variacao_percentual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variacao Percentual"
+          },
+          "total_atendimentos": {
+            "type": "integer",
+            "title": "Total Atendimentos"
+          },
+          "atendimentos_confirmados": {
+            "type": "integer",
+            "title": "Atendimentos Confirmados"
+          },
+          "atendimentos_finalizados": {
+            "type": "integer",
+            "title": "Atendimentos Finalizados"
+          },
+          "ticket_medio": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Medio"
+          },
+          "sinais_recebidos": {
+            "type": "number",
+            "title": "Sinais Recebidos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "periodo_dias",
+          "receita_total",
+          "receita_periodo",
+          "variacao_percentual",
+          "total_atendimentos",
+          "atendimentos_confirmados",
+          "atendimentos_finalizados",
+          "ticket_medio",
+          "sinais_recebidos"
+        ],
+        "title": "ResumoFinanceiro"
+      },
+      "ResumoResponse": {
+        "properties": {
+          "receita_mes": {
+            "type": "number",
+            "title": "Receita Mes"
+          },
+          "sinais_pendentes": {
+            "type": "number",
+            "title": "Sinais Pendentes"
+          },
+          "ticket_medio": {
+            "type": "number",
+            "title": "Ticket Medio"
+          }
+        },
+        "type": "object",
+        "required": [
+          "receita_mes",
+          "sinais_pendentes",
+          "ticket_medio"
+        ],
+        "title": "ResumoResponse"
+      },
+      "SenhaAlterarRequest": {
+        "properties": {
+          "senha_atual": {
+            "type": "string",
+            "title": "Senha Atual"
+          },
+          "senha_nova": {
+            "type": "string",
+            "title": "Senha Nova"
+          }
+        },
+        "type": "object",
+        "required": [
+          "senha_atual",
+          "senha_nova"
+        ],
+        "title": "SenhaAlterarRequest"
+      },
+      "SessaoResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "data_sessao": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Data Sessao"
+          },
+          "duracao_minutos": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duracao Minutos"
+          },
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "status_operacional": {
+            "type": "string",
+            "title": "Status Operacional"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "estilo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estilo"
+          },
+          "parte_corpo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parte Corpo"
+          },
+          "valor_total": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Total"
+          },
+          "cliente_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cliente Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "data_sessao",
+          "duracao_minutos",
+          "tipo",
+          "status_operacional",
+          "descricao",
+          "estilo",
+          "parte_corpo",
+          "valor_total",
+          "cliente_id"
+        ],
+        "title": "SessaoResponse"
+      },
+      "StatusConvite": {
+        "type": "string",
+        "enum": [
+          "PENDENTE",
+          "ACEITO",
+          "EXPIRADO",
+          "REVOGADO"
+        ],
+        "title": "StatusConvite"
+      },
+      "StatusCount": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "cor": {
+            "type": "string",
+            "title": "Cor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "label",
+          "total",
+          "cor"
+        ],
+        "title": "StatusCount"
+      },
+      "StatusFinanceiro": {
+        "type": "string",
+        "enum": [
+          "PENDENTE",
+          "SINAL_PAGO",
+          "PAGO_PARCIAL",
+          "PAGO_TOTAL",
+          "ISENTO",
+          "ESTORNADO"
+        ],
+        "title": "StatusFinanceiro"
+      },
+      "StatusFlash": {
+        "type": "string",
+        "enum": [
+          "DISPONIVEL",
+          "EM_NEGOCIACAO",
+          "RESERVADA",
+          "SINAL_PAGO",
+          "VENDIDA",
+          "ARQUIVADA"
+        ],
+        "title": "StatusFlash"
+      },
+      "StatusLancamento": {
+        "type": "string",
+        "enum": [
+          "PENDENTE",
+          "PAGO",
+          "CANCELADO",
+          "ESTORNADO"
+        ],
+        "title": "StatusLancamento"
+      },
+      "StatusOperacional": {
+        "type": "string",
+        "enum": [
+          "SOLICITADO",
+          "EM_ANALISE",
+          "AGUARDANDO_SINAL",
+          "CONFIRMADO",
+          "EM_ATENDIMENTO",
+          "FINALIZADO",
+          "REAGENDADO",
+          "CANCELADO_CLIENTE",
+          "CANCELADO_ESTUDIO",
+          "NAO_COMPARECEU",
+          "RETOQUE"
+        ],
+        "title": "StatusOperacional"
+      },
+      "TipoAtendimento": {
+        "type": "string",
+        "enum": [
+          "TATUAGEM",
+          "CONSULTA",
+          "RETOQUE",
+          "FLASH"
+        ],
+        "title": "TipoAtendimento"
+      },
+      "TipoDocumento": {
+        "type": "string",
+        "enum": [
+          "POLITICA_PRIVACIDADE",
+          "TERMOS_USO",
+          "CONSENTIMENTO",
+          "AUTORIZACAO_IMAGEM",
+          "POLITICA_SINAL",
+          "AFTERCARE",
+          "OUTRO"
+        ],
+        "title": "TipoDocumento"
+      },
+      "TipoLancamento": {
+        "type": "string",
+        "enum": [
+          "ENTRADA",
+          "SAIDA",
+          "COMISSAO",
+          "SINAL"
+        ],
+        "title": "TipoLancamento"
+      },
+      "TipoUsuario": {
+        "type": "string",
+        "enum": [
+          "ADMIN",
+          "ARTISTA",
+          "RECEPCIONISTA"
+        ],
+        "title": "TipoUsuario"
+      },
+      "TokenResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "Login realizado com sucesso"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "cookie"
+          }
+        },
+        "type": "object",
+        "title": "TokenResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VisibilidadePortfolio": {
+        "type": "string",
+        "enum": [
+          "PRIVADO",
+          "PUBLICO"
+        ],
+        "title": "VisibilidadePortfolio"
+      },
+      "app__api__v1__auth__schemas__UsuarioResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "estudio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Estudio Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nome",
+          "email",
+          "tipo",
+          "estudio_id"
+        ],
+        "title": "UsuarioResponse"
+      },
+      "app__api__v1__usuarios__router__UsuarioResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoUsuario"
+          },
+          "estudio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Estudio Id"
+          },
+          "ativo": {
+            "type": "boolean",
+            "title": "Ativo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nome",
+          "email",
+          "tipo",
+          "estudio_id",
+          "ativo"
+        ],
+        "title": "UsuarioResponse"
+      }
+    }
+  }
+}

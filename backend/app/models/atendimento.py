@@ -7,7 +7,17 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Numeric, String, Text, Uuid
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    Uuid,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -98,6 +108,19 @@ class Atendimento(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
         DateTime(timezone=True), nullable=True, index=True
     )
     duracao_minutos: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    orcamento_publico: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+    )
+    lgpd_retencao_ate: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    lgpd_anonimizado_em: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
 
     cliente: Mapped[Cliente | None] = relationship(
         "Cliente", foreign_keys=[cliente_id], lazy="joined"

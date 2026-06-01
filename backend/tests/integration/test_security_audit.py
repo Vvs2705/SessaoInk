@@ -1,16 +1,10 @@
 """Testes de integração e segurança para auditoria e isolamento (SessãoInk)."""
 
-import pytest
 import uuid
-from httpx import AsyncClient
-from unittest.mock import patch, AsyncMock
-from fastapi import status
+from unittest.mock import patch
 
-from app.models.usuario import Usuario, Estudio
-from app.models.cliente import Cliente
-from app.models.atendimento import Atendimento
-from app.models.documento import Documento
-from app.models.financeiro import Lancamento
+import pytest
+from httpx import AsyncClient
 
 
 class TestSecurityAndSpamControls:
@@ -82,7 +76,7 @@ class TestTenantIsolationIDCrossing:
         """POST /atendimentos/ deve retornar 400 ao tentar cruzar com cliente de outro estúdio."""
         # Tenta usar um UUID aleatório/inexistente (que é interpretado como não pertencente ao estúdio)
         fake_client_id = uuid.uuid4()
-        
+
         r = await autenticado.post(
             "/api/v1/atendimentos/",
             json={
@@ -98,7 +92,7 @@ class TestTenantIsolationIDCrossing:
     async def test_criar_atendimento_com_artista_de_outro_estudio(self, autenticado: AsyncClient):
         """POST /atendimentos/ deve retornar 400 ao tentar cruzar com artista/usuário de outro estúdio."""
         fake_artista_id = uuid.uuid4()
-        
+
         r = await autenticado.post(
             "/api/v1/atendimentos/",
             json={
@@ -114,7 +108,7 @@ class TestTenantIsolationIDCrossing:
     async def test_criar_documento_com_cliente_de_outro_estudio(self, autenticado: AsyncClient):
         """POST /documentos/ deve retornar 400 ao tentar vincular a um cliente inexistente/de outro estúdio."""
         fake_client_id = uuid.uuid4()
-        
+
         r = await autenticado.post(
             "/api/v1/documentos/",
             json={
@@ -131,7 +125,7 @@ class TestTenantIsolationIDCrossing:
     async def test_criar_documento_com_atendimento_de_outro_estudio(self, autenticado: AsyncClient):
         """POST /documentos/ deve retornar 400 ao tentar vincular a um atendimento inexistente/de outro estúdio."""
         fake_atendimento_id = uuid.uuid4()
-        
+
         r = await autenticado.post(
             "/api/v1/documentos/",
             json={
@@ -148,7 +142,7 @@ class TestTenantIsolationIDCrossing:
     async def test_criar_lancamento_com_atendimento_de_outro_estudio(self, autenticado: AsyncClient):
         """POST /financeiro/ deve retornar 400 ao tentar vincular a um atendimento inexistente/de outro estúdio."""
         fake_atendimento_id = uuid.uuid4()
-        
+
         r = await autenticado.post(
             "/api/v1/financeiro/",
             json={
@@ -165,7 +159,7 @@ class TestTenantIsolationIDCrossing:
     async def test_criar_lancamento_com_artista_de_outro_estudio(self, autenticado: AsyncClient):
         """POST /financeiro/ deve retornar 400 ao tentar vincular a um artista inexistente/de outro estúdio."""
         fake_artista_id = uuid.uuid4()
-        
+
         r = await autenticado.post(
             "/api/v1/financeiro/",
             json={

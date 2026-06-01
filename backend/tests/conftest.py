@@ -28,13 +28,12 @@ from app.core.redis import MockRedis  # noqa: E402
 redis.asyncio.Redis = MockRedis  # type: ignore[assignment]
 
 import pytest
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
 
-from app.main import app
 from app.core.database import Base, engine
-from app.models.usuario import Estudio, Usuario, TipoUsuario
 from app.core.security import hash_senha
-
+from app.main import app
+from app.models.usuario import Estudio, TipoUsuario, Usuario
 
 ADMIN_EMAIL = "admin@sessaoink.dev"
 ADMIN_SENHA = "admin123"

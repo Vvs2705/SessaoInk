@@ -6,7 +6,6 @@ from redis.asyncio import Redis
 
 from app.core.config import settings
 
-
 # ---------------------------------------------------------------------------
 # Helpers Redis — usa scan para garantir limpeza independente do IP real
 # ---------------------------------------------------------------------------

@@ -1,6 +1,5 @@
 """Testes de integração — Autenticação e Redis."""
 
-import pytest
 from httpx import AsyncClient
 
 from app.core.redis import MockRedis, obter_usuario_do_refresh

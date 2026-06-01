@@ -1,14 +1,15 @@
+
 import pytest
-import uuid
 from httpx import AsyncClient
 from sqlalchemy import select
+
 from app.core.database import async_session
-from app.models.usuario import Estudio, Usuario, TipoUsuario
-from app.models.cliente import Cliente
+from app.core.security import hash_senha
 from app.models.atendimento import Atendimento, StatusOperacional, TipoAtendimento
+from app.models.cliente import Cliente
 from app.models.documento import Documento, TipoDocumento
 from app.models.financeiro import Lancamento, TipoLancamento
-from app.core.security import hash_senha
+from app.models.usuario import Estudio, TipoUsuario, Usuario
 
 INVASOR_EMAIL = "admin@invasor.dev"
 ARTISTA_EMAIL = "artista@sessaoink.dev"
@@ -123,7 +124,7 @@ class TestTenantIsolationCrossOperations:
     async def test_invasor_nao_deve_ver_clientes_do_demo(self, client: AsyncClient):
         # Autentica como invasor
         authed = await _get_auth_client(client, INVASOR_EMAIL)
-        
+
         # 1. Tenta listar clientes (não deve vir o cliente demo)
         r_list = await authed.get("/api/v1/clientes/")
         assert r_list.status_code == 200
@@ -145,7 +146,7 @@ class TestTenantIsolationCrossOperations:
     @pytest.mark.asyncio
     async def test_invasor_nao_deve_ver_atendimentos_do_demo(self, client: AsyncClient):
         authed = await _get_auth_client(client, INVASOR_EMAIL)
-        
+
         async with async_session() as session:
             atend_id = await session.scalar(select(Atendimento.id).where(Atendimento.descricao == "Tatuagem do cliente demo"))
 
@@ -158,7 +159,7 @@ class TestTenantIsolationCrossOperations:
     @pytest.mark.asyncio
     async def test_invasor_nao_deve_ver_documentos_do_demo(self, client: AsyncClient):
         authed = await _get_auth_client(client, INVASOR_EMAIL)
-        
+
         async with async_session() as session:
             doc_id = await session.scalar(select(Documento.id).where(Documento.titulo == "Termo Demo"))
 
@@ -171,7 +172,7 @@ class TestTenantIsolationCrossOperations:
     @pytest.mark.asyncio
     async def test_invasor_nao_deve_ver_ou_deletar_lancamentos_do_demo(self, client: AsyncClient):
         authed = await _get_auth_client(client, INVASOR_EMAIL)
-        
+
         async with async_session() as session:
             lanc_id = await session.scalar(select(Lancamento.id).where(Lancamento.descricao == "Lançamento Demo"))
 

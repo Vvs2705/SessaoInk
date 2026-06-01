@@ -1,6 +1,5 @@
 """Testes de integração — Atendimentos e isolamento por estúdio."""
 
-import pytest
 from httpx import AsyncClient
 
 

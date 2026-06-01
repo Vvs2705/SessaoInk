@@ -1,9 +1,8 @@
 """Testes de integração — Portfólio (upload seguro, acesso autenticado)."""
 
 import io
-import pytest
-from httpx import AsyncClient
 
+from httpx import AsyncClient
 
 # ── Helpers de imagem de teste ────────────────────────────────────────────────
 
@@ -23,7 +22,8 @@ def jpeg_minimo() -> bytes:
 
 def png_minimo() -> bytes:
     """PNG mínimo válido (magic bytes corretos)."""
-    import struct, zlib
+    import struct
+    import zlib
     sig = b"\x89PNG\r\n\x1a\n"
 
     def chunk(kind: bytes, data: bytes) -> bytes:

@@ -1,8 +1,8 @@
 """Testes de integração para as correções aplicadas (Documentos Públicos e Conflitos de Agenda)."""
 
-import pytest
+from datetime import UTC, datetime, timedelta
+
 from httpx import AsyncClient
-from datetime import datetime, timezone, timedelta
 
 
 class TestDocumentosPublicos:
@@ -85,7 +85,7 @@ class TestAgendaConflitos:
         atend2_id = atend2_resp.json()["id"]
 
         # Definir horário de sessão
-        data_sessao_base = datetime.now(timezone.utc) + timedelta(days=5)
+        data_sessao_base = datetime.now(UTC) + timedelta(days=5)
 
         # 2. Agendar primeira sessão (das 14:00 às 16:00)
         agendar1_resp = await autenticado.post(

@@ -66,5 +66,8 @@ _equipes/
 docs/
 ROADMAP.md
 
-# Testes (rodam localmente, não sobem para o repositório)
-backend/tests/
+# Testes — o CÓDIGO de teste sobe (CI bloqueante P0-09); só artefatos são ignorados
+backend/test.db
+backend/**/*.db
+backend/**/.pytest_cache/
+backend/tests/**/__pycache__/

@@ -7,29 +7,29 @@ name = "sessaoink-api"
 version = "1.0.0"
 description = "SessãoInk — API de gestão para tatuadores e estúdios"
 requires-python = ">=3.12"
+# FONTE DA VERDADE de runtime: backend/requirements.txt (usado por Docker/Fly).
+# Esta lista espelha requirements.txt — sem deps-fantasma (P0-06: removidos
+# passlib, celery, python-magic, uuid7 — não usados no código).
 dependencies = [
     # Web framework
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.30.0",
     # ORM / Database
-    "sqlalchemy[asyncio]>=2.0.36",
+    "sqlalchemy>=2.0.36",
     "asyncpg>=0.30.0",
     "alembic>=1.13.3",
     # Validação e configuração
     "pydantic[email]>=2.9.0",
     "pydantic-settings>=2.6.0",
     # Auth / Segurança
-    "passlib[bcrypt]>=1.7.4",
+    "bcrypt>=4.0.0",
     "python-jose[cryptography]>=3.3.0",
     "python-multipart>=0.0.12",
-    # Cache / Fila
-    "redis[hiredis]>=5.2.0",
-    "celery>=5.4.0",
-    # Utilitários
-    "httpx>=0.27.0",
-    "python-magic-bin>=0.4.14; sys_platform == 'win32'",
-    "python-magic>=0.4.27; sys_platform != 'win32'",
-    "uuid7>=0.1.0",
+    # Cache
+    "redis>=5.2.0",
+    # Observabilidade / Email / Imagem
+    "sentry-sdk[fastapi]>=2.0.0",
+    "resend>=2.0.0",
     "Pillow>=11.0.0",
 ]
 

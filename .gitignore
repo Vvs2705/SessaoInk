@@ -63,8 +63,8 @@ ChatGPT Image*.png
 # Documentação interna / arquivos de equipe (apenas consulta local)
 _memoria/
 _equipes/
-docs/
 ROADMAP.md
+# docs/ agora é versionado (P1 — documentação operacional do MVP)
 
 # Testes — o CÓDIGO de teste sobe (CI bloqueante P0-09); só artefatos são ignorados
 backend/test.db

@@ -14,6 +14,7 @@ from app.models.usuario import Estudio, TipoUsuario, Usuario
 INVASOR_EMAIL = "admin@invasor.dev"
 ARTISTA_EMAIL = "artista@sessaoink.dev"
 RECEPCIONISTA_EMAIL = "recep@sessaoink.dev"
+ADMIN_EMAIL = "admin@sessaoink.dev"  # admin do estúdio demo (criado no conftest)
 SENHA = "admin123"
 
 @pytest.fixture(scope="session", autouse=True)
@@ -216,3 +217,40 @@ class TestRBACPermissions:
         authed_recep = await _get_auth_client(client, RECEPCIONISTA_EMAIL)
         r_recep = await authed_recep.delete(f"/api/v1/financeiro/{lanc_id}")
         assert r_recep.status_code == 403
+
+
+class TestRBACOperacoesAdmin:
+    """P0-03 — operações restritas a ADMIN por papel."""
+
+    @pytest.mark.asyncio
+    async def test_recepcionista_nao_altera_config_estudio(self, client: AsyncClient):
+        authed = await _get_auth_client(client, RECEPCIONISTA_EMAIL)
+        r = await authed.patch("/api/v1/estudio/", json={"bio": "hack"})
+        assert r.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_artista_nao_altera_config_estudio(self, client: AsyncClient):
+        authed = await _get_auth_client(client, ARTISTA_EMAIL)
+        r = await authed.patch("/api/v1/estudio/", json={"bio": "hack"})
+        assert r.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_artista_nao_cria_lancamento_financeiro(self, client: AsyncClient):
+        authed = await _get_auth_client(client, ARTISTA_EMAIL)
+        r = await authed.post(
+            "/api/v1/financeiro/",
+            json={"tipo": "ENTRADA", "descricao": "x", "valor": 50.0},
+        )
+        assert r.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_recepcionista_nao_acessa_relatorios(self, client: AsyncClient):
+        authed = await _get_auth_client(client, RECEPCIONISTA_EMAIL)
+        r = await authed.get("/api/v1/relatorios/resumo")
+        assert r.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_admin_acessa_relatorios(self, client: AsyncClient):
+        authed = await _get_auth_client(client, ADMIN_EMAIL)
+        r = await authed.get("/api/v1/relatorios/resumo")
+        assert r.status_code == 200

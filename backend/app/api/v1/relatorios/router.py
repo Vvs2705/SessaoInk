@@ -7,11 +7,11 @@ from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.auth.dependencies import get_usuario_atual
+from app.api.v1.auth.dependencies import require_role
 from app.core.database import get_session
 from app.models.atendimento import Atendimento, StatusOperacional
 from app.models.financeiro import Lancamento, StatusLancamento, TipoLancamento
-from app.models.usuario import Usuario
+from app.models.usuario import TipoUsuario, Usuario
 
 router = APIRouter(prefix="/relatorios", tags=["relatorios"])
 
@@ -84,7 +84,7 @@ STATUS_LABELS = {
 async def resumo_financeiro(
     periodo: int = Query(default=30, ge=7, le=365, description="Período em dias"),
     session: AsyncSession = Depends(get_session),
-    usuario: Usuario = Depends(get_usuario_atual),
+    usuario: Usuario = Depends(require_role(TipoUsuario.ADMIN)),  # P0-03 relatorios = ADMIN
 ):
     """Resumo financeiro e operacional do estúdio.
 
@@ -198,7 +198,7 @@ async def resumo_financeiro(
 @router.get("/por-status", response_model=RelatorioStatusResponse)
 async def relatorio_por_status(
     session: AsyncSession = Depends(get_session),
-    usuario: Usuario = Depends(get_usuario_atual),
+    usuario: Usuario = Depends(require_role(TipoUsuario.ADMIN)),  # P0-03 relatorios = ADMIN
 ):
     """Contagem de atendimentos ativos agrupados por status operacional."""
     result = await session.execute(
@@ -231,7 +231,7 @@ async def relatorio_por_status(
 async def relatorio_temporal(
     periodo: int = Query(default=30, ge=1, le=365, description="Período em dias"),
     session: AsyncSession = Depends(get_session),
-    usuario: Usuario = Depends(get_usuario_atual),
+    usuario: Usuario = Depends(require_role(TipoUsuario.ADMIN)),  # P0-03 relatorios = ADMIN
 ):
     """Receita agrupada por dia nos últimos N dias."""
 

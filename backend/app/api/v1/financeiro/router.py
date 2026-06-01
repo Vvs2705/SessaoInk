@@ -79,7 +79,7 @@ async def listar_lancamentos(
 async def criar_lancamento(
     dados: LancamentoCreate,
     session: AsyncSession = Depends(get_session),
-    usuario: Usuario = Depends(get_usuario_atual),
+    usuario: Usuario = Depends(require_role(TipoUsuario.ADMIN)),  # P0-03 financeiro = ADMIN
 ):
     # Validar se o atendimento pertence ao mesmo estúdio do usuário
     if dados.atendimento_id:
@@ -181,7 +181,7 @@ async def atualizar_lancamento(
     id: uuid.UUID,
     dados: LancamentoUpdate,
     session: AsyncSession = Depends(get_session),
-    usuario: Usuario = Depends(get_usuario_atual),
+    usuario: Usuario = Depends(require_role(TipoUsuario.ADMIN)),  # P0-03 financeiro = ADMIN
 ):
     result = await session.execute(
         select(Lancamento).where(

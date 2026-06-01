@@ -7,9 +7,9 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.auth.dependencies import get_usuario_atual
+from app.api.v1.auth.dependencies import get_usuario_atual, require_role
 from app.core.database import get_session
-from app.models.usuario import Estudio, Usuario
+from app.models.usuario import Estudio, TipoUsuario, Usuario
 
 router = APIRouter(prefix="/estudio", tags=["estudio"])
 
@@ -73,7 +73,7 @@ async def obter_estudio(
 async def atualizar_estudio(
     dados: EstudioAtualizarRequest,
     session: AsyncSession = Depends(get_session),
-    usuario: Usuario = Depends(get_usuario_atual),
+    usuario: Usuario = Depends(require_role(TipoUsuario.ADMIN)),  # P0-03 config = ADMIN
 ):
     """Atualiza dados do estúdio. Apenas ADMIN pode alterar."""
     from app.models.usuario import TipoUsuario

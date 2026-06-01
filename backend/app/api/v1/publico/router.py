@@ -76,6 +76,17 @@ class PortfolioPublicoItem(BaseModel):
     model_config = {"from_attributes": True}
 
 
+@router.get("/planos")
+async def listar_planos():
+    """Catálogo público de planos para a página de preços.
+
+    IMPORTANTE: declarado ANTES de `/{slug}` para não ser capturado como slug.
+    """
+    from app.core.planos import TRIAL_DIAS, listar_planos_publicos
+
+    return {"planos": listar_planos_publicos(), "trial_dias": TRIAL_DIAS}
+
+
 @router.get("/{slug}", response_model=EstudioPublicoResponse)
 async def perfil_publico(
     slug: str,

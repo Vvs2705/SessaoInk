@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+# Permissões mínimas (P0-09 / hardening do GitHub Actions)
+permissions:
+  contents: read
+
 jobs:
   backend:
     name: Backend
@@ -13,6 +17,10 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    env:
+      ENVIRONMENT: test
+      SECRET_KEY: ci-test-secret-key-32chars-minimum
+      REDIS_URL: redis://localhost:6379
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -20,18 +28,55 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install --upgrade pip && pip install -r requirements.txt
-      - name: Lint (ruff)
-        # ruff lê configuração do pyproject.toml automaticamente
+      - name: Lint (ruff) — bloqueante
         run: pip install ruff && ruff check .
-      - name: Type check (pyright)
-        run: pip install pyright && pyright --pythonpath $(which python) app/ || true
+      - name: Type check (pyright) — bloqueante
+        # pyrightconfig.json rebaixa falsos-positivos conhecidos a warning;
+        # erros reais de tipo quebram o build.
+        run: pip install pyright && pyright
+      - name: Testes (pytest) — bloqueante
+        # Suíte usa SQLite + MockRedis (autocontida): unit + integração (RBAC,
+        # tenant, segurança, auth, uploads). Sem necessidade de serviços.
+        run: pip install pytest pytest-asyncio aiosqlite httpx && pytest -q
       - name: Smoke test — imports
         run: python -c "from app.core.config import settings; from app.main import app; print('OK')"
+
+  migrations:
+    name: Migrations (Postgres limpo)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16-alpine
         env:
-          SECRET_KEY: ci-test-secret-key-32chars-minimum
-          DATABASE_URL: postgresql+asyncpg://user:pass@localhost/db
-          REDIS_URL: redis://localhost:6379
-          ENVIRONMENT: test
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: sessaoink_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      ENVIRONMENT: test
+      SECRET_KEY: ci-test-secret-key-32chars-minimum
+      REDIS_URL: redis://localhost:6379
+      DATABASE_URL: postgresql+asyncpg://ci:ci@localhost:5432/sessaoink_ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install --upgrade pip && pip install -r requirements.txt
+      - name: alembic upgrade head — banco limpo
+        run: alembic upgrade head
+      - name: alembic upgrade head idempotente (segunda execução)
+        run: alembic upgrade head
 
   frontend:
     name: Frontend
@@ -46,17 +91,29 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      # lucide-react@0.390 declara peer react@^18 mas funciona com React 19
-      # Vercel usa --legacy-peer-deps internamente; replicamos aqui
       - run: npm ci --legacy-peer-deps
-      # next lint tem incompatibilidade com React 19 / Next.js 15 no CI
-      # O TypeScript strict + build cobrem a maioria das garantias de qualidade
-      - name: Type check
+      - name: Type check — bloqueante
         run: npx tsc --noEmit
-      - name: Build
+      - name: Build — bloqueante
         run: npm run build
         env:
           NEXT_PUBLIC_APP_URL: https://sessao-ink.vercel.app
+      - name: npm audit (high+) — bloqueante
+        run: npm audit --audit-level=high
+
+  security-scan:
+    name: Security Scan (SCA)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: pip-audit (backend) — advisory
+        # Advisory por ora: vulnerabilidades transitivas do ecossistema Python
+        # exigem triagem de exploitabilidade antes de bloquear merge.
+        continue-on-error: true
+        run: pip install pip-audit && pip-audit -r backend/requirements.txt
 
   secret-scan:
     name: Secret Scan

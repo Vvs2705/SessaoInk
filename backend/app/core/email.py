@@ -7,7 +7,7 @@ Caso contrário, a operação é silenciosa (no-op).
 import asyncio
 import logging
 
-import resend
+import resend  # type: ignore[import-untyped]
 
 from app.core.config import settings
 

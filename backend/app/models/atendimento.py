@@ -5,12 +5,16 @@ from __future__ import annotations
 import enum
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Numeric, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 from app.core.mixins import SoftDeleteMixin, TimestampMixin, UUIDMixin
+
+if TYPE_CHECKING:
+    from app.models.cliente import Cliente
 
 
 class StatusOperacional(enum.StrEnum):

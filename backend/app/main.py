@@ -1,4 +1,5 @@
 import logging
+import secrets
 from contextlib import asynccontextmanager
 from urllib.parse import urlsplit
 
@@ -96,6 +97,15 @@ def _normalizar_origin(origin: str) -> str:
     return f"{parsed.scheme.lower()}://{parsed.netloc.lower()}"
 
 
+def _bearer_token_autorizado(token_esperado: str, authorization: str | None) -> bool:
+    if not token_esperado or not authorization:
+        return False
+    scheme, _, token = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not token:
+        return False
+    return secrets.compare_digest(token, token_esperado)
+
+
 @app.middleware("http")
 async def csrf_origin_check(request: Request, call_next):
     """Defesa CSRF em profundidade: rejeita Origin estranho em endpoints autenticados.
@@ -118,6 +128,12 @@ async def csrf_origin_check(request: Request, call_next):
         is_exempt = any(path.startswith(p) for p in _CSRF_EXEMPT_PREFIXES)
 
         if not is_exempt:
+            if _bearer_token_autorizado(
+                settings.LGPD_RETENTION_TOKEN,
+                request.headers.get("authorization"),
+            ):
+                return await call_next(request)
+
             browser_origin = request.headers.get("x-origin-browser", "")
             if browser_origin:
                 allowed = {_normalizar_origin(origin) for origin in settings.ALLOWED_ORIGINS}
@@ -137,9 +153,9 @@ async def csrf_origin_check(request: Request, call_next):
                     )
 
             csrf_cookie = request.cookies.get("csrf_token")
-            if csrf_cookie:
-                csrf_header = request.headers.get("x-csrf-token")
-                if not csrf_header or csrf_header != csrf_cookie:
+            csrf_header = request.headers.get("x-csrf-token")
+            if settings.CSRF_STRICT_MODE or csrf_cookie:
+                if not csrf_cookie or not csrf_header or csrf_header != csrf_cookie:
                     logger.warning(
                         "csrf_token_blocked",
                         extra={"path": path, "method": request.method},

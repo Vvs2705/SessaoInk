@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { CheckCircle, Shield, FileText, Loader2, AlertCircle } from "lucide-react";
+import { captureAppEvent } from "@/lib/posthog";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
@@ -86,6 +87,9 @@ export default function DocumentoAssinaturaPage() {
         throw new Error(errJson?.detail ?? "Falha ao assinar documento.");
       }
 
+      captureAppEvent("documento_publico_assinado", {
+        tipo: documento?.tipo,
+      });
       setSuccess(true);
       if (documento) {
         setDocumento({

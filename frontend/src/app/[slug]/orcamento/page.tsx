@@ -12,6 +12,7 @@ import {
   X,
   ChevronRight,
 } from "lucide-react";
+import { captureAppEvent } from "@/lib/posthog";
 import { cn } from "@/lib/utils";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
@@ -223,6 +224,10 @@ export default function OrcamentoPage() {
       }
 
       const data: OrcamentoResponse = await res.json();
+      captureAppEvent("orcamento_publico_enviado", {
+        slug,
+        imagens: imagens.length,
+      });
       setResultado(data);
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Erro ao enviar orçamento.");

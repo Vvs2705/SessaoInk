@@ -73,7 +73,7 @@ class TestCSRFDuploSubmit:
 
         assert r.status_code == 201, r.text
 
-    async def test_rollout_tolerante_sem_cookie_csrf_ainda_permite(
+    async def test_modo_estrito_sem_cookie_csrf_retorna_403(
         self,
         autenticado: AsyncClient,
         monkeypatch,
@@ -85,10 +85,27 @@ class TestCSRFDuploSubmit:
         r = await autenticado.post(
             "/api/v1/clientes/",
             headers={"X-Origin-Browser": "http://test"},
-            json={"nome": "Cliente legado sem cookie"},
+            json={"nome": "Cliente sem cookie CSRF"},
         )
 
-        assert r.status_code == 201, r.text
+        assert r.status_code == 403
+        assert r.json()["detail"].startswith("Token CSRF")
+
+    async def test_token_servico_lgpd_dispensa_csrf_browser(
+        self,
+        client: AsyncClient,
+        monkeypatch,
+    ):
+        monkeypatch.setattr("app.main.settings.ENVIRONMENT", "production")
+        monkeypatch.setattr("app.main.settings.LGPD_RETENTION_TOKEN", "service-token-123")
+
+        r = await client.post(
+            "/api/v1/admin/lgpd/anonimizar",
+            headers={"Authorization": "Bearer service-token-123"},
+            json={"dry_run": True},
+        )
+
+        assert r.status_code == 200, r.text
 
     async def test_origin_parecido_com_prefixo_autorizado_e_bloqueado(
         self,

@@ -24,4 +24,14 @@ export function initPostHog() {
   });
 }
 
+export function captureAppEvent(
+  event: string,
+  properties?: Record<string, string | number | boolean | null | undefined>
+) {
+  if (typeof window === "undefined") return;
+  if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return;
+  if (!posthog.__loaded) return;
+  posthog.capture(event, properties);
+}
+
 export { posthog };

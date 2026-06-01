@@ -1,3 +1,5 @@
+import { captureAppEvent } from "../posthog";
+
 // URL base: vazia em produção (usa proxy Next.js em /api/v1/) ou a URL direta do backend.
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 const CSRF_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
@@ -94,6 +96,24 @@ async function fetchWithAuth<T>(fetchFn: () => Promise<Response>): Promise<T> {
   return handleResponse<T>(retryRes);
 }
 
+function mutationEvent(method: string, path: string): string | null {
+  if (method === "POST" && path.includes("/auth/login")) return "auth_login";
+  if (path.includes("/clientes")) return "cliente_mutation";
+  if (path.includes("/agenda")) return "agenda_mutation";
+  if (path.includes("/atendimentos")) return "atendimento_mutation";
+  if (path.includes("/financeiro")) return "pagamento_mutation";
+  if (path.includes("/documentos")) return "documento_mutation";
+  if (path.includes("/portfolio")) return "portfolio_mutation";
+  if (path.includes("/flash-arts")) return "flash_art_mutation";
+  return null;
+}
+
+function captureMutation(method: string, path: string, status: "success" | "error") {
+  const event = mutationEvent(method, path);
+  if (!event) return;
+  captureAppEvent(event, { method, path, status });
+}
+
 export const api = {
   get: <T>(path: string, init?: RequestInit) =>
     fetchWithAuth<T>(() =>
@@ -104,32 +124,56 @@ export const api = {
       })
     ),
 
-  post: <T>(path: string, body?: unknown, init?: RequestInit) =>
-    fetchWithAuth<T>(() =>
-      fetch(`${API_URL}${path}`, {
-        ...withJsonHeaders("POST", init),
-        credentials: "include",
-        method: "POST",
-        body: body !== undefined ? JSON.stringify(body) : undefined,
-      })
-    ),
+  post: async <T>(path: string, body?: unknown, init?: RequestInit) => {
+    try {
+      const result = await fetchWithAuth<T>(() =>
+        fetch(`${API_URL}${path}`, {
+          ...withJsonHeaders("POST", init),
+          credentials: "include",
+          method: "POST",
+          body: body !== undefined ? JSON.stringify(body) : undefined,
+        })
+      );
+      captureMutation("POST", path, "success");
+      return result;
+    } catch (error) {
+      captureMutation("POST", path, "error");
+      throw error;
+    }
+  },
 
-  patch: <T>(path: string, body?: unknown, init?: RequestInit) =>
-    fetchWithAuth<T>(() =>
-      fetch(`${API_URL}${path}`, {
-        ...withJsonHeaders("PATCH", init),
-        credentials: "include",
-        method: "PATCH",
-        body: body !== undefined ? JSON.stringify(body) : undefined,
-      })
-    ),
+  patch: async <T>(path: string, body?: unknown, init?: RequestInit) => {
+    try {
+      const result = await fetchWithAuth<T>(() =>
+        fetch(`${API_URL}${path}`, {
+          ...withJsonHeaders("PATCH", init),
+          credentials: "include",
+          method: "PATCH",
+          body: body !== undefined ? JSON.stringify(body) : undefined,
+        })
+      );
+      captureMutation("PATCH", path, "success");
+      return result;
+    } catch (error) {
+      captureMutation("PATCH", path, "error");
+      throw error;
+    }
+  },
 
-  delete: <T>(path: string, init?: RequestInit) =>
-    fetchWithAuth<T>(() =>
-      fetch(`${API_URL}${path}`, {
-        ...withJsonHeaders("DELETE", init),
-        credentials: "include",
-        method: "DELETE",
-      })
-    ),
+  delete: async <T>(path: string, init?: RequestInit) => {
+    try {
+      const result = await fetchWithAuth<T>(() =>
+        fetch(`${API_URL}${path}`, {
+          ...withJsonHeaders("DELETE", init),
+          credentials: "include",
+          method: "DELETE",
+        })
+      );
+      captureMutation("DELETE", path, "success");
+      return result;
+    } catch (error) {
+      captureMutation("DELETE", path, "error");
+      throw error;
+    }
+  },
 };

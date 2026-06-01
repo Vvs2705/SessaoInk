@@ -1,52 +1,56 @@
-# Backup & Restore — SessãoInk
+# Backup & Restore - SessaoInk
 
 ## Banco (Neon PostgreSQL)
 
-O Neon oferece **backup gerenciado contínuo** com Point-in-Time Recovery (PITR).
-Não é necessário (nem recomendado) reinventar backup do Postgres manualmente.
-
-### Verificar PITR (fazer trimestralmente)
-1. Painel Neon → projeto → **Branches / Restore**.
-2. Confirmar a janela de retenção do plano (history retention). Anotar o valor.
-3. Confirmar que o branch de produção tem PITR habilitado.
+O Neon e a fonte de backup do banco por backup gerenciado continuo com
+Point-in-Time Recovery (PITR). Nao reinventar backup manual de Postgres na app.
 
 ### Restore (PITR)
-1. Neon → **Restore** → escolher timestamp alvo (antes do incidente).
-2. Restaurar para um **branch novo** primeiro (não sobrescrever produção direto).
-3. Validar dados no branch restaurado (queries de sanidade).
-4. Apontar a aplicação para o branch restaurado **ou** promover, conforme o caso.
-5. Atualizar `DATABASE_URL` no Fly se a connection string mudar; redeploy/restart.
 
-### Teste de restore (registrar evidência)
-- Periodicamente (ex.: trimestral): restaurar para branch de teste, rodar
-  `alembic current` + contagem de tabelas-chave e registrar evidência sanitizada
-  neste repositório.
-- Usar o template `docs/evidencias/restore-template.md`.
-- Não registrar connection strings, tokens, cookies, dumps, linhas de tabelas ou
-  dados pessoais.
+1. Neon -> Restore -> escolher timestamp alvo antes do incidente.
+2. Restaurar para branch novo primeiro; nao sobrescrever producao direto.
+3. Validar dados no branch restaurado com queries agregadas e sem PII.
+4. Apontar a aplicacao para o branch restaurado ou promover, conforme o caso.
+5. Atualizar `DATABASE_URL` no Fly se a connection string mudar.
+6. Rodar `/ready` e smoke test do backend.
 
-## Storage de uploads (Fly → object storage)
+### Evidencia atual
 
-- Imagens de portfólio/flash/atendimento ficam em `STORAGE_PATH` no volume do Fly.
-- **Risco:** volume local não tem PITR equivalente ao Neon e dificulta restore
-  granular de uploads.
-- **Direção recomendada:** migrar uploads para object storage compatível com S3
-  (Cloudflare R2 ou AWS S3) com versionamento, lifecycle e política de acesso
-  privado por padrão.
-- **Sem segredos no repositório:** credenciais devem ficar somente em secrets do
-  Fly/Vercel/GitHub Actions. Documentar apenas nomes de variáveis esperadas.
-- Variáveis esperadas para desenho futuro: `OBJECT_STORAGE_ENDPOINT`,
-  `OBJECT_STORAGE_BUCKET`, `OBJECT_STORAGE_REGION`, `OBJECT_STORAGE_ACCESS_KEY_ID`
-  e `OBJECT_STORAGE_SECRET_ACCESS_KEY`.
-- Até a migração, tratar o volume Fly como ponto de atenção operacional e
-  registrar qualquer snapshot/restauração manual como evidência sanitizada.
+- Ensaio local versionado:
+  `docs/evidencias/restore-2026-06-01-local-rehearsal.md`.
+- O teste PITR real em Neon deve ser registrado no mesmo diretorio quando houver
+  acesso ao painel/API do projeto de producao.
+
+## Storage de uploads
+
+Decisao: migrar uploads para object storage compativel com S3, preferindo
+Cloudflare R2 pela ausencia de egress fee e boa compatibilidade com Workers/CDN.
+
+Estado atual:
+
+- Uploads ainda usam `STORAGE_PATH` no volume Fly.
+- Volume Fly permanece funcional, mas nao entrega PITR equivalente ao banco.
+- Qualquer credencial deve ficar somente em Fly/Vercel/GitHub secrets.
+
+Variaveis planejadas:
+
+- `OBJECT_STORAGE_ENDPOINT`
+- `OBJECT_STORAGE_BUCKET`
+- `OBJECT_STORAGE_REGION`
+- `OBJECT_STORAGE_ACCESS_KEY_ID`
+- `OBJECT_STORAGE_SECRET_ACCESS_KEY`
+- `OBJECT_STORAGE_PUBLIC_BASE_URL`, se for adotado CDN publico.
 
 ## Readiness e alertas
-- `/ready` falha (503) se DB ou Redis indisponível — usar em healthcheck/monitor.
-- Alertas recomendados (P1-04): 5xx, `/ready` 503, Redis down, pico de 403/429.
 
-## Checklist de prontidão
-- [ ] Janela de PITR do Neon conhecida e suficiente.
-- [ ] Restore testado em branch separado com evidência registrada.
-- [ ] Migração para object storage planejada e validada sem segredos no repo.
-- [ ] Alertas operacionais configurados e chegando ao canal definido.
+- `/ready` retorna 503 se DB ou Redis estiverem indisponiveis.
+- Alertas minimos: 5xx, `/ready` 503, Redis down, pico de 403/429.
+- Eventos e dashboards estao descritos em `docs/observabilidade.md`.
+
+## Checklist de prontidao
+
+- [x] Politica de backup do banco delegada ao PITR Neon.
+- [x] Ensaio local de restore/retencao registrado sem segredos.
+- [x] Decisao de object storage registrada: Cloudflare R2/S3-compatible.
+- [x] Variaveis esperadas documentadas sem segredos.
+- [x] Healthcheck `/ready` validado em producao.

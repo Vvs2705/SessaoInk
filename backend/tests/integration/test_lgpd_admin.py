@@ -48,10 +48,19 @@ class TestAdminLGPD:
 
         async with async_session() as session:
             atendimento = await session.get(Atendimento, atendimento_id)
-            log = await session.scalar(
+            logs = (
+                await session.scalars(
                 select(AuditLog)
                 .where(AuditLog.acao == "lgpd.anonymized")
                 .order_by(AuditLog.created_em.desc())
+                )
+            )
+            log = next(
+                (
+                    item for item in logs
+                    if item.dados is not None and item.dados.get("anonimizados", 0) >= 1
+                ),
+                None,
             )
 
             assert atendimento is not None
@@ -66,6 +75,18 @@ class TestAdminLGPD:
         r = await client.post("/api/v1/admin/lgpd/anonimizar", json={})
 
         assert r.status_code == 401
+
+    async def test_endpoint_lgpd_aceita_token_de_servico(self, client, monkeypatch):
+        monkeypatch.setattr("app.api.v1.admin.router.settings.LGPD_RETENTION_TOKEN", "token-lgpd-service-1234567890")
+
+        r = await client.post(
+            "/api/v1/admin/lgpd/anonimizar",
+            headers={"Authorization": "Bearer token-lgpd-service-1234567890"},
+            json={"dry_run": True},
+        )
+
+        assert r.status_code == 200, r.text
+        assert r.json()["dry_run"] is True
 
     async def test_endpoint_lgpd_dry_run_nao_altera_dados(self, autenticado):
         agora = datetime(2026, 6, 1, tzinfo=UTC)

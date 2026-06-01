@@ -57,6 +57,10 @@ class Settings(BaseSettings):
     LGPD_ORCAMENTO_RETENCAO_DIAS: int = 180
     LGPD_PRIVACIDADE_VERSAO: str = "2026-06-01"
     LGPD_TERMOS_VERSAO: str = "2026-06-01"
+    LGPD_RETENTION_TOKEN: str = ""
+
+    # CSRF
+    CSRF_STRICT_MODE: bool = True
 
     # Config model configuration
     model_config = SettingsConfigDict(
@@ -105,6 +109,9 @@ class Settings(BaseSettings):
             erros.append("DATABASE_URL não pode apontar para localhost em produção")
         if any(host in self.REDIS_URL for host in ("localhost", "127.0.0.1")):
             erros.append("REDIS_URL não pode apontar para localhost em produção")
+
+        if not self.LGPD_RETENTION_TOKEN or len(self.LGPD_RETENTION_TOKEN) < 32:
+            erros.append("LGPD_RETENTION_TOKEN deve ter pelo menos 32 caracteres em producao")
 
         if erros:
             raise ValueError(

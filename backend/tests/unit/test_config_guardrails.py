@@ -11,6 +11,7 @@ _PROD_OK = dict(
     ALLOWED_ORIGINS="https://sessao-ink.vercel.app",
     DATABASE_URL="postgresql+asyncpg://u:p@neon.tech/db",
     REDIS_URL="redis://fly-redis:6379",
+    LGPD_RETENTION_TOKEN="x" * 40,
 )
 
 
@@ -56,6 +57,11 @@ def test_database_localhost_aborta():
 def test_redis_localhost_aborta():
     with pytest.raises(ValueError):
         _settings(REDIS_URL="redis://127.0.0.1:6379")
+
+
+def test_lgpd_retention_token_curto_aborta():
+    with pytest.raises(ValueError):
+        _settings(LGPD_RETENTION_TOKEN="curto")
 
 
 def test_desenvolvimento_nao_aplica_guardrails():

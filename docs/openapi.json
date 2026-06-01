@@ -297,6 +297,22 @@
         "operationId": "anonimizar_lgpd_expirada_api_v1_admin_lgpd_anonimizar_post",
         "parameters": [
           {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
             "name": "access_token",
             "in": "cookie",
             "required": false,

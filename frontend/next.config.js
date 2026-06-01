@@ -1,7 +1,12 @@
 const { withSentryConfig } = require("@sentry/nextjs");
 
-// URL da API para CSP — usa BACKEND_URL (server-only) em produção, localhost em dev
-const API_URL = process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001";
+// URL da API para CSP: em produção nunca deve cair para localhost.
+const API_URL =
+  process.env.BACKEND_URL ??
+  process.env.NEXT_PUBLIC_API_URL ??
+  (process.env.NODE_ENV === "production"
+    ? "https://sessaoink-api.fly.dev"
+    : "http://localhost:8001");
 const POSTHOG_HOST = "https://app.posthog.com";
 
 const cspHeader = `

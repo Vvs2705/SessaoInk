@@ -269,10 +269,12 @@ def get_redis() -> Any:
 
 
 async def salvar_refresh_token(token: str, usuario_id: str, ttl_dias: int) -> None:
-    """Salva refresh token no Redis com TTL em dias."""
+    """Salva refresh token no Redis sob o HASH SHA-256 (nunca o valor puro)."""
+    from app.core.security import hash_refresh_token
+
     async with get_redis() as r:
         await r.set(
-            f"{REFRESH_PREFIX}{token}",
+            f"{REFRESH_PREFIX}{hash_refresh_token(token)}",
             usuario_id,
             ex=ttl_dias * 24 * 3600,
         )
@@ -280,14 +282,18 @@ async def salvar_refresh_token(token: str, usuario_id: str, ttl_dias: int) -> No
 
 async def obter_usuario_do_refresh(token: str) -> str | None:
     """Retorna o usuario_id vinculado ao refresh token, ou None se inválido/expirado."""
+    from app.core.security import hash_refresh_token
+
     async with get_redis() as r:
-        return await r.get(f"{REFRESH_PREFIX}{token}")
+        return await r.get(f"{REFRESH_PREFIX}{hash_refresh_token(token)}")
 
 
 async def revogar_refresh_token(token: str) -> None:
     """Remove refresh token do Redis (logout / rotação)."""
+    from app.core.security import hash_refresh_token
+
     async with get_redis() as r:
-        await r.delete(f"{REFRESH_PREFIX}{token}")
+        await r.delete(f"{REFRESH_PREFIX}{hash_refresh_token(token)}")
 
 
 # ---------------------------------------------------------------------------

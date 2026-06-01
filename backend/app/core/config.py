@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    # Claims JWT — validados no decodificador (defesa contra token confusion)
+    JWT_ISSUER: str = "sessaoink-api"
+    JWT_AUDIENCE: str = "sessaoink-app"
     ALLOWED_ORIGINS: str | list[str] = ["http://localhost:3000"]
 
     # Trusted proxy — o backend roda atrás de Vercel (proxy) + Fly edge.

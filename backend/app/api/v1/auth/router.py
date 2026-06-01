@@ -154,6 +154,30 @@ async def logout(
     )
 
 
+@router.post("/logout-all", status_code=status.HTTP_204_NO_CONTENT)
+async def logout_all(
+    response: Response,
+    usuario: Usuario = Depends(get_usuario_atual),
+):
+    """Sair de todos os dispositivos — revoga TODAS as sessões do usuário."""
+    await revogar_todas_sessoes_usuario(str(usuario.id))
+
+    response.delete_cookie(
+        "access_token",
+        path="/",
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+        httponly=True,
+    )
+    response.delete_cookie(
+        "refresh_token",
+        path="/api/v1/auth/refresh",
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+        httponly=True,
+    )
+
+
 @router.get("/me", response_model=UsuarioResponse)
 async def me(usuario: Usuario = Depends(get_usuario_atual)):
     """Retorna os dados do usuário autenticado."""

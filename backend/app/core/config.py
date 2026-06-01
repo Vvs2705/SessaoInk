@@ -1,6 +1,19 @@
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Valores claramente inseguros/placeholder para SECRET_KEY
+_SECRET_KEYS_FRACAS = {
+    "changeme",
+    "change-me",
+    "secret",
+    "secret-key",
+    "your-secret-key",
+    "dev",
+    "development",
+    "test",
+    "default",
+}
 
 
 class Settings(BaseSettings):
@@ -53,6 +66,47 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             return [i.strip() for i in v.split(",") if i.strip()]
         return v
+
+    @model_validator(mode="after")
+    def _guardrails_producao(self) -> "Settings":
+        """P0-08 — aborta o startup se a config de produção for insegura.
+
+        Em produção, configuração insegura encerra a aplicação ANTES de subir o
+        servidor (falha no release_command do Fly → deploy aborta sem downtime,
+        mantendo a versão anterior no ar).
+        """
+        if self.ENVIRONMENT != "production":
+            return self
+
+        erros: list[str] = []
+
+        if self.DEBUG:
+            erros.append("DEBUG deve ser false em produção")
+
+        if not self.SECRET_KEY or len(self.SECRET_KEY) < 32:
+            erros.append("SECRET_KEY deve ter pelo menos 32 caracteres em produção")
+        elif self.SECRET_KEY.strip().lower() in _SECRET_KEYS_FRACAS:
+            erros.append("SECRET_KEY é um valor fraco/placeholder")
+
+        origins = self.ALLOWED_ORIGINS
+        if isinstance(origins, str):
+            origins = [o.strip() for o in origins.split(",") if o.strip()]
+        if not origins:
+            erros.append("ALLOWED_ORIGINS não pode ser vazio em produção")
+        if any("*" in o for o in origins):
+            erros.append("ALLOWED_ORIGINS não pode conter wildcard (*) em produção")
+
+        if any(host in self.DATABASE_URL for host in ("localhost", "127.0.0.1")):
+            erros.append("DATABASE_URL não pode apontar para localhost em produção")
+        if any(host in self.REDIS_URL for host in ("localhost", "127.0.0.1")):
+            erros.append("REDIS_URL não pode apontar para localhost em produção")
+
+        if erros:
+            raise ValueError(
+                "Configuração de produção insegura — startup abortado:\n  - "
+                + "\n  - ".join(erros)
+            )
+        return self
 
 
 settings = Settings()

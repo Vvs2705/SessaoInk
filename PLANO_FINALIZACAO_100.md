@@ -8,8 +8,9 @@
 
 ## STATUS ATUAL
 
-Estado alvo: 100% tecnico executavel no repositorio, com validacao local,
-secrets operacionais configurados e deploy/CI a confirmar apos este commit.
+Estado alvo: 100% tecnico executavel no repositorio, com validacao local, CI
+verde, secrets operacionais configurados, deploy em producao validado e dry-run
+LGPD executado com sucesso.
 
 Itens fechados:
 
@@ -32,6 +33,17 @@ Itens fechados:
   object storage registrada como Cloudflare R2/S3-compatible.
 - Housekeeping: documentos antigos removidos e este plano versionado.
 
+Evidencias finais:
+
+- Commit base de hardening: `fda6283 feat: fechar hardening final e operacao`.
+- Commit de robustez LGPD em producao: `29188bb fix: robustecer comparacao do
+  token LGPD`.
+- CI principal verde: run `26775255712`.
+- Backend Fly publicado: `sessaoink-api` versao 38, imagem
+  `sessaoink-api:deployment-01KT28PV30PBDJDH21Y1Q9WJNE`.
+- Frontend Vercel em producao: ultimo deploy `Ready`.
+- Workflow `LGPD Retention` dry-run: run `26775438303` com sucesso.
+
 ## VALIDACAO LOCAL EXECUTADA
 
 - Backend: `python -m pytest -q` -> 108 passed.
@@ -47,14 +59,14 @@ Itens fechados:
 
 - `LGPD_RETENTION_TOKEN` existe no GitHub Actions e no Fly.
 - `CSRF_STRICT_MODE=true` existe no Fly.
-- Backend deve ser redeployado apos o commit que contem estas mudancas.
-- Frontend deve ser atualizado pela Vercel apos push no `main`.
-- Depois do deploy, verificar:
+- Backend redeployado no Fly apos o commit final.
+- Frontend atualizado pela Vercel apos push no `main`.
+- Verificacoes de producao executadas:
   - CI verde.
-  - Fly `/ready`.
-  - Vercel Ready.
+  - Fly `/ready`: `database=ok` e `redis=ok`.
+  - Vercel `Ready`.
   - CSP publico sem `script-src 'unsafe-inline'`.
-  - Workflow `LGPD Retention` com `dry_run=true`.
+  - Workflow `LGPD Retention` com `dry_run=true` executado com sucesso.
 
 ## OBSERVACOES
 

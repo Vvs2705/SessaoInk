@@ -1,0 +1,11 @@
+# Dependências de desenvolvimento/CI — versões FIXAS para builds determinísticos.
+# Pinadas ao conjunto validado localmente (69 testes verdes) e à versão de
+# pyright/ruff usada no CI. Evita que "latest" quebre a coleção async do pytest
+# (pytest 9 + pytest-asyncio 1.x mudam a resolução de testpaths/loop scope).
+
+pytest==8.3.3
+pytest-asyncio==0.24.0
+aiosqlite==0.19.0
+httpx==0.27.2
+ruff==0.15.15
+pyright==1.1.409

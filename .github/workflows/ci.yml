@@ -27,17 +27,18 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install --upgrade pip && pip install -r requirements.txt
+      - name: Instalar dependências (runtime + dev pinadas)
+        run: pip install --upgrade pip && pip install -r requirements.txt -r requirements-dev.txt
       - name: Lint (ruff) — bloqueante
-        run: pip install ruff && ruff check .
+        run: ruff check .
       - name: Type check (pyright) — bloqueante
         # pyrightconfig.json rebaixa falsos-positivos conhecidos a warning;
         # erros reais de tipo quebram o build.
-        run: pip install pyright && pyright
+        run: pyright
       - name: Testes (pytest) — bloqueante
         # Suíte usa SQLite + MockRedis (autocontida): unit + integração (RBAC,
-        # tenant, segurança, auth, uploads). Sem necessidade de serviços.
-        run: pip install pytest pytest-asyncio aiosqlite httpx && pytest -q
+        # tenant, segurança, auth, uploads). Versões pinadas em requirements-dev.txt.
+        run: pytest -q
       - name: Smoke test — imports
         run: python -c "from app.core.config import settings; from app.main import app; print('OK')"
 

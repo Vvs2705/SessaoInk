@@ -54,8 +54,18 @@ def _normalize_openapi(value: Any) -> None:
             value.get("type") == "string"
             and value.get("contentMediaType") == "application/octet-stream"
         ):
-            value.pop("contentMediaType", None)
+            title = value.get("title")
+            remaining = {
+                key: item
+                for key, item in value.items()
+                if key not in {"type", "contentMediaType", "format", "title"}
+            }
+            value.clear()
+            value["type"] = "string"
             value["format"] = "binary"
+            if title is not None:
+                value["title"] = title
+            value.update(remaining)
 
         for schema_name, schema in (
             value.get("components", {}).get("schemas", {}).items()

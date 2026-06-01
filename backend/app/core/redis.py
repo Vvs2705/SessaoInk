@@ -129,7 +129,7 @@ class RedisFallbackWrapper:
         if RedisFallbackWrapper._use_mock:
             return await self.mock_client.get(key)
         try:
-            return await self.real_client.get(key)
+            return await self.real_client.get(key)  # type: ignore[return-value]
         except Exception as e:
             logger.warning(f"Erro no Redis (get), usando MockRedis fallback: {e}")
             RedisFallbackWrapper._use_mock = True
@@ -180,7 +180,7 @@ class RedisFallbackWrapper:
         if RedisFallbackWrapper._use_mock:
             return await self.mock_client.keys(pattern)
         try:
-            return await self.real_client.keys(pattern)
+            return await self.real_client.keys(pattern)  # type: ignore[return-value]
         except Exception as e:
             logger.warning(f"Erro no Redis (keys), usando MockRedis fallback: {e}")
             RedisFallbackWrapper._use_mock = True
@@ -214,7 +214,7 @@ class ProductionRedis:
         pass
 
     async def get(self, key: str) -> str | None:
-        return await self._client.get(key)
+        return await self._client.get(key)  # type: ignore[return-value]
 
     async def set(self, key: str, value: Any, ex: int | None = None) -> None:
         await self._client.set(key, value, ex=ex)
@@ -229,7 +229,7 @@ class ProductionRedis:
         return await self._client.expire(key, seconds)
 
     async def keys(self, pattern: str) -> list[str]:
-        return await self._client.keys(pattern)
+        return await self._client.keys(pattern)  # type: ignore[return-value]
 
     async def ping(self) -> bool:
         return await self._client.ping()

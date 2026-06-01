@@ -21,6 +21,9 @@ jobs:
       ENVIRONMENT: test
       SECRET_KEY: ci-test-secret-key-32chars-minimum
       REDIS_URL: redis://localhost:6379
+      # Smoke test importa a app sem conftest; config exige DATABASE_URL.
+      # ENVIRONMENT=test → guardrails de produção não se aplicam (localhost ok).
+      DATABASE_URL: postgresql+asyncpg://user:pass@localhost/db
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

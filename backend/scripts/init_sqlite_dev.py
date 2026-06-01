@@ -7,6 +7,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
 from app.core.database import Base
 from app.core.security import hash_senha
 from app.models.usuario import Estudio, TipoUsuario, Usuario
@@ -50,7 +51,7 @@ async def init():
         session.add(admin)
         await session.commit()
 
-        print(f"Banco SQLite dev.db criado e semeado com sucesso!")
+        print("Banco SQLite dev.db criado e semeado com sucesso!")
         print(f"Estudio criado: {estudio.nome} (slug: {estudio.slug})")
         print(f"Admin criado: {admin.email} / senha: admin123")
 

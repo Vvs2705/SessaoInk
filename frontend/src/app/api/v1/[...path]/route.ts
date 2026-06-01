@@ -9,7 +9,7 @@ const CSRF_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 /** Caminhos isentos de verificação de CSRF (endpoints públicos sem sessão). */
 const CSRF_EXEMPT = [
-  "/api/v1/publico/",
+  "/api/v1/public/",
   "/api/v1/auth/login",
 ];
 

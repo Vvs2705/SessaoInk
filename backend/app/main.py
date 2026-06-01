@@ -31,6 +31,7 @@ if settings.SENTRY_DSN:
     )
 from app.api.v1.agenda.router import router as agenda_router
 from app.api.v1.atendimentos.router import router as atendimentos_router
+from app.api.v1.auditoria.router import router as auditoria_router
 from app.api.v1.auth.router import router as auth_router
 from app.api.v1.busca.router import router as busca_router
 from app.api.v1.clientes.router import router as clientes_router
@@ -161,6 +162,7 @@ app.include_router(agenda_router, prefix="/api/v1")
 app.include_router(relatorios_router, prefix="/api/v1")
 app.include_router(usuarios_router, prefix="/api/v1")
 app.include_router(convites_router, prefix="/api/v1")
+app.include_router(auditoria_router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["health"])

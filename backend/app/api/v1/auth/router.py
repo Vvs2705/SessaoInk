@@ -24,7 +24,7 @@ from app.core.redis import (
     salvar_refresh_token,
     verificar_bloqueio_login,
 )
-from app.core.request_context import get_client_ip
+from app.core.request_context import get_client_ip, get_user_agent
 from app.core.security import (
     criar_access_token,
     criar_refresh_token,
@@ -32,6 +32,7 @@ from app.core.security import (
     verificar_senha,
 )
 from app.models.usuario import Usuario
+from app.services.audit import log_event
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -63,6 +64,7 @@ async def login(
     # IP real do browser (via proxy Vercel/Fly) — não o IP do servidor Vercel.
     # Sem isso, o rate limit compartilharia o mesmo bucket para todos os usuários.
     ip = get_client_ip(request)
+    ua = get_user_agent(request)
 
     # Verificar bloqueio por excesso de tentativas
     if await verificar_bloqueio_login(ip):
@@ -81,6 +83,19 @@ async def login(
 
     if not usuario or not verificar_senha(dados.senha, usuario.senha_hash):
         await incrementar_tentativa_login(ip)
+        # Auditoria de falha (commit=True — persiste mesmo levantando 401 depois)
+        await log_event(
+            session,
+            acao="auth.login.failure",
+            estudio_id=usuario.estudio_id if usuario else None,
+            actor_usuario_id=usuario.id if usuario else None,
+            actor_tipo=usuario.tipo.value if usuario else None,
+            entidade="usuario",
+            ip=ip,
+            user_agent=ua,
+            dados={"email": dados.email},
+            commit=True,
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email ou senha incorretos",
@@ -88,6 +103,18 @@ async def login(
 
     # Login bem-sucedido — zerar contador de tentativas
     await limpar_tentativas_login(ip)
+    await log_event(
+        session,
+        acao="auth.login.success",
+        estudio_id=usuario.estudio_id,
+        actor_usuario_id=usuario.id,
+        actor_tipo=usuario.tipo.value,
+        entidade="usuario",
+        entidade_id=str(usuario.id),
+        ip=ip,
+        user_agent=ua,
+        commit=True,
+    )
 
     # Gerar tokens
     access_token = criar_access_token(

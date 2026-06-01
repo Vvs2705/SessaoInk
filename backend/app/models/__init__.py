@@ -7,6 +7,7 @@ from app.models.atendimento import (  # noqa: F401
     StatusOperacional,
     TipoAtendimento,
 )
+from app.models.audit_log import AuditLog  # noqa: F401
 from app.models.cliente import Cliente  # noqa: F401
 from app.models.convite import Convite, StatusConvite  # noqa: F401
 from app.models.documento import (  # noqa: F401
@@ -43,4 +44,5 @@ __all__ = [
     "Plano",
     "Assinatura",
     "Convite",
+    "AuditLog",
 ]

@@ -103,7 +103,12 @@ def _bearer_token_autorizado(token_esperado: str, authorization: str | None) -> 
     scheme, _, token = authorization.partition(" ")
     if scheme.lower() != "bearer" or not token:
         return False
-    return secrets.compare_digest(token, token_esperado)
+    try:
+        token_bytes = token.encode("ascii")
+        esperado_bytes = token_esperado.encode("ascii")
+    except UnicodeEncodeError:
+        return False
+    return secrets.compare_digest(token_bytes, esperado_bytes)
 
 
 @app.middleware("http")

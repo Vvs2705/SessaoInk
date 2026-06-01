@@ -55,7 +55,12 @@ def _validar_bearer_servico(authorization: str | None) -> bool:
     scheme, _, token = authorization.partition(" ")
     if scheme.lower() != "bearer" or not token:
         return False
-    return secrets.compare_digest(token, settings.LGPD_RETENTION_TOKEN)
+    try:
+        token_bytes = token.encode("ascii")
+        esperado_bytes = settings.LGPD_RETENTION_TOKEN.encode("ascii")
+    except UnicodeEncodeError:
+        return False
+    return secrets.compare_digest(token_bytes, esperado_bytes)
 
 
 async def require_admin_or_lgpd_service(

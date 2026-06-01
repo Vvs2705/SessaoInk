@@ -88,6 +88,13 @@ class TestAdminLGPD:
         assert r.status_code == 200, r.text
         assert r.json()["dry_run"] is True
 
+    async def test_endpoint_lgpd_rejeita_token_nao_ascii_sem_500(self, monkeypatch):
+        from app.api.v1.admin.router import _validar_bearer_servico
+
+        monkeypatch.setattr("app.api.v1.admin.router.settings.LGPD_RETENTION_TOKEN", "token-lgpd-service-1234567890")
+
+        assert _validar_bearer_servico("Bearer invÃ¡lido") is False
+
     async def test_endpoint_lgpd_dry_run_nao_altera_dados(self, autenticado):
         agora = datetime(2026, 6, 1, tzinfo=UTC)
 

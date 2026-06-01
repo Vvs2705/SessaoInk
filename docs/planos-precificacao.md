@@ -40,6 +40,33 @@
   `duration_in_months=6`) aplicado ao price do Profissional, OU um price de intro dedicado.
 - Comunicar com clareza no checkout: "R$100/mês nos 6 primeiros meses, depois R$135/mês".
 
+## Ciclos de cobrança (mercado BR)
+
+Pix sempre tem desconto; cartão acompanha a realidade brasileira de parcelamento.
+Percentuais são "preço de lançamento" — revisar após ~3 meses. (Fonte: `app/core/planos.py::CICLOS`.)
+
+| Ciclo | Compromisso | Desconto Pix | Cartão |
+|---|---|---|---|
+| Mensal | 1 mês | — | recorrente |
+| Trimestral | 3 meses | 10% | à vista |
+| Semestral | 6 meses | 15% | parcelado com juros (até 6x) |
+| Anual | 12 meses | 25% | até 10x sem juros (nós absorvemos) |
+
+**Exemplo Profissional (R$135/mês):**
+- Trimestral: Pix R$364,50 · cartão à vista R$405.
+- Semestral: Pix R$688,50 · cartão até 6x com juros do emissor.
+- Anual: Pix **R$1.215** (−R$405) · **ou 10x de R$162 sem juros**.
+
+> "Sem juros" = nós (merchant) absorvemos o custo do parcelamento (caixa antecipado +
+> retenção anual justificam). "Com juros" (semestral) = o emissor cobra o cliente,
+> recebemos o valor cheio.
+
+### Gateway de pagamento (decisão pendente)
+Pix + parcelamento sem juros + boleto são mais nativos em **Mercado Pago / Asaas /
+Pagar.me** do que no Stripe no Brasil. A camada de billing será abstrata para plugar
+qualquer um. Decidir com base em: taxas de Pix, suporte a parcelado sem juros (PSJ),
+boleto e antifraude.
+
 ## Trial
 - **14 dias grátis** no Profissional (sem cartão) é o caminho recomendado para conversão.
   O modelo `Assinatura` já tem `status=TRIAL` e `trial_expira_em`.

@@ -31,3 +31,20 @@ class TestPlanos:
         # /public/planos não pode ser tratado como slug de estúdio
         r = await client.get("/api/v1/public/slug-inexistente-xyz")
         assert r.status_code == 404  # estúdio não encontrado (rota slug ainda funciona)
+
+    async def test_tabela_de_precos_por_ciclo(self, client: AsyncClient):
+        r = await client.get("/api/v1/public/planos")
+        prof = next(p for p in r.json()["planos"] if p["slug"] == "profissional")
+        tabela = {t["ciclo"]: t for t in prof["tabela_precos"]}
+        assert {"mensal", "trimestral", "semestral", "anual"} <= set(tabela)
+        # Anual: Pix 25% off de 1620 = 1215; cartão 10x sem juros de 162
+        anual = tabela["anual"]
+        assert anual["pix_total"] == 1215.0
+        assert anual["desconto_pix_pct"] == 25
+        assert anual["cartao_max_parcelas"] == 10
+        assert anual["cartao_juros"] is False
+        assert anual["cartao_parcela"] == 162.0
+        # Trimestral: à vista, Pix 10% de 405 = 364.5
+        assert tabela["trimestral"]["pix_total"] == 364.5
+        # Semestral: cartão com juros
+        assert tabela["semestral"]["cartao_juros"] is True

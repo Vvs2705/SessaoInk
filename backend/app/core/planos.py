@@ -117,9 +117,86 @@ PLANOS: list[dict[str, Any]] = [
 ]
 
 
+# ---------------------------------------------------------------------------
+# Ciclos de cobrança (mercado BR) — compromisso + forma de pagamento.
+# Pix sempre tem desconto; cartão segue a realidade brasileira de parcelamento.
+# Os percentuais são "preço de lançamento" — revisar após ~3 meses.
+# ---------------------------------------------------------------------------
+CICLOS: list[dict[str, Any]] = [
+    {
+        "chave": "mensal",
+        "meses": 1,
+        "label": "Mensal",
+        "desconto_pix": 0.0,
+        "cartao": {"modo": "recorrente", "max_parcelas": 1, "juros": False},
+        "obs": "Cobrança recorrente no cartão.",
+    },
+    {
+        "chave": "trimestral",
+        "meses": 3,
+        "label": "Trimestral",
+        "desconto_pix": 0.10,
+        "cartao": {"modo": "avista", "max_parcelas": 1, "juros": False},
+        "obs": "À vista. Pix com 10% de desconto.",
+    },
+    {
+        "chave": "semestral",
+        "meses": 6,
+        "label": "Semestral",
+        "desconto_pix": 0.15,
+        "cartao": {"modo": "parcelado", "max_parcelas": 6, "juros": True},
+        "obs": "Pix com 15% de desconto OU cartão parcelado com juros (até 6x).",
+    },
+    {
+        "chave": "anual",
+        "meses": 12,
+        "label": "Anual",
+        "desconto_pix": 0.25,
+        "cartao": {"modo": "parcelado", "max_parcelas": 10, "juros": False},
+        "obs": "Pix com 25% de desconto OU até 10x sem juros no cartão.",
+    },
+]
+
+
+def _round2(v: float) -> float:
+    return round(v + 1e-9, 2)
+
+
+def tabela_precos(plano: dict[str, Any]) -> list[dict[str, Any]]:
+    """Calcula, para cada ciclo, o total via Pix e via cartão (com parcelas)."""
+    mensal = float(plano["preco_mensal"])
+    tabela: list[dict[str, Any]] = []
+    for c in CICLOS:
+        base = mensal * c["meses"]
+        pix_total = _round2(base * (1 - c["desconto_pix"]))
+        cartao = c["cartao"]
+        # Cartão sem juros: total = base (nós absorvemos). Com juros: emissor cobra
+        # o cliente; o total nominal exibido é a base (parcela = base / n).
+        cartao_total = _round2(base)
+        max_parc = cartao["max_parcelas"]
+        cartao_parcela = _round2(cartao_total / max_parc) if max_parc else cartao_total
+        tabela.append(
+            {
+                "ciclo": c["chave"],
+                "label": c["label"],
+                "meses": c["meses"],
+                "preco_cheio": _round2(base),
+                "pix_total": pix_total,
+                "desconto_pix_pct": int(c["desconto_pix"] * 100),
+                "cartao_total": cartao_total,
+                "cartao_max_parcelas": max_parc,
+                "cartao_parcela": cartao_parcela,
+                "cartao_juros": cartao["juros"],
+                "cartao_modo": cartao["modo"],
+                "obs": c["obs"],
+            }
+        )
+    return tabela
+
+
 def listar_planos_publicos() -> list[dict[str, Any]]:
-    """Catálogo para a página de preços (sem dados internos sensíveis)."""
-    return PLANOS
+    """Catálogo para a página de preços, com a tabela de ciclos/pagamento por plano."""
+    return [{**p, "tabela_precos": tabela_precos(p)} for p in PLANOS]
 
 
 def get_plano(slug: str) -> dict[str, Any] | None:

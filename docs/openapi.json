@@ -2009,6 +2009,26 @@
         }
       }
     },
+    "/api/v1/public/planos": {
+      "get": {
+        "tags": [
+          "portal-público"
+        ],
+        "summary": "Listar Planos",
+        "description": "Catálogo público de planos para a página de preços.\n\nIMPORTANTE: declarado ANTES de `/{slug}` para não ser capturado como slug.",
+        "operationId": "listar_planos_api_v1_public_planos_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/public/{slug}": {
       "get": {
         "tags": [

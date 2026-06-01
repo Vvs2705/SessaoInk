@@ -2,7 +2,7 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,6 +11,7 @@ from app.core.database import get_session
 from app.models.cliente import Cliente
 from app.models.usuario import Usuario
 from app.schemas.cliente import ClienteCreate, ClienteResponse, ClienteUpdate
+from app.services.tenant import get_cliente_do_estudio
 
 router = APIRouter(prefix="/clientes", tags=["clientes"])
 
@@ -51,13 +52,12 @@ async def obter_cliente(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    result = await session.execute(
-        select(Cliente).where(Cliente.id == id, Cliente.estudio_id == usuario.estudio_id)
+    return await get_cliente_do_estudio(
+        session,
+        cliente_id=id,
+        estudio_id=usuario.estudio_id,
+        detail="Cliente não encontrado",
     )
-    cliente = result.scalar_one_or_none()
-    if not cliente:
-        raise HTTPException(status_code=404, detail="Cliente não encontrado")
-    return cliente
 
 
 @router.patch("/{id}", response_model=ClienteResponse)
@@ -67,12 +67,12 @@ async def atualizar_cliente(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    result = await session.execute(
-        select(Cliente).where(Cliente.id == id, Cliente.estudio_id == usuario.estudio_id)
+    cliente = await get_cliente_do_estudio(
+        session,
+        cliente_id=id,
+        estudio_id=usuario.estudio_id,
+        detail="Cliente não encontrado",
     )
-    cliente = result.scalar_one_or_none()
-    if not cliente:
-        raise HTTPException(status_code=404, detail="Cliente não encontrado")
     for k, v in dados.model_dump(exclude_none=True).items():
         setattr(cliente, k, v)
     await session.flush()
@@ -86,10 +86,10 @@ async def arquivar_cliente(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    result = await session.execute(
-        select(Cliente).where(Cliente.id == id, Cliente.estudio_id == usuario.estudio_id)
+    cliente = await get_cliente_do_estudio(
+        session,
+        cliente_id=id,
+        estudio_id=usuario.estudio_id,
+        detail="Cliente não encontrado",
     )
-    cliente = result.scalar_one_or_none()
-    if not cliente:
-        raise HTTPException(status_code=404, detail="Cliente não encontrado")
     cliente.ativo = False

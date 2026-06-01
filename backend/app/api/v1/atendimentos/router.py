@@ -12,13 +12,17 @@ from app.api.v1.auth.dependencies import get_usuario_atual
 from app.core.config import settings
 from app.core.database import get_session
 from app.models.atendimento import Atendimento, StatusOperacional
-from app.models.cliente import Cliente
 from app.models.usuario import Usuario
 from app.schemas.atendimento import (
     AtendimentoCreate,
     AtendimentoResponse,
     AtendimentoStatusUpdate,
     AtendimentoUpdate,
+)
+from app.services.tenant import (
+    get_atendimento_do_estudio,
+    get_cliente_do_estudio,
+    get_usuario_do_estudio,
 )
 
 router = APIRouter(prefix="/atendimentos", tags=["atendimentos"])
@@ -47,40 +51,27 @@ async def criar_atendimento(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    # Validar se o cliente informado pertence ao mesmo estúdio do usuário
     if dados.cliente_id:
-        cliente_exists = await session.scalar(
-            select(Cliente).where(
-                Cliente.id == dados.cliente_id,
-                Cliente.estudio_id == usuario.estudio_id,
-                Cliente.ativo,
-            )
+        await get_cliente_do_estudio(
+            session,
+            cliente_id=dados.cliente_id,
+            estudio_id=usuario.estudio_id,
+            active_only=True,
+            not_found_status=status.HTTP_400_BAD_REQUEST,
+            detail="Cliente inválido ou não pertence ao seu estúdio",
         )
-        if not cliente_exists:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cliente inválido ou não pertence ao seu estúdio",
-            )
 
-    # Validar se o artista informado pertence ao mesmo estúdio do usuário
     if dados.artista_id:
-        artista_exists = await session.scalar(
-            select(Usuario).where(
-                Usuario.id == dados.artista_id,
-                Usuario.estudio_id == usuario.estudio_id,
-                Usuario.ativo,
-            )
+        await get_usuario_do_estudio(
+            session,
+            usuario_id=dados.artista_id,
+            estudio_id=usuario.estudio_id,
+            active_only=True,
+            not_found_status=status.HTTP_400_BAD_REQUEST,
+            detail="Artista inválido ou não pertence ao seu estúdio",
         )
-        if not artista_exists:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Artista inválido ou não pertence ao seu estúdio",
-            )
 
-    atendimento = Atendimento(
-        estudio_id=usuario.estudio_id,
-        **dados.model_dump()
-    )
+    atendimento = Atendimento(estudio_id=usuario.estudio_id, **dados.model_dump())
     session.add(atendimento)
     await session.flush()
     await session.refresh(atendimento)
@@ -93,16 +84,12 @@ async def obter_atendimento(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    result = await session.execute(
-        select(Atendimento).where(
-            Atendimento.id == id,
-            Atendimento.estudio_id == usuario.estudio_id,
-        )
+    return await get_atendimento_do_estudio(
+        session,
+        atendimento_id=id,
+        estudio_id=usuario.estudio_id,
+        detail="Atendimento não encontrado",
     )
-    item = result.scalar_one_or_none()
-    if not item:
-        raise HTTPException(404, "Atendimento não encontrado")
-    return item
 
 
 @router.patch("/{id}", response_model=AtendimentoResponse)
@@ -112,44 +99,32 @@ async def atualizar_atendimento(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    result = await session.execute(
-        select(Atendimento).where(
-            Atendimento.id == id, Atendimento.estudio_id == usuario.estudio_id
-        )
+    item = await get_atendimento_do_estudio(
+        session,
+        atendimento_id=id,
+        estudio_id=usuario.estudio_id,
+        detail="Atendimento não encontrado",
     )
-    item = result.scalar_one_or_none()
-    if not item:
-        raise HTTPException(404, "Atendimento não encontrado")
 
-    # Validar se o cliente informado pertence ao mesmo estúdio do usuário
     if dados.cliente_id is not None:
-        cliente_exists = await session.scalar(
-            select(Cliente).where(
-                Cliente.id == dados.cliente_id,
-                Cliente.estudio_id == usuario.estudio_id,
-                Cliente.ativo,
-            )
+        await get_cliente_do_estudio(
+            session,
+            cliente_id=dados.cliente_id,
+            estudio_id=usuario.estudio_id,
+            active_only=True,
+            not_found_status=status.HTTP_400_BAD_REQUEST,
+            detail="Cliente inválido ou não pertence ao seu estúdio",
         )
-        if not cliente_exists:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cliente inválido ou não pertence ao seu estúdio",
-            )
 
-    # Validar se o artista informado pertence ao mesmo estúdio do usuário
     if dados.artista_id is not None:
-        artista_exists = await session.scalar(
-            select(Usuario).where(
-                Usuario.id == dados.artista_id,
-                Usuario.estudio_id == usuario.estudio_id,
-                Usuario.ativo,
-            )
+        await get_usuario_do_estudio(
+            session,
+            usuario_id=dados.artista_id,
+            estudio_id=usuario.estudio_id,
+            active_only=True,
+            not_found_status=status.HTTP_400_BAD_REQUEST,
+            detail="Artista inválido ou não pertence ao seu estúdio",
         )
-        if not artista_exists:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Artista inválido ou não pertence ao seu estúdio",
-            )
 
     for k, v in dados.model_dump(exclude_none=True).items():
         setattr(item, k, v)
@@ -165,14 +140,12 @@ async def alterar_status(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    result = await session.execute(
-        select(Atendimento).where(
-            Atendimento.id == id, Atendimento.estudio_id == usuario.estudio_id
-        )
+    item = await get_atendimento_do_estudio(
+        session,
+        atendimento_id=id,
+        estudio_id=usuario.estudio_id,
+        detail="Atendimento não encontrado",
     )
-    item = result.scalar_one_or_none()
-    if not item:
-        raise HTTPException(404, "Atendimento não encontrado")
     if dados.status_operacional:
         item.status_operacional = dados.status_operacional
     if dados.status_financeiro:
@@ -188,14 +161,12 @@ async def arquivar_atendimento(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    result = await session.execute(
-        select(Atendimento).where(
-            Atendimento.id == id, Atendimento.estudio_id == usuario.estudio_id
-        )
+    item = await get_atendimento_do_estudio(
+        session,
+        atendimento_id=id,
+        estudio_id=usuario.estudio_id,
+        detail="Atendimento não encontrado",
     )
-    item = result.scalar_one_or_none()
-    if not item:
-        raise HTTPException(404, "Atendimento não encontrado")
     item.ativo = False
 
 
@@ -205,18 +176,13 @@ async def listar_imagens_atendimento(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    # Validar se o atendimento existe e pertence ao estúdio do usuário
-    result = await session.execute(
-        select(Atendimento).where(
-            Atendimento.id == id,
-            Atendimento.estudio_id == usuario.estudio_id,
-        )
+    await get_atendimento_do_estudio(
+        session,
+        atendimento_id=id,
+        estudio_id=usuario.estudio_id,
+        detail="Atendimento não encontrado",
     )
-    atendimento = result.scalar_one_or_none()
-    if not atendimento:
-        raise HTTPException(404, "Atendimento não encontrado")
 
-    # Localizar diretório no disco
     dir_imagens = (
         Path(settings.STORAGE_PATH)
         / "uploads"
@@ -229,11 +195,10 @@ async def listar_imagens_atendimento(
         return []
 
     exts = {".jpg", ".jpeg", ".png", ".webp"}
-    filenames = [
+    return [
         f.name for f in dir_imagens.iterdir()
         if f.is_file() and f.suffix.lower() in exts
     ]
-    return filenames
 
 
 @router.get("/{id}/imagens/{filename}")
@@ -243,18 +208,13 @@ async def obter_imagem_atendimento(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    # Validar se o atendimento existe e pertence ao estúdio do usuário
-    result = await session.execute(
-        select(Atendimento).where(
-            Atendimento.id == id,
-            Atendimento.estudio_id == usuario.estudio_id,
-        )
+    await get_atendimento_do_estudio(
+        session,
+        atendimento_id=id,
+        estudio_id=usuario.estudio_id,
+        detail="Atendimento não encontrado",
     )
-    atendimento = result.scalar_one_or_none()
-    if not atendimento:
-        raise HTTPException(404, "Atendimento não encontrado")
 
-    # Localizar arquivo no disco
     caminho = (
         Path(settings.STORAGE_PATH)
         / "uploads"

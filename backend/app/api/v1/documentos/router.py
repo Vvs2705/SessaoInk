@@ -5,7 +5,7 @@ import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,11 +14,14 @@ from app.api.v1.auth.dependencies import get_usuario_atual
 from app.core.config import settings
 from app.core.database import get_session
 from app.core.request_context import get_client_ip, get_user_agent
-from app.models.atendimento import Atendimento
-from app.models.cliente import Cliente
 from app.models.documento import AcaoLink, Documento, DocumentoLinkAcesso, TipoDocumento
 from app.models.usuario import Usuario
 from app.services.audit import log_event
+from app.services.tenant import (
+    get_atendimento_do_estudio,
+    get_cliente_do_estudio,
+    get_documento_do_estudio,
+)
 
 router = APIRouter(prefix="/documentos", tags=["documentos"])
 
@@ -65,35 +68,25 @@ async def criar_documento(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    # Validar se o cliente pertence ao mesmo estúdio do usuário
     if dados.cliente_id:
-        cliente_exists = await session.scalar(
-            select(Cliente).where(
-                Cliente.id == dados.cliente_id,
-                Cliente.estudio_id == usuario.estudio_id,
-                Cliente.ativo,
-            )
+        await get_cliente_do_estudio(
+            session,
+            cliente_id=dados.cliente_id,
+            estudio_id=usuario.estudio_id,
+            active_only=True,
+            not_found_status=400,
+            detail="Cliente inválido ou não pertence ao seu estúdio",
         )
-        if not cliente_exists:
-            raise HTTPException(
-                status_code=400,
-                detail="Cliente inválido ou não pertence ao seu estúdio",
-            )
 
-    # Validar se o atendimento pertence ao mesmo estúdio do usuário
     if dados.atendimento_id:
-        atendimento_exists = await session.scalar(
-            select(Atendimento).where(
-                Atendimento.id == dados.atendimento_id,
-                Atendimento.estudio_id == usuario.estudio_id,
-                Atendimento.ativo,
-            )
+        await get_atendimento_do_estudio(
+            session,
+            atendimento_id=dados.atendimento_id,
+            estudio_id=usuario.estudio_id,
+            active_only=True,
+            not_found_status=400,
+            detail="Atendimento inválido ou não pertence ao seu estúdio",
         )
-        if not atendimento_exists:
-            raise HTTPException(
-                status_code=400,
-                detail="Atendimento inválido ou não pertence ao seu estúdio",
-            )
 
     doc = Documento(
         estudio_id=usuario.estudio_id,
@@ -111,16 +104,12 @@ async def obter_documento(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    result = await session.execute(
-        select(Documento).where(
-            Documento.id == id,
-            Documento.estudio_id == usuario.estudio_id,
-        )
+    return await get_documento_do_estudio(
+        session,
+        documento_id=id,
+        estudio_id=usuario.estudio_id,
+        detail="Documento não encontrado",
     )
-    doc = result.scalar_one_or_none()
-    if not doc:
-        raise HTTPException(404, "Documento não encontrado")
-    return doc
 
 
 @router.delete("/{id}", status_code=204)
@@ -129,16 +118,13 @@ async def deletar_documento(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    """Remove o documento permanentemente (documentos não têm soft delete — são dados LGPD controláveis)."""
-    result = await session.execute(
-        select(Documento).where(
-            Documento.id == id,
-            Documento.estudio_id == usuario.estudio_id,
-        )
+    """Remove o documento permanentemente."""
+    doc = await get_documento_do_estudio(
+        session,
+        documento_id=id,
+        estudio_id=usuario.estudio_id,
+        detail="Documento não encontrado",
     )
-    doc = result.scalar_one_or_none()
-    if not doc:
-        raise HTTPException(404, "Documento não encontrado")
     await session.delete(doc)
     return None
 
@@ -153,13 +139,12 @@ async def gerar_link_documento(
     usuario: Usuario = Depends(get_usuario_atual),
 ):
     """Gera link seguro de acesso ao documento para compartilhar com cliente."""
-    doc = await session.scalar(
-        select(Documento).where(
-            Documento.id == id, Documento.estudio_id == usuario.estudio_id
-        )
+    await get_documento_do_estudio(
+        session,
+        documento_id=id,
+        estudio_id=usuario.estudio_id,
+        detail="Documento não encontrado",
     )
-    if not doc:
-        raise HTTPException(404, "Documento não encontrado")
 
     token_raw = secrets.token_urlsafe(32)
     token_hash = hashlib.sha256(token_raw.encode()).hexdigest()
@@ -174,7 +159,6 @@ async def gerar_link_documento(
     session.add(link)
     await session.flush()
 
-    # P0-05/P0-10 — auditoria de geração de link (IP/UA do servidor capturados)
     await log_event(
         session,
         acao="documento.link_generated",
@@ -188,6 +172,5 @@ async def gerar_link_documento(
         dados={"acao_link": acao.value, "expira_em": expira.isoformat()},
     )
 
-    # Retorna SOMENTE a URL final (P0-05) — nunca o token em campo separado.
     url = f"{settings.APP_URL}/documento/{token_raw}"
     return {"url": url, "expira_em": expira.isoformat(), "acao": acao}

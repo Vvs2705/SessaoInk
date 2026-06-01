@@ -1,4 +1,4 @@
-"""Router de Agenda — sessões por período e agendamento."""
+"""Router de Agenda: sessoes por periodo e agendamento."""
 
 import uuid
 from datetime import UTC, date, datetime, timedelta
@@ -12,13 +12,9 @@ from app.api.v1.auth.dependencies import get_usuario_atual
 from app.core.database import get_session
 from app.models.atendimento import Atendimento, StatusOperacional
 from app.models.usuario import Usuario
+from app.services.tenant import get_atendimento_do_estudio
 
 router = APIRouter(prefix="/agenda", tags=["agenda"])
-
-
-# ---------------------------------------------------------------------------
-# Schemas
-# ---------------------------------------------------------------------------
 
 
 class SessaoResponse(BaseModel):
@@ -41,18 +37,13 @@ class AgendaMesResponse(BaseModel):
     mes: int
     total_sessoes: int
     sessoes: list[SessaoResponse]
-    dias_com_sessao: list[int]  # lista de dias do mês com pelo menos 1 sessão
+    dias_com_sessao: list[int]
 
 
 class AgendarSessaoRequest(BaseModel):
     atendimento_id: uuid.UUID
     data_sessao: datetime
     duracao_minutos: int | None = 120
-
-
-# ---------------------------------------------------------------------------
-# Endpoints
-# ---------------------------------------------------------------------------
 
 
 @router.get("/", response_model=AgendaMesResponse)
@@ -62,10 +53,6 @@ async def listar_agenda(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    """Lista todas as sessões agendadas (data_sessao preenchida) para o mês/ano indicado.
-
-    Se não informado, usa o mês atual.
-    """
     hoje = date.today()
     ano = ano or hoje.year
     mes = mes or hoje.month
@@ -116,24 +103,18 @@ async def agendar_sessao(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    """Agenda (ou reagenda) uma sessão vinculada a um atendimento existente."""
-    result = await session.execute(
-        select(Atendimento).where(
-            Atendimento.id == dados.atendimento_id,
-            Atendimento.estudio_id == usuario.estudio_id,
-            Atendimento.ativo,
-        )
+    atendimento = await get_atendimento_do_estudio(
+        session,
+        atendimento_id=dados.atendimento_id,
+        estudio_id=usuario.estudio_id,
+        active_only=True,
+        detail="Atendimento não encontrado",
     )
-    atendimento = result.scalar_one_or_none()
-    if not atendimento:
-        raise HTTPException(status_code=404, detail="Atendimento não encontrado")
 
     if atendimento.artista_id:
         duracao_min = dados.duracao_minutos or 120
 
-        # Normaliza para UTC naive para evitar TypeError ao comparar com datas do SQLite
         def _naive(dt: datetime) -> datetime:
-            """Remove timezone info, convertendo para UTC se necessário."""
             if dt.tzinfo is not None:
                 dt = dt.astimezone(UTC).replace(tzinfo=None)
             return dt
@@ -150,8 +131,8 @@ async def agendar_sessao(
                 Atendimento.data_sessao.isnot(None),
                 Atendimento.status_operacional.in_([
                     StatusOperacional.CONFIRMADO,
-                    StatusOperacional.EM_ATENDIMENTO
-                ])
+                    StatusOperacional.EM_ATENDIMENTO,
+                ]),
             )
         )
         for outro in conflito_result.scalars().all():
@@ -161,13 +142,15 @@ async def agendar_sessao(
             if outro_inicio < fim_prop and outro_fim > inicio_prop:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail="Conflito de horário: o artista já possui uma sessão agendada neste período."
+                    detail=(
+                        "Conflito de horário: o artista já possui uma sessão "
+                        "agendada neste período."
+                    ),
                 )
 
     atendimento.data_sessao = dados.data_sessao
     atendimento.duracao_minutos = dados.duracao_minutos
 
-    # Se estava SOLICITADO ou EM_ANALISE, avança para CONFIRMADO ao agendar
     if atendimento.status_operacional in (
         StatusOperacional.SOLICITADO,
         StatusOperacional.EM_ANALISE,
@@ -197,7 +180,6 @@ async def proximas_sessoes(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    """Lista as próximas sessões nos próximos N dias (padrão: 7)."""
     agora = datetime.now(UTC)
     limite = agora + timedelta(days=dias)
 

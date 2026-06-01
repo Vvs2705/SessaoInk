@@ -119,6 +119,43 @@ jobs:
         continue-on-error: true
         run: pip install pip-audit && pip-audit -r backend/requirements.txt
 
+  docker-sbom:
+    name: Docker/SBOM Scan (advisory)
+    runs-on: ubuntu-latest
+    # Advisory: Docker image CVEs and SBOM generation should surface risk without
+    # blocking merges until findings are triaged and a blocking policy is defined.
+    continue-on-error: true
+    env:
+      IMAGE_REF: sessaoink-backend:ci
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend Docker image
+        run: docker build -t "$IMAGE_REF" ./backend
+      - name: Trivy image scan (high/critical) — advisory
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE_REF }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          vuln-type: os,library
+          format: table
+          exit-code: "1"
+      - name: Generate CycloneDX SBOM
+        if: always()
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE_REF }}
+          format: cyclonedx
+          output: sbom-backend.cdx.json
+          exit-code: "0"
+      - name: Upload SBOM artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-backend-cyclonedx
+          path: sbom-backend.cdx.json
+          if-no-files-found: warn
+
   secret-scan:
     name: Secret Scan
     runs-on: ubuntu-latest

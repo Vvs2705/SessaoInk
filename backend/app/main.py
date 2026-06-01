@@ -130,6 +130,27 @@ async def csrf_origin_check(request: Request, call_next):
     return await call_next(request)
 
 
+# Correlation ID — rastreabilidade ponta a ponta (P1-05)
+@app.middleware("http")
+async def correlation_id_middleware(request: Request, call_next):
+    import uuid as _uuid
+
+    from app.core.logging_config import correlation_id_var
+
+    cid = (
+        request.headers.get("x-correlation-id")
+        or request.headers.get("x-request-id")
+        or _uuid.uuid4().hex
+    )
+    token = correlation_id_var.set(cid)
+    try:
+        response = await call_next(request)
+    finally:
+        correlation_id_var.reset(token)
+    response.headers["X-Correlation-ID"] = cid
+    return response
+
+
 # Headers de segurança
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):

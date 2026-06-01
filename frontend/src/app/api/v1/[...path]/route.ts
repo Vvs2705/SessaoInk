@@ -69,6 +69,12 @@ async function proxy(
     request.headers.get("x-real-ip");
   if (clientIp) headers.set("X-Forwarded-For", clientIp);
 
+  // Correlation ID — rastreabilidade ponta a ponta (P1-05). Reaproveita o id do
+  // browser se houver, senão gera um. O backend ecoa em X-Correlation-ID.
+  const correlationId =
+    request.headers.get("x-correlation-id") ?? crypto.randomUUID();
+  headers.set("X-Correlation-ID", correlationId);
+
   const hasBody = !["GET", "HEAD", "DELETE"].includes(request.method);
 
   let body: ArrayBuffer | string | undefined;

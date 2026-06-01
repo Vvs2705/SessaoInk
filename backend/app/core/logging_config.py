@@ -1,7 +1,11 @@
 """Configuração de logging estruturado JSON para produção."""
 import json
 import logging
+from contextvars import ContextVar
 from datetime import UTC, datetime
+
+# Correlation ID por request — propagado do proxy/frontend e incluído em todo log.
+correlation_id_var: ContextVar[str | None] = ContextVar("correlation_id", default=None)
 
 
 class JSONFormatter(logging.Formatter):
@@ -14,6 +18,9 @@ class JSONFormatter(logging.Formatter):
             "logger": record.name,
             "message": record.getMessage(),
         }
+        cid = correlation_id_var.get()
+        if cid:
+            log_data["correlation_id"] = cid
         if hasattr(record, "extra"):
             log_data.update(record.__dict__.get("extra", {}))
         if record.exc_info:

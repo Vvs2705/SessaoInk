@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.database import get_session
 from app.core.redis import registrar_solicitacao_orcamento, verificar_limite_orcamento
+from app.core.request_context import get_client_ip, get_user_agent
 from app.core.upload_security import processar_upload
 from app.models.atendimento import (
     Atendimento,
@@ -24,6 +25,7 @@ from app.models.atendimento import (
 from app.models.documento import AcaoLink, Documento, DocumentoLinkAcesso
 from app.models.portfolio import FlashArt, Portfolio, StatusFlash, VisibilidadePortfolio
 from app.models.usuario import Estudio
+from app.services.audit import log_event
 
 router = APIRouter(prefix="/public", tags=["portal-público"])
 
@@ -475,13 +477,9 @@ async def assinar_documento_por_token(
         raise HTTPException(400, "Documento já está assinado")
 
     now = datetime.now(UTC)
-    ip = (
-        request.headers.get("x-forwarded-for", "")
-        .split(",")[0]
-        .strip()
-        or (request.client.host if request.client else "unknown")
-    )
-    ua = request.headers.get("user-agent", "")
+    # IP/UA SEMPRE do servidor (P0-05/P0-06) — nunca do corpo da requisição.
+    ip = get_client_ip(request)
+    ua = get_user_agent(request)
 
     doc.assinado = True
     doc.data_assinatura = now
@@ -496,6 +494,19 @@ async def assinar_documento_por_token(
     link.usado_em = now
     link.ip_uso = ip
     link.user_agent_uso = ua
+
+    # P0-05/P0-10 — auditoria da assinatura (ator anônimo/público)
+    await log_event(
+        session,
+        acao="documento.signed",
+        estudio_id=doc.estudio_id,
+        actor_tipo="publico",
+        entidade="documento",
+        entidade_id=str(doc.id),
+        ip=ip,
+        user_agent=ua,
+        dados={"nome_assinante": nome_assinante},
+    )
 
     await session.commit()
     return {"message": "Documento assinado com sucesso"}

@@ -5,7 +5,7 @@ import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,10 +13,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.auth.dependencies import get_usuario_atual
 from app.core.config import settings
 from app.core.database import get_session
+from app.core.request_context import get_client_ip, get_user_agent
 from app.models.atendimento import Atendimento
 from app.models.cliente import Cliente
 from app.models.documento import AcaoLink, Documento, DocumentoLinkAcesso, TipoDocumento
 from app.models.usuario import Usuario
+from app.services.audit import log_event
 
 router = APIRouter(prefix="/documentos", tags=["documentos"])
 
@@ -144,6 +146,7 @@ async def deletar_documento(
 @router.post("/{id}/gerar-link", response_model=dict)
 async def gerar_link_documento(
     id: uuid.UUID,
+    request: Request,
     acao: AcaoLink = AcaoLink.ASSINAR,
     horas: int = 72,
     session: AsyncSession = Depends(get_session),
@@ -171,5 +174,20 @@ async def gerar_link_documento(
     session.add(link)
     await session.flush()
 
+    # P0-05/P0-10 — auditoria de geração de link (IP/UA do servidor capturados)
+    await log_event(
+        session,
+        acao="documento.link_generated",
+        estudio_id=usuario.estudio_id,
+        actor_usuario_id=usuario.id,
+        actor_tipo=usuario.tipo.value,
+        entidade="documento",
+        entidade_id=str(id),
+        ip=get_client_ip(request),
+        user_agent=get_user_agent(request),
+        dados={"acao_link": acao.value, "expira_em": expira.isoformat()},
+    )
+
+    # Retorna SOMENTE a URL final (P0-05) — nunca o token em campo separado.
     url = f"{settings.APP_URL}/documento/{token_raw}"
-    return {"url": url, "token": token_raw, "expira_em": expira.isoformat(), "acao": acao}
+    return {"url": url, "expira_em": expira.isoformat(), "acao": acao}

@@ -28,7 +28,11 @@ class TestDocumentosPublicos:
             params={"acao": "ASSINAR"}
         )
         assert link_resp.status_code == 200, link_resp.text
-        token = link_resp.json()["token"]
+        # P0-05: a resposta retorna SOMENTE a URL final (nunca o token em campo
+        # separado). O token é o último segmento da URL.
+        url = link_resp.json()["url"]
+        assert "token" not in link_resp.json()  # não vaza token em campo próprio
+        token = url.rstrip("/").split("/")[-1]
 
         # 2. Obter documento publicamente via token sem auth
         pub_get = await client.get(f"/api/v1/public/documentos/token/{token}")

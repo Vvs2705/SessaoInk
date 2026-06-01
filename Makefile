@@ -1,10 +1,10 @@
 # SessãoInk — atalhos de desenvolvimento
 # Uso: make <alvo>   (Windows: usar via Git Bash/WSL ou rodar os comandos manualmente)
 
-.PHONY: help dev-back dev-front test lint typecheck migrate docker-up check-back
+.PHONY: help dev-back dev-front test lint typecheck migrate openapi check-openapi docker-up check-back
 
 help:
-	@echo "Alvos: dev-back dev-front test lint typecheck migrate docker-up check-back"
+	@echo "Alvos: dev-back dev-front test lint typecheck migrate openapi check-openapi docker-up check-back"
 
 dev-back:
 	cd backend && uvicorn app.main:app --reload
@@ -14,6 +14,13 @@ dev-front:
 
 migrate:
 	cd backend && alembic upgrade head
+
+openapi:
+	cd backend && python scripts/generate_openapi.py --output ../docs/openapi.json
+
+check-openapi:
+	cd backend && python scripts/generate_openapi.py --output ../docs/openapi.json
+	git diff --exit-code -- docs/openapi.json
 
 lint:
 	cd backend && ruff check .

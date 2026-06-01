@@ -4,6 +4,8 @@ const BACKEND = process.env.BACKEND_URL || "https://sessaoink-api.fly.dev";
 
 export async function POST(request: NextRequest) {
   const refreshToken = request.cookies.get("refresh_token")?.value;
+  const csrfToken = request.cookies.get("csrf_token")?.value;
+  const incomingCsrfToken = request.headers.get("x-csrf-token");
 
   if (!refreshToken) {
     return NextResponse.json({ detail: "Refresh token não encontrado" }, { status: 401 });
@@ -15,7 +17,13 @@ export async function POST(request: NextRequest) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Cookie: `refresh_token=${refreshToken}`,
+        Cookie: [
+          `refresh_token=${refreshToken}`,
+          csrfToken ? `csrf_token=${csrfToken}` : "",
+        ]
+          .filter(Boolean)
+          .join("; "),
+        ...(incomingCsrfToken ? { "X-CSRF-Token": incomingCsrfToken } : {}),
       },
     });
   } catch {

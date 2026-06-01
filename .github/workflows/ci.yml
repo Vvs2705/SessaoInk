@@ -42,6 +42,8 @@ jobs:
         # Suíte usa SQLite + MockRedis (autocontida): unit + integração (RBAC,
         # tenant, segurança, auth, uploads). Versões pinadas em requirements-dev.txt.
         run: pytest -q
+      - name: OpenAPI versionado — bloqueante
+        run: python scripts/generate_openapi.py --output ../docs/openapi.json && git diff --exit-code -- ../docs/openapi.json
       - name: Smoke test — imports
         run: python -c "from app.core.config import settings; from app.main import app; print('OK')"
 

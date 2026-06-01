@@ -1,4 +1,4 @@
-"""Router de Portfólio — upload seguro de imagens."""
+"""Router de Portfolio - upload seguro de imagens."""
 
 import uuid
 from pathlib import Path
@@ -14,7 +14,7 @@ from app.core.config import settings
 from app.core.database import get_session
 from app.core.upload_security import processar_upload
 from app.models.portfolio import Portfolio, VisibilidadePortfolio
-from app.models.usuario import Usuario
+from app.models.usuario import TipoUsuario, Usuario
 
 router = APIRouter(prefix="/portfolio", tags=["portfolio"])
 
@@ -31,16 +31,26 @@ class PortfolioResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+def _portfolio_visivel_para_usuario(item: Portfolio, usuario: Usuario) -> bool:
+    if usuario.tipo != TipoUsuario.ARTISTA:
+        return True
+    return item.artista_id == usuario.id
+
+
 @router.get("/", response_model=list[PortfolioResponse])
 async def listar_portfolio(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
+    filtros = [
+        Portfolio.estudio_id == usuario.estudio_id,
+        Portfolio.ativo,
+    ]
+    if usuario.tipo == TipoUsuario.ARTISTA:
+        filtros.append(Portfolio.artista_id == usuario.id)
+
     result = await session.execute(
-        select(Portfolio).where(
-            Portfolio.estudio_id == usuario.estudio_id,
-            Portfolio.ativo,
-        ).order_by(Portfolio.criado_em.desc())
+        select(Portfolio).where(*filtros).order_by(Portfolio.criado_em.desc())
     )
     return result.scalars().all()
 
@@ -54,14 +64,11 @@ async def upload_foto(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    """Upload de foto do portfólio — pipeline seguro compartilhado (P0-04)."""
-    # Validação de tamanho, magic bytes, MIME, strip de EXIF e nome seguro:
-    # tudo centralizado em upload_security.processar_upload.
+    """Upload de foto do portfolio pelo pipeline seguro compartilhado."""
     nome_arquivo, _imagem = await processar_upload(
         arquivo, str(usuario.estudio_id), "portfolio"
     )
 
-    # Criar registro no banco
     item = Portfolio(
         estudio_id=usuario.estudio_id,
         artista_id=usuario.id,
@@ -84,7 +91,7 @@ async def servir_imagem(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    """Serve imagem autenticada — nunca expõe o caminho real."""
+    """Serve imagem autenticada sem expor o caminho real."""
     result = await session.execute(
         select(Portfolio).where(
             Portfolio.id == id,
@@ -92,8 +99,8 @@ async def servir_imagem(
         )
     )
     item = result.scalar_one_or_none()
-    if not item:
-        raise HTTPException(404, "Imagem não encontrada")
+    if not item or not _portfolio_visivel_para_usuario(item, usuario):
+        raise HTTPException(404, "Imagem nao encontrada")
 
     caminho = (
         Path(settings.STORAGE_PATH)
@@ -103,7 +110,7 @@ async def servir_imagem(
         / item.imagem_path
     )
     if not caminho.exists():
-        raise HTTPException(404, "Arquivo não encontrado")
+        raise HTTPException(404, "Arquivo nao encontrado")
 
     return FileResponse(str(caminho))
 
@@ -114,7 +121,7 @@ async def arquivar_portfolio(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    """Soft delete — oculta a foto (ADR-004)."""
+    """Soft delete - oculta a foto."""
     result = await session.execute(
         select(Portfolio).where(
             Portfolio.id == id,
@@ -122,8 +129,8 @@ async def arquivar_portfolio(
         )
     )
     item = result.scalar_one_or_none()
-    if not item:
-        raise HTTPException(404, "Item não encontrado")
+    if not item or not _portfolio_visivel_para_usuario(item, usuario):
+        raise HTTPException(404, "Item nao encontrado")
     item.ativo = False
     await session.flush()
     return None
@@ -137,18 +144,19 @@ async def alterar_visibilidade(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    """Publica ou torna privada uma imagem. Exige autorização explícita para publicar."""
+    """Publica ou torna privada uma imagem."""
     result = await session.execute(
         select(Portfolio).where(
-            Portfolio.id == id, Portfolio.estudio_id == usuario.estudio_id
+            Portfolio.id == id,
+            Portfolio.estudio_id == usuario.estudio_id,
         )
     )
     item = result.scalar_one_or_none()
-    if not item:
-        raise HTTPException(404, "Item não encontrado")
+    if not item or not _portfolio_visivel_para_usuario(item, usuario):
+        raise HTTPException(404, "Item nao encontrado")
 
     if visibilidade == VisibilidadePortfolio.PUBLICO and not autorizado:
-        raise HTTPException(400, "É necessário confirmar autorização para publicar")
+        raise HTTPException(400, "E necessario confirmar autorizacao para publicar")
 
     item.visibilidade = visibilidade
     if autorizado:

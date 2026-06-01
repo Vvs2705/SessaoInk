@@ -1,5 +1,6 @@
 """Router de autenticação — login, logout, refresh, me."""
 
+import secrets
 import uuid
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
@@ -48,6 +49,32 @@ COOKIE_SECURE = _PRODUCTION
 COOKIE_SAMESITE = "lax"
 ACCESS_COOKIE_MAX_AGE = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
 REFRESH_COOKIE_MAX_AGE = settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600
+CSRF_COOKIE_MAX_AGE = REFRESH_COOKIE_MAX_AGE
+CSRF_COOKIE_NAME = "csrf_token"
+
+
+def _set_csrf_cookie(response: Response) -> str:
+    token = secrets.token_urlsafe(32)
+    response.set_cookie(
+        key=CSRF_COOKIE_NAME,
+        value=token,
+        httponly=False,
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+        max_age=CSRF_COOKIE_MAX_AGE,
+        path="/",
+    )
+    return token
+
+
+def _delete_csrf_cookie(response: Response) -> None:
+    response.delete_cookie(
+        CSRF_COOKIE_NAME,
+        path="/",
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+        httponly=False,
+    )
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -152,6 +179,7 @@ async def login(
         max_age=REFRESH_COOKIE_MAX_AGE,
         path="/api/v1/auth/refresh",
     )
+    _set_csrf_cookie(response)
 
     return TokenResponse()
 
@@ -179,6 +207,7 @@ async def logout(
         samesite=COOKIE_SAMESITE,
         httponly=True,
     )
+    _delete_csrf_cookie(response)
 
 
 @router.post("/logout-all", status_code=status.HTTP_204_NO_CONTENT)
@@ -203,6 +232,7 @@ async def logout_all(
         samesite=COOKIE_SAMESITE,
         httponly=True,
     )
+    _delete_csrf_cookie(response)
 
 
 @router.get("/me", response_model=UsuarioResponse)
@@ -289,6 +319,7 @@ async def refresh(
         max_age=REFRESH_COOKIE_MAX_AGE,
         path="/api/v1/auth/refresh",
     )
+    _set_csrf_cookie(response)
 
     return TokenResponse()
 

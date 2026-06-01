@@ -1,5 +1,6 @@
 import logging
 from contextlib import asynccontextmanager
+from urllib.parse import urlsplit
 
 import sentry_sdk
 from fastapi import Depends, FastAPI, Request
@@ -29,6 +30,7 @@ if settings.SENTRY_DSN:
         environment=settings.ENVIRONMENT,
         send_default_pii=False,  # LGPD — não enviar dados pessoais
     )
+from app.api.v1.admin.router import router as admin_router
 from app.api.v1.agenda.router import router as agenda_router
 from app.api.v1.atendimentos.router import router as atendimentos_router
 from app.api.v1.auditoria.router import router as auditoria_router
@@ -87,6 +89,13 @@ _CSRF_EXEMPT_PREFIXES = (
 )
 
 
+def _normalizar_origin(origin: str) -> str:
+    parsed = urlsplit(origin.strip())
+    if not parsed.scheme or not parsed.netloc:
+        return origin.strip().lower().rstrip("/")
+    return f"{parsed.scheme.lower()}://{parsed.netloc.lower()}"
+
+
 @app.middleware("http")
 async def csrf_origin_check(request: Request, call_next):
     """Defesa CSRF em profundidade: rejeita Origin estranho em endpoints autenticados.
@@ -111,8 +120,8 @@ async def csrf_origin_check(request: Request, call_next):
         if not is_exempt:
             browser_origin = request.headers.get("x-origin-browser", "")
             if browser_origin:
-                allowed = settings.ALLOWED_ORIGINS  # list[str]
-                origin_ok = any(browser_origin.startswith(o) for o in allowed)
+                allowed = {_normalizar_origin(origin) for origin in settings.ALLOWED_ORIGINS}
+                origin_ok = _normalizar_origin(browser_origin) in allowed
                 if not origin_ok:
                     logger.warning(
                         "csrf_blocked",
@@ -124,6 +133,19 @@ async def csrf_origin_check(request: Request, call_next):
                     )
                     return JSONResponse(
                         {"detail": "Origem não autorizada"},
+                        status_code=403,
+                    )
+
+            csrf_cookie = request.cookies.get("csrf_token")
+            if csrf_cookie:
+                csrf_header = request.headers.get("x-csrf-token")
+                if not csrf_header or csrf_header != csrf_cookie:
+                    logger.warning(
+                        "csrf_token_blocked",
+                        extra={"path": path, "method": request.method},
+                    )
+                    return JSONResponse(
+                        {"detail": "Token CSRF inválido"},
                         status_code=403,
                     )
 
@@ -169,6 +191,7 @@ async def add_security_headers(request: Request, call_next):
 
 # Routers
 app.include_router(auth_router, prefix="/api/v1")
+app.include_router(admin_router, prefix="/api/v1")
 app.include_router(clientes_router, prefix="/api/v1")
 app.include_router(atendimentos_router, prefix="/api/v1")
 app.include_router(flash_arts_router, prefix="/api/v1")

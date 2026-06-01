@@ -5,6 +5,7 @@ import {
   Image, Zap, Wallet, Package, FileText, BarChart2,
   Settings, LogOut, ChevronRight
 } from "lucide-react";
+import { withCsrfHeaders } from "@/lib/api/client";
 
 const ITEMS = [
   { href: "/portfolio",     label: "Portfólio",     icon: Image,    badge: null },
@@ -46,7 +47,7 @@ export default function MaisPage() {
         <button
           className="w-full flex items-center gap-3 p-4 rounded-[14px] bg-[#0B171C] border border-[#243337] hover:bg-[#E35D5B]/10 hover:border-[#E35D5B]/30 transition-all"
           onClick={async () => {
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ""}/api/v1/auth/logout`, { method: "POST", credentials: "include" });
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ""}/api/v1/auth/logout`, withCsrfHeaders({ method: "POST", credentials: "include" }));
             window.location.href = "/login";
           }}
         >

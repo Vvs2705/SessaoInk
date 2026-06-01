@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Zap, Plus, Loader2, X, DollarSign, Maximize2, MapPin, Trash2, Tag, FileText } from "lucide-react";
-import { api, ApiError } from "@/lib/api/client";
+import { api, ApiError, withCsrfHeaders } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
@@ -94,11 +94,11 @@ export default function FlashArtsPage() {
   };
 
   const uploadFlashArt = async (formData: FormData): Promise<Response> => {
-    return fetch(`${API}/api/v1/flash-arts/`, {
+    return fetch(`${API}/api/v1/flash-arts/`, withCsrfHeaders({
       method: "POST",
       credentials: "include",
       body: formData,
-    });
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -127,10 +127,10 @@ export default function FlashArtsPage() {
       let res = await uploadFlashArt(formData);
 
       if (res.status === 401) {
-        const refreshed = await fetch(`${API}/api/v1/auth/refresh`, {
+        const refreshed = await fetch(`${API}/api/v1/auth/refresh`, withCsrfHeaders({
           method: "POST",
           credentials: "include",
-        });
+        }));
         if (!refreshed.ok) {
           window.location.href = "/login";
           return;

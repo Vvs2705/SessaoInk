@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Image as ImageIcon, Upload, Eye, EyeOff, Loader2, X, ShieldCheck, Trash2 } from "lucide-react";
-import { api, ApiError } from "@/lib/api/client";
+import { api, ApiError, withCsrfHeaders } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
@@ -65,11 +65,11 @@ export default function PortfolioPage() {
     try {
       const form = new FormData();
       form.append("arquivo", file);
-      await fetch(`${API}/api/v1/portfolio/upload`, {
+      await fetch(`${API}/api/v1/portfolio/upload`, withCsrfHeaders({
         method: "POST",
         credentials: "include",
         body: form,
-      }).then(async r => {
+      })).then(async r => {
         if (!r.ok) {
           const err = await r.json().catch(() => ({ detail: "Erro no upload" }));
           throw new Error(err.detail);

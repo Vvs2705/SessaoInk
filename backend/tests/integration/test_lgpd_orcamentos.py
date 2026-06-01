@@ -11,15 +11,17 @@ from sqlalchemy import select
 
 from app.core.config import settings
 from app.core.database import async_session
+from app.core.security import hash_senha
 from app.models.atendimento import (
     Atendimento,
     AtendimentoImagem,
     StatusOperacional,
     TipoAtendimento,
 )
+from app.models.audit_log import AuditLog
 from app.models.cliente import Cliente
 from app.models.consentimento import Consentimento
-from app.models.usuario import Estudio
+from app.models.usuario import Estudio, TipoUsuario, Usuario
 from app.services import lgpd
 from app.services.lgpd import anonimizar_orcamentos_publicos_expirados
 
@@ -114,6 +116,7 @@ async def test_anonimiza_apenas_orcamentos_publicos_nao_convertidos_expirados():
         resultado = await anonimizar_orcamentos_publicos_expirados(
             session,
             agora=agora,
+            estudio_id=estudio.id,
         )
 
         assert resultado.anonimizados == 1
@@ -256,3 +259,118 @@ async def test_modela_consentimento_de_orcamento_publico():
         await session.commit()
 
         assert consentimento.id is not None
+
+
+@pytest.mark.asyncio
+async def test_endpoint_admin_lgpd_anonimiza_e_audita_com_idempotencia(
+    client: AsyncClient,
+):
+    retencao_vencida = datetime(2000, 1, 1, tzinfo=UTC)
+
+    async with async_session() as session:
+        admin = await session.scalar(
+            select(Usuario).where(
+                Usuario.email == "admin@sessaoink.dev",
+                Usuario.tipo == TipoUsuario.ADMIN,
+            )
+        )
+        assert admin is not None
+
+        atendimento = Atendimento(
+            estudio_id=admin.estudio_id,
+            status_operacional=StatusOperacional.SOLICITADO,
+            tipo=TipoAtendimento.TATUAGEM,
+            descricao="Orcamento publico vencido via endpoint",
+            notas_privadas="Contato: Pessoa Endpoint | WhatsApp: 1133333333",
+            orcamento_publico=True,
+            lgpd_retencao_ate=retencao_vencida,
+        )
+        session.add(atendimento)
+        await session.commit()
+
+        atendimento_id = atendimento.id
+        admin_email = admin.email
+        admin_id = admin.id
+        estudio_id = admin.estudio_id
+
+    login = await client.post(
+        "/api/v1/auth/login",
+        json={"email": admin_email, "senha": "admin123"},
+    )
+    assert login.status_code == 200, login.text
+
+    resposta = await client.post("/api/v1/admin/lgpd/anonimizar")
+    assert resposta.status_code == 200, resposta.text
+    assert resposta.json()["candidatos"] >= 1
+    assert resposta.json()["anonimizados"] >= 1
+    assert resposta.json()["dry_run"] is False
+
+    async with async_session() as session:
+        atendimento_atualizado = await session.get(Atendimento, atendimento_id)
+        assert atendimento_atualizado is not None
+        assert atendimento_atualizado.lgpd_anonimizado_em is not None
+        assert atendimento_atualizado.descricao is None
+        assert atendimento_atualizado.notas_privadas == "[anonimizado LGPD]"
+
+        eventos = (
+            await session.scalars(
+                select(AuditLog)
+                .where(
+                    AuditLog.acao == "lgpd.anonymized",
+                    AuditLog.estudio_id == estudio_id,
+                    AuditLog.actor_usuario_id == admin_id,
+                )
+                .order_by(AuditLog.created_em.desc())
+            )
+        ).all()
+        evento = next(
+            (
+                item
+                for item in eventos
+                if item.dados
+                and item.dados.get("anonimizados", 0) >= resposta.json()["anonimizados"]
+            ),
+            None,
+        )
+        assert evento is not None
+        assert evento.actor_tipo == TipoUsuario.ADMIN.value
+        assert evento.entidade == "atendimento"
+        assert evento.dados is not None
+        assert evento.dados["candidatos"] >= 1
+        assert evento.dados["anonimizados"] >= 1
+        assert evento.dados["dry_run"] is False
+
+    segunda_resposta = await client.post("/api/v1/admin/lgpd/anonimizar")
+    assert segunda_resposta.status_code == 200, segunda_resposta.text
+    assert segunda_resposta.json() == {"candidatos": 0, "anonimizados": 0, "dry_run": False}
+
+
+@pytest.mark.asyncio
+async def test_endpoint_admin_lgpd_exige_admin(client: AsyncClient):
+    sem_auth = await client.post("/api/v1/admin/lgpd/anonimizar")
+    assert sem_auth.status_code == 401
+
+    async with async_session() as session:
+        estudio = Estudio(nome="LGPD Artist Ink", slug=f"lgpd-artist-{uuid.uuid4().hex[:8]}")
+        session.add(estudio)
+        await session.flush()
+
+        artista = Usuario(
+            estudio_id=estudio.id,
+            nome="Artista LGPD",
+            email=f"artista-lgpd-{uuid.uuid4().hex[:8]}@sessaoink.dev",
+            senha_hash=hash_senha("admin123"),
+            tipo=TipoUsuario.ARTISTA,
+        )
+        session.add(artista)
+        await session.commit()
+        artista_email = artista.email
+
+    login = await client.post(
+        "/api/v1/auth/login",
+        json={"email": artista_email, "senha": "admin123"},
+    )
+    assert login.status_code == 200, login.text
+
+    resposta = await client.post("/api/v1/admin/lgpd/anonimizar")
+    assert resposta.status_code == 403

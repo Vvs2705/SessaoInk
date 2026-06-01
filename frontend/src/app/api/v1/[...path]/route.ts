@@ -44,13 +44,23 @@ async function proxy(
   // ────────────────────────────────────────────────────────────────────────
 
   const accessToken = request.cookies.get("access_token")?.value;
+  const csrfToken = request.cookies.get("csrf_token")?.value;
   const incomingContentType = request.headers.get("content-type") ?? "";
   const isMultipart =
     incomingContentType.includes("multipart/form-data") ||
     incomingContentType.includes("application/x-www-form-urlencoded");
 
   const headers = new Headers();
-  if (accessToken) headers.set("Cookie", `access_token=${accessToken}`);
+  const cookieHeader = [
+    accessToken ? `access_token=${accessToken}` : "",
+    csrfToken ? `csrf_token=${csrfToken}` : "",
+  ]
+    .filter(Boolean)
+    .join("; ");
+  if (cookieHeader) headers.set("Cookie", cookieHeader);
+
+  const incomingCsrf = request.headers.get("x-csrf-token");
+  if (incomingCsrf) headers.set("X-CSRF-Token", incomingCsrf);
 
   // Encaminhar o Origin real do browser para o backend como header customizado.
   // O backend usa X-Origin-Browser para validação CSRF em profundidade

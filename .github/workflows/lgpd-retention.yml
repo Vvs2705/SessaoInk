@@ -1,0 +1,46 @@
+name: LGPD Retention
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Executar sem alterar dados"
+        required: false
+        default: "false"
+
+permissions:
+  contents: read
+
+jobs:
+  anonymize-expired-public-budgets:
+    name: Anonimizar orçamentos públicos expirados
+    runs-on: ubuntu-latest
+    env:
+      API_URL: https://sessaoink-api.fly.dev
+      ADMIN_EMAIL: ${{ secrets.SESSAOINK_ADMIN_EMAIL }}
+      ADMIN_PASSWORD: ${{ secrets.SESSAOINK_ADMIN_PASSWORD }}
+      DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+    steps:
+      - name: Validar secrets obrigatórios
+        run: |
+          test -n "$ADMIN_EMAIL"
+          test -n "$ADMIN_PASSWORD"
+
+      - name: Login administrativo
+        run: |
+          curl -fsS -c cookies.txt \
+            -H "Content-Type: application/json" \
+            -d "{\"email\":\"$ADMIN_EMAIL\",\"senha\":\"$ADMIN_PASSWORD\"}" \
+            "$API_URL/api/v1/auth/login" >/tmp/lgpd-login.json
+
+      - name: Executar retenção LGPD
+        run: |
+          csrf_token="$(awk '$6 == "csrf_token" { print $7 }' cookies.txt | tail -n 1)"
+          test -n "$csrf_token"
+          curl -fsS -b cookies.txt \
+            -H "Content-Type: application/json" \
+            -H "X-CSRF-Token: $csrf_token" \
+            -d "{\"dry_run\":$DRY_RUN}" \
+            "$API_URL/api/v1/admin/lgpd/anonimizar"

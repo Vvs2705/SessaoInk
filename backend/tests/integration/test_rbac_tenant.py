@@ -1,4 +1,7 @@
 
+import uuid
+from datetime import UTC, datetime
+
 import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
@@ -9,6 +12,7 @@ from app.models.atendimento import Atendimento, StatusOperacional, TipoAtendimen
 from app.models.cliente import Cliente
 from app.models.documento import Documento, TipoDocumento
 from app.models.financeiro import Lancamento, TipoLancamento
+from app.models.portfolio import FlashArt, Portfolio
 from app.models.usuario import Estudio, TipoUsuario, Usuario
 
 INVASOR_EMAIL = "admin@invasor.dev"
@@ -254,3 +258,119 @@ class TestRBACOperacoesAdmin:
         authed = await _get_auth_client(client, ADMIN_EMAIL)
         r = await authed.get("/api/v1/relatorios/resumo")
         assert r.status_code == 200
+
+
+class TestOwnerCheckArtista:
+    """P0-03 incremental — ARTISTA acessa apenas recursos vinculados a usuario.id."""
+
+    @pytest.mark.asyncio
+    async def test_artista_ve_apenas_portfolio_flash_e_agenda_proprios(
+        self,
+        client: AsyncClient,
+    ):
+        marcador = uuid.uuid4().hex[:8]
+
+        async with async_session() as session:
+            artista = await session.scalar(select(Usuario).where(Usuario.email == ARTISTA_EMAIL))
+            assert artista is not None
+
+            outro_artista = Usuario(
+                estudio_id=artista.estudio_id,
+                nome=f"Outro Artista {marcador}",
+                email=f"outro-artista-{marcador}@sessaoink.dev",
+                senha_hash=hash_senha(SENHA),
+                tipo=TipoUsuario.ARTISTA,
+            )
+            session.add(outro_artista)
+            await session.flush()
+
+            portfolio_proprio = Portfolio(
+                estudio_id=artista.estudio_id,
+                artista_id=artista.id,
+                imagem_path=f"portfolio-proprio-{marcador}.webp",
+                titulo=f"Portfolio proprio {marcador}",
+            )
+            portfolio_outro = Portfolio(
+                estudio_id=artista.estudio_id,
+                artista_id=outro_artista.id,
+                imagem_path=f"portfolio-outro-{marcador}.webp",
+                titulo=f"Portfolio outro {marcador}",
+            )
+            flash_propria = FlashArt(
+                estudio_id=artista.estudio_id,
+                artista_id=artista.id,
+                titulo=f"Flash propria {marcador}",
+            )
+            flash_outra = FlashArt(
+                estudio_id=artista.estudio_id,
+                artista_id=outro_artista.id,
+                titulo=f"Flash outra {marcador}",
+            )
+            agenda_propria = Atendimento(
+                estudio_id=artista.estudio_id,
+                artista_id=artista.id,
+                status_operacional=StatusOperacional.CONFIRMADO,
+                tipo=TipoAtendimento.TATUAGEM,
+                descricao=f"Agenda propria {marcador}",
+                data_sessao=datetime(2026, 7, 10, 14, 0, tzinfo=UTC),
+            )
+            agenda_outra = Atendimento(
+                estudio_id=artista.estudio_id,
+                artista_id=outro_artista.id,
+                status_operacional=StatusOperacional.CONFIRMADO,
+                tipo=TipoAtendimento.TATUAGEM,
+                descricao=f"Agenda outra {marcador}",
+                data_sessao=datetime(2026, 7, 11, 14, 0, tzinfo=UTC),
+            )
+            session.add_all(
+                [
+                    portfolio_proprio,
+                    portfolio_outro,
+                    flash_propria,
+                    flash_outra,
+                    agenda_propria,
+                    agenda_outra,
+                ]
+            )
+            await session.commit()
+            portfolio_outro_id = portfolio_outro.id
+            flash_outra_id = flash_outra.id
+            agenda_outra_id = agenda_outra.id
+
+        authed = await _get_auth_client(client, ARTISTA_EMAIL)
+
+        portfolio_resp = await authed.get("/api/v1/portfolio/")
+        assert portfolio_resp.status_code == 200
+        titulos_portfolio = {item["titulo"] for item in portfolio_resp.json()}
+        assert f"Portfolio proprio {marcador}" in titulos_portfolio
+        assert f"Portfolio outro {marcador}" not in titulos_portfolio
+
+        flash_resp = await authed.get("/api/v1/flash-arts/")
+        assert flash_resp.status_code == 200
+        titulos_flash = {item["titulo"] for item in flash_resp.json()}
+        assert f"Flash propria {marcador}" in titulos_flash
+        assert f"Flash outra {marcador}" not in titulos_flash
+
+        agenda_resp = await authed.get("/api/v1/agenda/?ano=2026&mes=7")
+        assert agenda_resp.status_code == 200
+        descricoes_agenda = {item["descricao"] for item in agenda_resp.json()["sessoes"]}
+        assert f"Agenda propria {marcador}" in descricoes_agenda
+        assert f"Agenda outra {marcador}" not in descricoes_agenda
+
+        delete_portfolio = await authed.delete(f"/api/v1/portfolio/{portfolio_outro_id}")
+        assert delete_portfolio.status_code == 404
+
+        patch_flash = await authed.patch(
+            f"/api/v1/flash-arts/{flash_outra_id}/status?status_novo=ARQUIVADA"
+        )
+        assert patch_flash.status_code == 404
+
+        agenda_outro = await authed.post(
+            "/api/v1/agenda/agendar",
+            json={
+                "atendimento_id": str(agenda_outra_id),
+                "data_sessao": "2026-07-12T14:00:00Z",
+                "duracao_minutos": 120,
+            },
+        )
+        assert agenda_outro.status_code == 404

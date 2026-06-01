@@ -12,7 +12,7 @@ from app.api.v1.auth.dependencies import get_usuario_atual
 from app.core.config import settings
 from app.core.database import get_session
 from app.models.atendimento import Atendimento, StatusOperacional
-from app.models.usuario import Usuario
+from app.models.usuario import TipoUsuario, Usuario
 from app.schemas.atendimento import (
     AtendimentoCreate,
     AtendimentoResponse,
@@ -28,6 +28,12 @@ from app.services.tenant import (
 router = APIRouter(prefix="/atendimentos", tags=["atendimentos"])
 
 
+def _atendimento_visivel_para_usuario(item: Atendimento, usuario: Usuario) -> bool:
+    if usuario.tipo != TipoUsuario.ARTISTA:
+        return True
+    return item.artista_id == usuario.id
+
+
 @router.get("/", response_model=list[AtendimentoResponse])
 async def listar_atendimentos(
     status_op: StatusOperacional | None = Query(default=None),
@@ -40,6 +46,8 @@ async def listar_atendimentos(
     )
     if status_op:
         q = q.where(Atendimento.status_operacional == status_op)
+    if usuario.tipo == TipoUsuario.ARTISTA:
+        q = q.where(Atendimento.artista_id == usuario.id)
     q = q.order_by(Atendimento.criado_em.desc())
     result = await session.execute(q)
     return result.scalars().all()
@@ -51,6 +59,15 @@ async def criar_atendimento(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
+    dados_dict = dados.model_dump()
+    if usuario.tipo == TipoUsuario.ARTISTA:
+        if dados.artista_id is not None and dados.artista_id != usuario.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Artista so pode criar atendimentos para si.",
+            )
+        dados_dict["artista_id"] = usuario.id
+
     if dados.cliente_id:
         await get_cliente_do_estudio(
             session,
@@ -61,17 +78,17 @@ async def criar_atendimento(
             detail="Cliente inválido ou não pertence ao seu estúdio",
         )
 
-    if dados.artista_id:
+    if dados_dict.get("artista_id"):
         await get_usuario_do_estudio(
             session,
-            usuario_id=dados.artista_id,
+            usuario_id=dados_dict["artista_id"],
             estudio_id=usuario.estudio_id,
             active_only=True,
             not_found_status=status.HTTP_400_BAD_REQUEST,
             detail="Artista inválido ou não pertence ao seu estúdio",
         )
 
-    atendimento = Atendimento(estudio_id=usuario.estudio_id, **dados.model_dump())
+    atendimento = Atendimento(estudio_id=usuario.estudio_id, **dados_dict)
     session.add(atendimento)
     await session.flush()
     await session.refresh(atendimento)
@@ -84,12 +101,15 @@ async def obter_atendimento(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    return await get_atendimento_do_estudio(
+    item = await get_atendimento_do_estudio(
         session,
         atendimento_id=id,
         estudio_id=usuario.estudio_id,
         detail="Atendimento não encontrado",
     )
+    if not _atendimento_visivel_para_usuario(item, usuario):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Atendimento nÃ£o encontrado")
+    return item
 
 
 @router.patch("/{id}", response_model=AtendimentoResponse)
@@ -105,6 +125,18 @@ async def atualizar_atendimento(
         estudio_id=usuario.estudio_id,
         detail="Atendimento não encontrado",
     )
+    if not _atendimento_visivel_para_usuario(item, usuario):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Atendimento nao encontrado")
+
+    if (
+        usuario.tipo == TipoUsuario.ARTISTA
+        and dados.artista_id is not None
+        and dados.artista_id != usuario.id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Artista so pode alterar atendimentos para si.",
+        )
 
     if dados.cliente_id is not None:
         await get_cliente_do_estudio(
@@ -146,6 +178,8 @@ async def alterar_status(
         estudio_id=usuario.estudio_id,
         detail="Atendimento não encontrado",
     )
+    if not _atendimento_visivel_para_usuario(item, usuario):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Atendimento nao encontrado")
     if dados.status_operacional:
         item.status_operacional = dados.status_operacional
     if dados.status_financeiro:
@@ -167,6 +201,8 @@ async def arquivar_atendimento(
         estudio_id=usuario.estudio_id,
         detail="Atendimento não encontrado",
     )
+    if not _atendimento_visivel_para_usuario(item, usuario):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Atendimento nao encontrado")
     item.ativo = False
 
 

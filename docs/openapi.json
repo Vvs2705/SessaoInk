@@ -287,6 +287,65 @@
         }
       }
     },
+    "/api/v1/admin/lgpd/anonimizar": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Anonimizar Lgpd Expirada",
+        "description": "Executa retencao LGPD de orcamentos publicos expirados do estudio.",
+        "operationId": "anonimizar_lgpd_expirada_api_v1_admin_lgpd_anonimizar_post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnonimizacaoLGPDRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnonimizacaoLGPDResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/clientes/": {
       "get": {
         "tags": [
@@ -2375,7 +2434,7 @@
           "portfolio"
         ],
         "summary": "Upload Foto",
-        "description": "Upload de foto do portfólio — pipeline seguro compartilhado (P0-04).",
+        "description": "Upload de foto do portfolio pelo pipeline seguro compartilhado.",
         "operationId": "upload_foto_api_v1_portfolio_upload_post",
         "parameters": [
           {
@@ -2435,7 +2494,7 @@
           "portfolio"
         ],
         "summary": "Servir Imagem",
-        "description": "Serve imagem autenticada — nunca expõe o caminho real.",
+        "description": "Serve imagem autenticada sem expor o caminho real.",
         "operationId": "servir_imagem_api_v1_portfolio__id__imagem_get",
         "parameters": [
           {
@@ -2493,7 +2552,7 @@
           "portfolio"
         ],
         "summary": "Arquivar Portfolio",
-        "description": "Soft delete — oculta a foto (ADR-004).",
+        "description": "Soft delete - oculta a foto.",
         "operationId": "arquivar_portfolio_api_v1_portfolio__id__delete",
         "parameters": [
           {
@@ -2546,7 +2605,7 @@
           "portfolio"
         ],
         "summary": "Alterar Visibilidade",
-        "description": "Publica ou torna privada uma imagem. Exige autorização explícita para publicar.",
+        "description": "Publica ou torna privada uma imagem.",
         "operationId": "alterar_visibilidade_api_v1_portfolio__id__visibilidade_patch",
         "parameters": [
           {
@@ -4117,6 +4176,65 @@
           "data_sessao"
         ],
         "title": "AgendarSessaoRequest"
+      },
+      "AnonimizacaoLGPDRequest": {
+        "properties": {
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "default": false
+          },
+          "limite": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limite"
+          },
+          "agora": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agora"
+          }
+        },
+        "type": "object",
+        "title": "AnonimizacaoLGPDRequest"
+      },
+      "AnonimizacaoLGPDResponse": {
+        "properties": {
+          "candidatos": {
+            "type": "integer",
+            "title": "Candidatos"
+          },
+          "anonimizados": {
+            "type": "integer",
+            "title": "Anonimizados"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run"
+          }
+        },
+        "type": "object",
+        "required": [
+          "candidatos",
+          "anonimizados",
+          "dry_run"
+        ],
+        "title": "AnonimizacaoLGPDResponse"
       },
       "AtendimentoCreate": {
         "properties": {

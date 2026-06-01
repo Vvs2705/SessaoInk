@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.auth.dependencies import get_usuario_atual
 from app.core.database import get_session
 from app.models.atendimento import Atendimento, StatusOperacional
-from app.models.usuario import Usuario
+from app.models.usuario import TipoUsuario, Usuario
 from app.services.tenant import get_atendimento_do_estudio
 
 router = APIRouter(prefix="/agenda", tags=["agenda"])
@@ -57,15 +57,19 @@ async def listar_agenda(
     ano = ano or hoje.year
     mes = mes or hoje.month
 
+    filtros = [
+        Atendimento.estudio_id == usuario.estudio_id,
+        Atendimento.ativo,
+        Atendimento.data_sessao.isnot(None),
+        extract("year", Atendimento.data_sessao) == ano,
+        extract("month", Atendimento.data_sessao) == mes,
+    ]
+    if usuario.tipo == TipoUsuario.ARTISTA:
+        filtros.append(Atendimento.artista_id == usuario.id)
+
     result = await session.execute(
         select(Atendimento)
-        .where(
-            Atendimento.estudio_id == usuario.estudio_id,
-            Atendimento.ativo,
-            Atendimento.data_sessao.isnot(None),
-            extract("year", Atendimento.data_sessao) == ano,
-            extract("month", Atendimento.data_sessao) == mes,
-        )
+        .where(*filtros)
         .order_by(Atendimento.data_sessao)
     )
     sessoes = result.scalars().all()
@@ -110,6 +114,12 @@ async def agendar_sessao(
         active_only=True,
         detail="Atendimento não encontrado",
     )
+
+    if usuario.tipo == TipoUsuario.ARTISTA and atendimento.artista_id != usuario.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Atendimento nao encontrado",
+        )
 
     if atendimento.artista_id:
         duracao_min = dados.duracao_minutos or 120
@@ -183,14 +193,18 @@ async def proximas_sessoes(
     agora = datetime.now(UTC)
     limite = agora + timedelta(days=dias)
 
+    filtros = [
+        Atendimento.estudio_id == usuario.estudio_id,
+        Atendimento.ativo,
+        Atendimento.data_sessao >= agora,
+        Atendimento.data_sessao <= limite,
+    ]
+    if usuario.tipo == TipoUsuario.ARTISTA:
+        filtros.append(Atendimento.artista_id == usuario.id)
+
     result = await session.execute(
         select(Atendimento)
-        .where(
-            Atendimento.estudio_id == usuario.estudio_id,
-            Atendimento.ativo,
-            Atendimento.data_sessao >= agora,
-            Atendimento.data_sessao <= limite,
-        )
+        .where(*filtros)
         .order_by(Atendimento.data_sessao)
     )
     sessoes = result.scalars().all()

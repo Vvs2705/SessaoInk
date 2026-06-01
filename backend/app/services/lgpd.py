@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -47,6 +48,7 @@ async def anonimizar_orcamentos_publicos_expirados(
     session: AsyncSession,
     *,
     agora: datetime | None = None,
+    estudio_id: UUID | None = None,
     limite: int | None = None,
     dry_run: bool = False,
 ) -> ResultadoAnonimizacaoLGPD:
@@ -65,6 +67,8 @@ async def anonimizar_orcamentos_publicos_expirados(
         )
         .order_by(Atendimento.lgpd_retencao_ate.asc())
     )
+    if estudio_id is not None:
+        query = query.where(Atendimento.estudio_id == estudio_id)
     if limite is not None:
         query = query.limit(limite)
 

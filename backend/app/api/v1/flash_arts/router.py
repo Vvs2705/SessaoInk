@@ -14,7 +14,7 @@ from app.core.config import settings
 from app.core.database import get_session
 from app.core.upload_security import processar_upload
 from app.models.portfolio import FlashArt, StatusFlash
-from app.models.usuario import Usuario
+from app.models.usuario import TipoUsuario, Usuario
 
 router = APIRouter(prefix="/flash-arts", tags=["flash-arts"])
 
@@ -33,16 +33,26 @@ class FlashArtResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+def _flash_visivel_para_usuario(item: FlashArt, usuario: Usuario) -> bool:
+    if usuario.tipo != TipoUsuario.ARTISTA:
+        return True
+    return item.artista_id == usuario.id
+
+
 @router.get("/", response_model=list[FlashArtResponse])
 async def listar_flash_arts(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
+    filtros = [
+        FlashArt.estudio_id == usuario.estudio_id,
+        FlashArt.ativo,
+    ]
+    if usuario.tipo == TipoUsuario.ARTISTA:
+        filtros.append(FlashArt.artista_id == usuario.id)
+
     result = await session.execute(
-        select(FlashArt).where(
-            FlashArt.estudio_id == usuario.estudio_id,
-            FlashArt.ativo,
-        ).order_by(FlashArt.criado_em.desc())
+        select(FlashArt).where(*filtros).order_by(FlashArt.criado_em.desc())
     )
     return result.scalars().all()
 
@@ -58,13 +68,10 @@ async def criar_flash_art(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    # Pipeline seguro compartilhado (P0-04): tamanho, magic bytes, MIME,
-    # strip de EXIF e nome de arquivo seguro.
     nome_arquivo, _imagem = await processar_upload(
         arquivo, str(usuario.estudio_id), "flash_arts"
     )
 
-    # Criar registro no banco
     flash = FlashArt(
         estudio_id=usuario.estudio_id,
         artista_id=usuario.id,
@@ -96,11 +103,11 @@ async def servir_imagem(
         )
     )
     item = result.scalar_one_or_none()
-    if not item:
-        raise HTTPException(404, "Flash art não encontrada")
+    if not item or not _flash_visivel_para_usuario(item, usuario):
+        raise HTTPException(404, "Flash art nao encontrada")
 
     if not item.imagem_path:
-        raise HTTPException(404, "Imagem não cadastrada para esta flash art")
+        raise HTTPException(404, "Imagem nao cadastrada para esta flash art")
 
     caminho = (
         Path(settings.STORAGE_PATH)
@@ -110,7 +117,7 @@ async def servir_imagem(
         / item.imagem_path
     )
     if not caminho.exists():
-        raise HTTPException(404, "Arquivo não encontrado")
+        raise HTTPException(404, "Arquivo nao encontrado")
 
     return FileResponse(str(caminho))
 
@@ -123,11 +130,14 @@ async def alterar_status_flash(
     usuario: Usuario = Depends(get_usuario_atual),
 ):
     result = await session.execute(
-        select(FlashArt).where(FlashArt.id == id, FlashArt.estudio_id == usuario.estudio_id)
+        select(FlashArt).where(
+            FlashArt.id == id,
+            FlashArt.estudio_id == usuario.estudio_id,
+        )
     )
     flash = result.scalar_one_or_none()
-    if not flash:
-        raise HTTPException(404, "Flash art não encontrada")
+    if not flash or not _flash_visivel_para_usuario(flash, usuario):
+        raise HTTPException(404, "Flash art nao encontrada")
     flash.status = status_novo
     await session.flush()
     await session.refresh(flash)
@@ -141,12 +151,14 @@ async def arquivar_flash_art(
     usuario: Usuario = Depends(get_usuario_atual),
 ):
     result = await session.execute(
-        select(FlashArt).where(FlashArt.id == id, FlashArt.estudio_id == usuario.estudio_id)
+        select(FlashArt).where(
+            FlashArt.id == id,
+            FlashArt.estudio_id == usuario.estudio_id,
+        )
     )
     flash = result.scalar_one_or_none()
-    if not flash:
-        raise HTTPException(404, "Flash art não encontrada")
+    if not flash or not _flash_visivel_para_usuario(flash, usuario):
+        raise HTTPException(404, "Flash art nao encontrada")
     flash.ativo = False
     await session.flush()
     return None
-

@@ -2029,6 +2029,46 @@
         }
       }
     },
+    "/api/v1/public/planos/interesse": {
+      "post": {
+        "tags": [
+          "portal-público"
+        ],
+        "summary": "Registrar Interesse Plano",
+        "description": "Captura interesse em um plano (lead) e notifica vendas por e-mail.\n\nFuncional sem gateway: enquanto o checkout do Mercado Pago não está ligado,\neste é o CTA real da página de preços. Declarado antes de `/{slug}`.",
+        "operationId": "registrar_interesse_plano_api_v1_public_planos_interesse_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InteressePlanoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/public/{slug}": {
       "get": {
         "tags": [
@@ -6302,6 +6342,56 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "InteressePlanoRequest": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "contato": {
+            "type": "string",
+            "title": "Contato"
+          },
+          "plano": {
+            "type": "string",
+            "title": "Plano"
+          },
+          "ciclo": {
+            "type": "string",
+            "title": "Ciclo",
+            "default": "mensal"
+          },
+          "mensagem": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mensagem"
+          },
+          "website": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome",
+          "contato",
+          "plano"
+        ],
+        "title": "InteressePlanoRequest"
       },
       "LancamentoCreate": {
         "properties": {

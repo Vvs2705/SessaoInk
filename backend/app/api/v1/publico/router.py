@@ -5,7 +5,16 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    UploadFile,
+)
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -85,6 +94,58 @@ async def listar_planos():
     from app.core.planos import TRIAL_DIAS, listar_planos_publicos
 
     return {"planos": listar_planos_publicos(), "trial_dias": TRIAL_DIAS}
+
+
+class InteressePlanoRequest(BaseModel):
+    nome: str
+    contato: str  # WhatsApp ou e-mail
+    plano: str
+    ciclo: str = "mensal"
+    mensagem: str | None = None
+    # Honeypot anti-spam (deve vir vazio)
+    website: str | None = None
+
+
+@router.post("/planos/interesse", status_code=202)
+async def registrar_interesse_plano(
+    dados: InteressePlanoRequest,
+    background_tasks: BackgroundTasks,
+):
+    """Captura interesse em um plano (lead) e notifica vendas por e-mail.
+
+    Funcional sem gateway: enquanto o checkout do Mercado Pago não está ligado,
+    este é o CTA real da página de preços. Declarado antes de `/{slug}`.
+    """
+    from app.core.planos import get_plano
+
+    # Honeypot: bot preencheu campo oculto → descarta silenciosamente
+    if dados.website:
+        return {"ok": True}
+
+    if len(dados.nome.strip()) < 2 or len(dados.nome) > 200:
+        raise HTTPException(400, "Nome inválido (2-200 caracteres)")
+    if len(dados.contato.strip()) < 5 or len(dados.contato) > 200:
+        raise HTTPException(400, "Contato inválido")
+    if dados.mensagem and len(dados.mensagem) > 1000:
+        raise HTTPException(400, "Mensagem muito longa (máx 1000 caracteres)")
+    if not get_plano(dados.plano):
+        raise HTTPException(400, "Plano inválido")
+
+    from app.core.email import enviar_lead_interesse_plano
+
+    # BackgroundTasks: envio gerenciado pelo Starlette (sem fire-and-forget).
+    background_tasks.add_task(
+        enviar_lead_interesse_plano,
+        nome=dados.nome.strip(),
+        contato=dados.contato.strip(),
+        plano=dados.plano,
+        ciclo=dados.ciclo,
+        mensagem=dados.mensagem,
+    )
+    return {
+        "ok": True,
+        "mensagem": "Recebemos seu interesse! Entraremos em contato em breve.",
+    }
 
 
 @router.get("/{slug}", response_model=EstudioPublicoResponse)

@@ -62,6 +62,11 @@ class Settings(BaseSettings):
     # CSRF
     CSRF_STRICT_MODE: bool = True
 
+    # Vendas / Billing
+    LEADS_EMAIL: str = ""  # destino das notificações de interesse em planos
+    MERCADO_PAGO_ACCESS_TOKEN: str = ""  # token do gateway (preenchido depois)
+    MERCADO_PAGO_WEBHOOK_SECRET: str = ""
+
     # Config model configuration
     model_config = SettingsConfigDict(
         env_file=".env",

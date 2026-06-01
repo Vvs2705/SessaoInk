@@ -7,8 +7,6 @@ Caso contrário, a operação é silenciosa (no-op).
 import asyncio
 import logging
 
-import resend  # type: ignore[import-untyped]
-
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -20,6 +18,8 @@ def _resend_configurado() -> bool:
 
 def _enviar_sync(destinatario: str, assunto: str, html: str) -> None:
     """Envia email via Resend de forma síncrona — executado em thread separada."""
+    import resend  # type: ignore[import-untyped]  # lazy: módulo importável sem o pacote
+
     resend.api_key = settings.RESEND_API_KEY
 
     resend.Emails.send({
@@ -135,3 +135,55 @@ async def enviar_notificacao_orcamento(
     except Exception as exc:
         # Não deixar falha de email derrubar a requisição
         logger.warning(f"Falha ao enviar email via Resend: {exc}")
+
+
+async def enviar_lead_interesse_plano(
+    nome: str,
+    contato: str,
+    plano: str,
+    ciclo: str,
+    mensagem: str | None = None,
+) -> None:
+    """Notifica o time de vendas sobre um interesse em plano (captura de lead).
+
+    Destino: settings.LEADS_EMAIL. Se ausente/sem Resend, apenas registra no log
+    (o lead nunca é perdido silenciosamente — fica no log estruturado).
+    """
+    destino = settings.LEADS_EMAIL
+    if not destino or not _resend_configurado():
+        logger.info(
+            "lead_interesse_plano",
+            extra={"extra": {"nome": nome, "contato": contato, "plano": plano, "ciclo": ciclo}},
+        )
+        return
+
+    msg_html = (mensagem or "—").replace("<", "&lt;").replace(">", "&gt;")
+    html = f"""
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#050B12;font-family:-apple-system,'Segoe UI',sans-serif;">
+  <div style="max-width:520px;margin:40px auto;background:#0B171C;border:1px solid #243337;border-radius:18px;overflow:hidden;">
+    <div style="background:#2F9285;padding:22px 30px;">
+      <p style="margin:0;font-size:11px;color:#050B12;font-weight:700;letter-spacing:2px;text-transform:uppercase;">SessãoInk · Vendas</p>
+      <h1 style="margin:6px 0 0;font-size:19px;color:#050B12;font-weight:800;">Novo interesse no plano {plano} 🚀</h1>
+    </div>
+    <div style="padding:24px 30px;">
+      <table style="width:100%;border-collapse:collapse;">
+        <tr><td style="padding:6px 0;font-size:12px;color:#87938F;width:30%;">Nome</td><td style="padding:6px 0;font-size:14px;color:#F0EADD;font-weight:600;">{nome}</td></tr>
+        <tr style="border-top:1px solid #1a2830;"><td style="padding:6px 0;font-size:12px;color:#87938F;">Contato</td><td style="padding:6px 0;font-size:14px;color:#F0EADD;">{contato}</td></tr>
+        <tr style="border-top:1px solid #1a2830;"><td style="padding:6px 0;font-size:12px;color:#87938F;">Plano</td><td style="padding:6px 0;font-size:14px;color:#2F9285;font-weight:700;">{plano}</td></tr>
+        <tr style="border-top:1px solid #1a2830;"><td style="padding:6px 0;font-size:12px;color:#87938F;">Ciclo</td><td style="padding:6px 0;font-size:14px;color:#F0EADD;">{ciclo}</td></tr>
+      </table>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid #243337;">
+        <p style="margin:0 0 6px;font-size:12px;color:#87938F;">Mensagem</p>
+        <p style="margin:0;font-size:14px;color:#F0EADD;line-height:1.6;">{msg_html}</p>
+      </div>
+    </div>
+  </div>
+</body></html>
+"""
+    assunto = f"[SessãoInk] Interesse no plano {plano} ({ciclo}) — {nome}"
+    try:
+        await asyncio.to_thread(_enviar_sync, destino, assunto, html)
+        logger.info(f"Lead de interesse enviado para {destino} (plano {plano})")
+    except Exception as exc:
+        logger.warning(f"Falha ao enviar lead via Resend: {exc}")

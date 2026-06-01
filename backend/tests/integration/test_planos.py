@@ -48,3 +48,34 @@ class TestPlanos:
         assert tabela["trimestral"]["pix_total"] == 364.5
         # Semestral: cartão com juros
         assert tabela["semestral"]["cartao_juros"] is True
+
+
+class TestInteressePlano:
+    async def test_registra_interesse_valido(self, client: AsyncClient):
+        r = await client.post(
+            "/api/v1/public/planos/interesse",
+            json={"nome": "Estúdio Teste", "contato": "11999998888", "plano": "profissional", "ciclo": "anual"},
+        )
+        assert r.status_code == 202
+        assert r.json()["ok"] is True
+
+    async def test_honeypot_descarta_silenciosamente(self, client: AsyncClient):
+        r = await client.post(
+            "/api/v1/public/planos/interesse",
+            json={"nome": "bot", "contato": "x@x.com", "plano": "essencial", "website": "http://spam"},
+        )
+        assert r.status_code == 202
+
+    async def test_plano_invalido_rejeitado(self, client: AsyncClient):
+        r = await client.post(
+            "/api/v1/public/planos/interesse",
+            json={"nome": "Fulano", "contato": "11999998888", "plano": "inexistente"},
+        )
+        assert r.status_code == 400
+
+    async def test_nome_curto_rejeitado(self, client: AsyncClient):
+        r = await client.post(
+            "/api/v1/public/planos/interesse",
+            json={"nome": "x", "contato": "11999998888", "plano": "essencial"},
+        )
+        assert r.status_code == 400

@@ -70,10 +70,11 @@ Resumo dos controles de seguranca implementados no hardening P0/P1.
 
 - Backend: `X-Content-Type-Options`, `X-Frame-Options=DENY`,
   `Referrer-Policy`, `Permissions-Policy` e CSP em producao.
-- Frontend: `script-src 'self'`, sem `unsafe-eval` e sem
-  `script-src 'unsafe-inline'`.
-- `style-src 'unsafe-inline'` permanece por compatibilidade com estilos inline
-  existentes em telas do dashboard.
+- Frontend (`next.config.js`): `script-src 'self' 'unsafe-inline'` (sem `unsafe-eval`).
+  O `'unsafe-inline'` é necessário porque o Next.js App Router injeta scripts inline de
+  hidratação — sem ele a página fica em branco. Endurecer para nonce/`strict-dynamic`
+  exige renderização dinâmica em todas as rotas (follow-up planejado).
+- `style-src 'unsafe-inline'` permanece por compatibilidade com estilos inline.
 
 ## Politica de secrets
 

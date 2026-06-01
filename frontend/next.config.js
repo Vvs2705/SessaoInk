@@ -9,14 +9,20 @@ const API_URL =
     : "http://localhost:8001");
 const POSTHOG_HOST = "https://app.posthog.com";
 
+// CSP do frontend. `script-src` inclui 'unsafe-inline' porque o Next.js App
+// Router injeta scripts inline de hidratação; sem isso a página fica em branco.
+// (Endurecer para nonce/strict-dynamic exige renderização dinâmica em todas as
+// rotas — planejado como follow-up; ver docs/security.md.)
 const cspHeader = `
   default-src 'self';
-  script-src 'self';
+  script-src 'self' 'unsafe-inline';
   style-src 'self' 'unsafe-inline';
   img-src 'self' blob: data:;
   font-src 'self';
   connect-src 'self' ${API_URL} ${POSTHOG_HOST} https://*.ingest.sentry.io;
   frame-ancestors 'none';
+  base-uri 'self';
+  form-action 'self';
 `;
 
 /** @type {import('next').NextConfig} */

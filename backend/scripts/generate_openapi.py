@@ -42,7 +42,36 @@ def generate_openapi() -> dict[str, Any]:
 
     from app.main import app
 
-    return app.openapi()
+    schema = app.openapi()
+    _normalize_openapi(schema)
+    return schema
+
+
+def _normalize_openapi(value: Any) -> None:
+    """Remove schema noise that varies across Python/Pydantic builds."""
+    if isinstance(value, dict):
+        if (
+            value.get("type") == "string"
+            and value.get("contentMediaType") == "application/octet-stream"
+        ):
+            value.pop("contentMediaType", None)
+            value["format"] = "binary"
+
+        for schema_name, schema in (
+            value.get("components", {}).get("schemas", {}).items()
+            if "components" in value
+            else []
+        ):
+            if schema_name == "ValidationError":
+                properties = schema.get("properties", {})
+                properties.pop("input", None)
+                properties.pop("ctx", None)
+
+        for item in value.values():
+            _normalize_openapi(item)
+    elif isinstance(value, list):
+        for item in value:
+            _normalize_openapi(item)
 
 
 def main() -> None:

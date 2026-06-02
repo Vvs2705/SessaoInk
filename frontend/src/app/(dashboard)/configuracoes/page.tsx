@@ -595,7 +595,7 @@ export default function ConfiguracoesPage() {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <div className="p-2 bg-[#0B171C] rounded-[10px] border border-[#243337]">
@@ -607,15 +607,15 @@ export default function ConfiguracoesPage() {
         </div>
       </div>
 
-      <div className="flex gap-6">
+      <div className="flex flex-col md:flex-row gap-6">
         {/* Sidebar de abas */}
-        <nav className="w-48 shrink-0 space-y-1">
+        <nav className="flex md:flex-col overflow-x-auto md:overflow-visible w-full md:w-48 shrink-0 gap-1 md:space-y-1 pb-2 md:pb-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {ABAS.map(({ id, icon: Icon, label }) => (
             <button
               key={id}
               onClick={() => setAba(id)}
               className={cn(
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-medium transition-all text-left",
+                "flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-medium transition-all text-left shrink-0 w-auto md:w-full",
                 aba === id
                   ? "bg-[#2F9285]/10 text-[#2F9285] border border-[#2F9285]/20"
                   : "text-[#87938F] hover:bg-[#0B171C] hover:text-[#F0EADD] border border-transparent"

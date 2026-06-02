@@ -77,11 +77,28 @@ export default function OrcamentoPage() {
     aceite_termos: false,
   });
 
+  // Flash art selecionada (cliente clicou numa flash no portal)
+  const [flashId, setFlashId] = useState<string | null>(null);
+  const [flashTitulo, setFlashTitulo] = useState<string | null>(null);
+
   useEffect(() => {
+    const flashParam = searchParams.get("flash");
+    const tituloParam = searchParams.get("titulo");
     const descParam = searchParams.get("descricao");
-    if (descParam) {
+
+    if (flashParam && tituloParam) {
+      // Fluxo de flash art: identifica a arte e já preenche a descrição.
+      setFlashId(flashParam);
+      setFlashTitulo(tituloParam);
+      setForm((prev) => ({
+        ...prev,
+        descricao:
+          prev.descricao ||
+          `Olá! Tenho interesse em fazer a flash art "${tituloParam}".`,
+      }));
+    } else if (descParam) {
       setForm((prev) => ({ ...prev, descricao: descParam }));
-      setStep(2); // Jump to step 2 directly since description is filled from portfólio
+      setStep(2); // Descrição veio do portfólio
     }
   }, [searchParams]);
 
@@ -185,8 +202,13 @@ export default function OrcamentoPage() {
       if (form.instagram.trim()) {
         formData.append("instagram", form.instagram.trim());
       }
-      if (form.descricao.trim()) {
-        formData.append("descricao", form.descricao.trim());
+      // Garante que o estúdio identifique a flash art, mesmo se o cliente editar a descrição.
+      let descricaoFinal = form.descricao.trim();
+      if (flashTitulo && !descricaoFinal.toLowerCase().includes(flashTitulo.toLowerCase())) {
+        descricaoFinal = `[Flash art: ${flashTitulo}] ${descricaoFinal}`.trim();
+      }
+      if (descricaoFinal) {
+        formData.append("descricao", descricaoFinal);
       }
       if (form.estilo) {
         formData.append("estilo", form.estilo);
@@ -273,11 +295,35 @@ export default function OrcamentoPage() {
           >
             <ArrowLeft size={14} /> Voltar ao perfil
           </a>
-          <h1 className="text-2xl font-extrabold text-[#F0EADD]">Solicitar Orçamento</h1>
+          <h1 className="text-2xl font-extrabold text-[#F0EADD]">
+            {flashTitulo ? "Solicitar esta Flash Art" : "Solicitar Orçamento"}
+          </h1>
           <p className="text-sm text-[#87938F] mt-1">
             Estúdio <span className="text-[#2F9285]">@{slug}</span>
           </p>
         </div>
+
+        {/* Banner da flash art selecionada */}
+        {flashTitulo && (
+          <div className="flex items-center gap-3 mb-6 p-3 rounded-[16px] bg-[#C36B3F]/10 border border-[#C36B3F]/25">
+            {flashId && (
+              <img
+                src={`/api/v1/public/${slug}/flash-arts/${flashId}/imagem`}
+                alt={flashTitulo}
+                className="w-16 h-16 rounded-[12px] object-cover border border-[#243337] shrink-0"
+              />
+            )}
+            <div className="min-w-0">
+              <p className="text-[11px] uppercase tracking-wider text-[#C36B3F] font-semibold">
+                Flash art selecionada
+              </p>
+              <p className="text-sm font-semibold text-[#F0EADD] truncate">{flashTitulo}</p>
+              <p className="text-xs text-[#87938F]">
+                É só preencher seus dados — o estúdio já saberá qual arte você quer.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Progress bar */}
         <div className="flex items-center gap-2 mb-8 bg-[#0B171C] border border-[#243337] p-3 rounded-[16px]">

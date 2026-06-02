@@ -1454,6 +1454,105 @@
         "operationId": "listar_lancamentos_api_v1_financeiro__get",
         "parameters": [
           {
+            "name": "tipo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/TipoLancamento"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tipo"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/StatusLancamento"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "categoria",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Categoria"
+            }
+          },
+          {
+            "name": "artista_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Artista Id"
+            }
+          },
+          {
+            "name": "data_inicio",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Data Inicio"
+            }
+          },
+          {
+            "name": "data_fim",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Data Fim"
+            }
+          },
+          {
             "name": "access_token",
             "in": "cookie",
             "required": false,
@@ -1555,6 +1654,218 @@
         }
       }
     },
+    "/api/v1/financeiro/entradas": {
+      "get": {
+        "tags": [
+          "financeiro"
+        ],
+        "summary": "Listar Entradas",
+        "operationId": "listar_entradas_api_v1_financeiro_entradas_get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LancamentoResponse"
+                  },
+                  "title": "Response Listar Entradas Api V1 Financeiro Entradas Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/financeiro/saidas": {
+      "get": {
+        "tags": [
+          "financeiro"
+        ],
+        "summary": "Listar Saidas",
+        "operationId": "listar_saidas_api_v1_financeiro_saidas_get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LancamentoResponse"
+                  },
+                  "title": "Response Listar Saidas Api V1 Financeiro Saidas Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/financeiro/comissoes": {
+      "get": {
+        "tags": [
+          "financeiro"
+        ],
+        "summary": "Listar Comissoes",
+        "operationId": "listar_comissoes_api_v1_financeiro_comissoes_get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LancamentoResponse"
+                  },
+                  "title": "Response Listar Comissoes Api V1 Financeiro Comissoes Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/financeiro/reservas": {
+      "get": {
+        "tags": [
+          "financeiro"
+        ],
+        "summary": "Listar Reservas",
+        "operationId": "listar_reservas_api_v1_financeiro_reservas_get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LancamentoResponse"
+                  },
+                  "title": "Response Listar Reservas Api V1 Financeiro Reservas Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/financeiro/resumo": {
       "get": {
         "tags": [
@@ -1587,6 +1898,75 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ResumoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/financeiro/consolidado": {
+      "get": {
+        "tags": [
+          "financeiro"
+        ],
+        "summary": "Consolidado Financeiro",
+        "operationId": "consolidado_financeiro_api_v1_financeiro_consolidado_get",
+        "parameters": [
+          {
+            "name": "inicio",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Inicio"
+            }
+          },
+          {
+            "name": "fim",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Fim"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsolidadoResponse"
                 }
               }
             }
@@ -1709,6 +2089,306 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/financeiro/comissoes/gerar": {
+      "post": {
+        "tags": [
+          "financeiro"
+        ],
+        "summary": "Gerar Comissao",
+        "operationId": "gerar_comissao_api_v1_financeiro_comissoes_gerar_post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComissaoGerarRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LancamentoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/financeiro/comissoes/{id}/pagar": {
+      "patch": {
+        "tags": [
+          "financeiro"
+        ],
+        "summary": "Pagar Comissao",
+        "operationId": "pagar_comissao_api_v1_financeiro_comissoes__id__pagar_patch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LancamentoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/financeiro/exportar": {
+      "get": {
+        "tags": [
+          "financeiro"
+        ],
+        "summary": "Exportar Financeiro",
+        "operationId": "exportar_financeiro_api_v1_financeiro_exportar_get",
+        "parameters": [
+          {
+            "name": "tipo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/TipoLancamento"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tipo"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/StatusLancamento"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "data_inicio",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Data Inicio"
+            }
+          },
+          {
+            "name": "data_fim",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Data Fim"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dashboard/resumo": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Resumo Dashboard",
+        "operationId": "resumo_dashboard_api_v1_dashboard_resumo_get",
+        "parameters": [
+          {
+            "name": "inicio",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Inicio"
+            }
+          },
+          {
+            "name": "fim",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Fim"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumoDashboardResponse"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -4988,6 +5668,24 @@
         ],
         "title": "AnonimizacaoLGPDResponse"
       },
+      "ArtistaGrafico": {
+        "properties": {
+          "artista_nome": {
+            "type": "string",
+            "title": "Artista Nome"
+          },
+          "valor": {
+            "type": "number",
+            "title": "Valor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "artista_nome",
+          "valor"
+        ],
+        "title": "ArtistaGrafico"
+      },
       "AtendimentoCreate": {
         "properties": {
           "cliente_id": {
@@ -6001,6 +6699,24 @@
         ],
         "title": "CategoriaEstoque"
       },
+      "CategoriaGrafico": {
+        "properties": {
+          "categoria": {
+            "type": "string",
+            "title": "Categoria"
+          },
+          "valor": {
+            "type": "number",
+            "title": "Valor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "categoria",
+          "valor"
+        ],
+        "title": "CategoriaGrafico"
+      },
       "ClienteAtendimentoResponse": {
         "properties": {
           "id": {
@@ -6281,6 +6997,158 @@
         "type": "object",
         "title": "ClienteUpdate"
       },
+      "ComissaoGerarRequest": {
+        "properties": {
+          "artista_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Artista Id"
+          },
+          "atendimento_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Atendimento Id"
+          },
+          "valor_servico": {
+            "type": "number",
+            "title": "Valor Servico"
+          },
+          "comissao_percentual": {
+            "type": "number",
+            "title": "Comissao Percentual"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          }
+        },
+        "type": "object",
+        "required": [
+          "artista_id",
+          "atendimento_id",
+          "valor_servico",
+          "comissao_percentual"
+        ],
+        "title": "ComissaoGerarRequest"
+      },
+      "ConsolidadoGraficos": {
+        "properties": {
+          "por_categoria": {
+            "items": {
+              "$ref": "#/components/schemas/CategoriaGrafico"
+            },
+            "type": "array",
+            "title": "Por Categoria"
+          },
+          "por_artista": {
+            "items": {
+              "$ref": "#/components/schemas/ArtistaGrafico"
+            },
+            "type": "array",
+            "title": "Por Artista"
+          },
+          "fluxo_diario": {
+            "items": {
+              "$ref": "#/components/schemas/FluxoDia"
+            },
+            "type": "array",
+            "title": "Fluxo Diario"
+          }
+        },
+        "type": "object",
+        "required": [
+          "por_categoria",
+          "por_artista",
+          "fluxo_diario"
+        ],
+        "title": "ConsolidadoGraficos"
+      },
+      "ConsolidadoResponse": {
+        "properties": {
+          "resumo": {
+            "$ref": "#/components/schemas/ConsolidadoResumo"
+          },
+          "graficos": {
+            "$ref": "#/components/schemas/ConsolidadoGraficos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "resumo",
+          "graficos"
+        ],
+        "title": "ConsolidadoResponse"
+      },
+      "ConsolidadoResumo": {
+        "properties": {
+          "entradas_pagas": {
+            "type": "number",
+            "title": "Entradas Pagas"
+          },
+          "entradas_pendentes": {
+            "type": "number",
+            "title": "Entradas Pendentes"
+          },
+          "saidas_pagas": {
+            "type": "number",
+            "title": "Saidas Pagas"
+          },
+          "saidas_pendentes": {
+            "type": "number",
+            "title": "Saidas Pendentes"
+          },
+          "saldo_realizado": {
+            "type": "number",
+            "title": "Saldo Realizado"
+          },
+          "saldo_previsto": {
+            "type": "number",
+            "title": "Saldo Previsto"
+          },
+          "sinais_pagos": {
+            "type": "number",
+            "title": "Sinais Pagos"
+          },
+          "sinais_pendentes": {
+            "type": "number",
+            "title": "Sinais Pendentes"
+          },
+          "comissoes_pagas": {
+            "type": "number",
+            "title": "Comissoes Pagas"
+          },
+          "comissoes_pendentes": {
+            "type": "number",
+            "title": "Comissoes Pendentes"
+          },
+          "lucro_estimado": {
+            "type": "number",
+            "title": "Lucro Estimado"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entradas_pagas",
+          "entradas_pendentes",
+          "saidas_pagas",
+          "saidas_pendentes",
+          "saldo_realizado",
+          "saldo_previsto",
+          "sinais_pagos",
+          "sinais_pendentes",
+          "comissoes_pagas",
+          "comissoes_pendentes",
+          "lucro_estimado"
+        ],
+        "title": "ConsolidadoResumo"
+      },
       "ConviteCreate": {
         "properties": {
           "email": {
@@ -6355,6 +7223,75 @@
           "criado_em"
         ],
         "title": "ConviteResponse"
+      },
+      "DashboardAlerta": {
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "mensagem": {
+            "type": "string",
+            "title": "Mensagem"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tipo",
+          "mensagem"
+        ],
+        "title": "DashboardAlerta"
+      },
+      "DashboardGraficos": {
+        "properties": {
+          "fluxo_diario": {
+            "items": {
+              "$ref": "#/components/schemas/FluxoDia"
+            },
+            "type": "array",
+            "title": "Fluxo Diario"
+          },
+          "por_artista": {
+            "items": {
+              "$ref": "#/components/schemas/ArtistaGrafico"
+            },
+            "type": "array",
+            "title": "Por Artista"
+          },
+          "por_metodo": {
+            "items": {
+              "$ref": "#/components/schemas/MetodoGrafico"
+            },
+            "type": "array",
+            "title": "Por Metodo"
+          },
+          "por_categoria": {
+            "items": {
+              "$ref": "#/components/schemas/CategoriaGrafico"
+            },
+            "type": "array",
+            "title": "Por Categoria"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fluxo_diario",
+          "por_artista",
+          "por_metodo",
+          "por_categoria"
+        ],
+        "title": "DashboardGraficos"
       },
       "DocumentoCreate": {
         "properties": {
@@ -7030,6 +7967,29 @@
         ],
         "title": "FlashArtResponse"
       },
+      "FluxoDia": {
+        "properties": {
+          "dia": {
+            "type": "string",
+            "title": "Dia"
+          },
+          "entradas": {
+            "type": "number",
+            "title": "Entradas"
+          },
+          "saidas": {
+            "type": "number",
+            "title": "Saidas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dia",
+          "entradas",
+          "saidas"
+        ],
+        "title": "FluxoDia"
+      },
       "FormaPagamento": {
         "type": "string",
         "enum": [
@@ -7192,6 +8152,164 @@
               }
             ],
             "title": "Artista Id"
+          },
+          "categoria": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categoria"
+          },
+          "centro_custo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Centro Custo"
+          },
+          "origem": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrigemLancamento"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "MANUAL"
+          },
+          "valor_bruto": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Bruto"
+          },
+          "valor_taxa": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Taxa"
+          },
+          "valor_liquido": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Liquido"
+          },
+          "competencia": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Competencia"
+          },
+          "data_vencimento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Vencimento"
+          },
+          "comissao_percentual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comissao Percentual"
+          },
+          "lancamento_origem_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lancamento Origem Id"
+          },
+          "recorrencia": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Recorrencia"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "NENHUMA"
+          },
+          "parcela_numero": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parcela Numero"
+          },
+          "parcela_total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parcela Total"
+          },
+          "grupo_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grupo Id"
           }
         },
         "type": "object",
@@ -7262,6 +8380,219 @@
               }
             ],
             "title": "Data Realizada"
+          },
+          "categoria": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categoria"
+          },
+          "centro_custo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Centro Custo"
+          },
+          "origem": {
+            "$ref": "#/components/schemas/OrigemLancamento"
+          },
+          "valor_bruto": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Bruto"
+          },
+          "valor_taxa": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Taxa"
+          },
+          "valor_liquido": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Liquido"
+          },
+          "competencia": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Competencia"
+          },
+          "data_vencimento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Vencimento"
+          },
+          "comissao_percentual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comissao Percentual"
+          },
+          "lancamento_origem_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lancamento Origem Id"
+          },
+          "recorrencia": {
+            "$ref": "#/components/schemas/Recorrencia"
+          },
+          "parcela_numero": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parcela Numero"
+          },
+          "parcela_total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parcela Total"
+          },
+          "grupo_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grupo Id"
+          },
+          "criado_por_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Criado Por Id"
+          },
+          "cancelado_por_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancelado Por Id"
+          },
+          "cancelado_em": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancelado Em"
+          },
+          "motivo_cancelamento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo Cancelamento"
+          },
+          "artista_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artista Id"
+          },
+          "atendimento_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atendimento Id"
           }
         },
         "type": "object",
@@ -7273,7 +8604,27 @@
           "status",
           "forma_pagamento",
           "data_prevista",
-          "data_realizada"
+          "data_realizada",
+          "categoria",
+          "centro_custo",
+          "origem",
+          "valor_bruto",
+          "valor_taxa",
+          "valor_liquido",
+          "competencia",
+          "data_vencimento",
+          "comissao_percentual",
+          "lancamento_origem_id",
+          "recorrencia",
+          "parcela_numero",
+          "parcela_total",
+          "grupo_id",
+          "criado_por_id",
+          "cancelado_por_id",
+          "cancelado_em",
+          "motivo_cancelamento",
+          "artista_id",
+          "atendimento_id"
         ],
         "title": "LancamentoResponse"
       },
@@ -7366,6 +8717,173 @@
               }
             ],
             "title": "Artista Id"
+          },
+          "categoria": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categoria"
+          },
+          "centro_custo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Centro Custo"
+          },
+          "origem": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrigemLancamento"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "valor_bruto": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Bruto"
+          },
+          "valor_taxa": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Taxa"
+          },
+          "valor_liquido": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Liquido"
+          },
+          "competencia": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Competencia"
+          },
+          "data_vencimento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Vencimento"
+          },
+          "comissao_percentual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comissao Percentual"
+          },
+          "lancamento_origem_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lancamento Origem Id"
+          },
+          "recorrencia": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Recorrencia"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parcela_numero": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parcela Numero"
+          },
+          "parcela_total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parcela Total"
+          },
+          "grupo_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grupo Id"
+          },
+          "motivo_cancelamento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo Cancelamento"
           }
         },
         "type": "object",
@@ -7390,6 +8908,24 @@
         ],
         "title": "LoginRequest"
       },
+      "MetodoGrafico": {
+        "properties": {
+          "metodo": {
+            "type": "string",
+            "title": "Metodo"
+          },
+          "valor": {
+            "type": "number",
+            "title": "Valor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "metodo",
+          "valor"
+        ],
+        "title": "MetodoGrafico"
+      },
       "OrcamentoResponse": {
         "properties": {
           "protocolo": {
@@ -7412,6 +8948,18 @@
           "mensagem"
         ],
         "title": "OrcamentoResponse"
+      },
+      "OrigemLancamento": {
+        "type": "string",
+        "enum": [
+          "MANUAL",
+          "ATENDIMENTO",
+          "COMISSAO",
+          "ASSINATURA",
+          "SISTEMA"
+        ],
+        "title": "OrigemLancamento",
+        "description": "De onde o lançamento se originou — para rastreabilidade e idempotência."
       },
       "PortfolioPublicoItem": {
         "properties": {
@@ -7624,6 +9172,16 @@
         ],
         "title": "ReceitaPorDia"
       },
+      "Recorrencia": {
+        "type": "string",
+        "enum": [
+          "NENHUMA",
+          "SEMANAL",
+          "MENSAL",
+          "ANUAL"
+        ],
+        "title": "Recorrencia"
+      },
       "RelatorioStatusResponse": {
         "properties": {
           "total_ativos": {
@@ -7775,6 +9333,148 @@
           "titulo"
         ],
         "title": "ResultadoFlashArt"
+      },
+      "ResumoDashboardFinanceiro": {
+        "properties": {
+          "entradas_pagas": {
+            "type": "number",
+            "title": "Entradas Pagas"
+          },
+          "entradas_pendentes": {
+            "type": "number",
+            "title": "Entradas Pendentes"
+          },
+          "saidas_pagas": {
+            "type": "number",
+            "title": "Saidas Pagas"
+          },
+          "saidas_pendentes": {
+            "type": "number",
+            "title": "Saidas Pendentes"
+          },
+          "saldo_realizado": {
+            "type": "number",
+            "title": "Saldo Realizado"
+          },
+          "saldo_previsto": {
+            "type": "number",
+            "title": "Saldo Previsto"
+          },
+          "sinais_pagos": {
+            "type": "number",
+            "title": "Sinais Pagos"
+          },
+          "sinais_pendentes": {
+            "type": "number",
+            "title": "Sinais Pendentes"
+          },
+          "comissoes_pagas": {
+            "type": "number",
+            "title": "Comissoes Pagas"
+          },
+          "comissoes_pendentes": {
+            "type": "number",
+            "title": "Comissoes Pendentes"
+          },
+          "lucro_estimado": {
+            "type": "number",
+            "title": "Lucro Estimado"
+          },
+          "ticket_medio": {
+            "type": "number",
+            "title": "Ticket Medio"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entradas_pagas",
+          "entradas_pendentes",
+          "saidas_pagas",
+          "saidas_pendentes",
+          "saldo_realizado",
+          "saldo_previsto",
+          "sinais_pagos",
+          "sinais_pendentes",
+          "comissoes_pagas",
+          "comissoes_pendentes",
+          "lucro_estimado",
+          "ticket_medio"
+        ],
+        "title": "ResumoDashboardFinanceiro"
+      },
+      "ResumoDashboardOperacional": {
+        "properties": {
+          "orcamentos_pendentes": {
+            "type": "integer",
+            "title": "Orcamentos Pendentes"
+          },
+          "sessoes_hoje": {
+            "type": "integer",
+            "title": "Sessoes Hoje"
+          },
+          "sessoes_sete_dias": {
+            "type": "integer",
+            "title": "Sessoes Sete Dias"
+          },
+          "aguardando_sinal": {
+            "type": "integer",
+            "title": "Aguardando Sinal"
+          },
+          "clientes_novos": {
+            "type": "integer",
+            "title": "Clientes Novos"
+          },
+          "conversao_orcamento_sessao": {
+            "type": "number",
+            "title": "Conversao Orcamento Sessao"
+          }
+        },
+        "type": "object",
+        "required": [
+          "orcamentos_pendentes",
+          "sessoes_hoje",
+          "sessoes_sete_dias",
+          "aguardando_sinal",
+          "clientes_novos",
+          "conversao_orcamento_sessao"
+        ],
+        "title": "ResumoDashboardOperacional"
+      },
+      "ResumoDashboardResponse": {
+        "properties": {
+          "periodo": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Periodo"
+          },
+          "financeiro": {
+            "$ref": "#/components/schemas/ResumoDashboardFinanceiro"
+          },
+          "operacional": {
+            "$ref": "#/components/schemas/ResumoDashboardOperacional"
+          },
+          "graficos": {
+            "$ref": "#/components/schemas/DashboardGraficos"
+          },
+          "alertas": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardAlerta"
+            },
+            "type": "array",
+            "title": "Alertas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "periodo",
+          "financeiro",
+          "operacional",
+          "graficos",
+          "alertas"
+        ],
+        "title": "ResumoDashboardResponse"
       },
       "ResumoFinanceiro": {
         "properties": {
@@ -8096,6 +9796,7 @@
         "enum": [
           "PENDENTE",
           "PAGO",
+          "PARCIAL",
           "CANCELADO",
           "ESTORNADO"
         ],
@@ -8147,7 +9848,10 @@
           "ENTRADA",
           "SAIDA",
           "COMISSAO",
-          "SINAL"
+          "SINAL",
+          "RESERVA",
+          "ESTORNO",
+          "AJUSTE"
         ],
         "title": "TipoLancamento"
       },

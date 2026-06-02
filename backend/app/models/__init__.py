@@ -17,7 +17,15 @@ from app.models.documento import (  # noqa: F401
     DocumentoLinkAcesso,
     TipoDocumento,
 )
-from app.models.financeiro import EstoqueItem, Lancamento, TipoLancamento  # noqa: F401
+from app.models.financeiro import (  # noqa: F401
+    EstoqueItem,
+    FormaPagamentoFin,
+    Lancamento,
+    OrigemLancamento,
+    Recorrencia,
+    StatusLancamento,
+    TipoLancamento,
+)
 from app.models.portfolio import (  # noqa: F401
     FlashArt,
     Portfolio,

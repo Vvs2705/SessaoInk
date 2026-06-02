@@ -74,7 +74,8 @@ async def test_anonimiza_apenas_orcamentos_publicos_nao_convertidos_expirados():
     agora = datetime(2026, 6, 1, tzinfo=UTC)
 
     async with async_session() as session:
-        estudio = Estudio(nome="LGPD Ink", slug="lgpd-ink")
+        slug = f"lgpd-ink-{uuid.uuid4().hex[:8]}"
+        estudio = Estudio(nome="LGPD Ink", slug=slug)
         session.add(estudio)
         await session.flush()
 
@@ -145,7 +146,8 @@ async def test_anonimizacao_remove_arquivo_fisico_de_imagem(monkeypatch):
     monkeypatch.setattr(settings, "STORAGE_PATH", str(storage_path))
 
     async with async_session() as session:
-        estudio = Estudio(nome="LGPD Image Ink", slug="lgpd-image-ink")
+        slug = f"lgpd-image-ink-{uuid.uuid4().hex[:8]}"
+        estudio = Estudio(nome="LGPD Image Ink", slug=slug)
         session.add(estudio)
         await session.flush()
 
@@ -201,7 +203,8 @@ async def test_anonimizacao_mantem_retry_se_remocao_fisica_falhar(monkeypatch):
     monkeypatch.setattr(lgpd, "_remover_imagem_atendimento", _falha_remocao)
 
     async with async_session() as session:
-        estudio = Estudio(nome="LGPD Retry Ink", slug="lgpd-retry-ink")
+        slug = f"lgpd-retry-ink-{uuid.uuid4().hex[:8]}"
+        estudio = Estudio(nome="LGPD Retry Ink", slug=slug)
         session.add(estudio)
         await session.flush()
 
@@ -237,7 +240,8 @@ async def test_anonimizacao_mantem_retry_se_remocao_fisica_falhar(monkeypatch):
 @pytest.mark.asyncio
 async def test_modela_consentimento_de_orcamento_publico():
     async with async_session() as session:
-        estudio = Estudio(nome="Consent Ink", slug="consent-ink")
+        slug = f"consent-ink-{uuid.uuid4().hex[:8]}"
+        estudio = Estudio(nome="Consent Ink", slug=slug)
         session.add(estudio)
         await session.flush()
 

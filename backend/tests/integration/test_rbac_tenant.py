@@ -29,6 +29,16 @@ async def seed_rbac_tenant_data():
         result_demo = await session.execute(select(Estudio).where(Estudio.slug == "demo"))
         estudio_demo = result_demo.scalar_one()
 
+        # Idempotência: este fixture é session-scoped, mas pode ser reexecutado
+        # quando o event loop de sessão é recriado (interação pytest-asyncio com
+        # outros módulos). Se o seed já rodou, não recriar — evita colisão de
+        # UNIQUE em estudios.slug.
+        ja_semeado = await session.scalar(
+            select(Estudio).where(Estudio.slug == "invasor")
+        )
+        if ja_semeado is not None:
+            return
+
         # Criar estúdio invasor
         estudio_invasor = Estudio(
             nome="Estúdio Invasor",

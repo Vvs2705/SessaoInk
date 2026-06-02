@@ -24,74 +24,76 @@ async def seed_tenant_helper_data(setup_test_database):
         demo = await session.scalar(select(Estudio).where(Estudio.slug == "demo"))
         assert demo is not None
 
-        invasor = Estudio(
-            nome="Estudio Tenant Helper Invasor",
-            slug="tenant-helper-invasor",
-            bio="Dados usados para testar isolamento",
-            cidade="Curitiba",
-            uf="PR",
-        )
-        session.add(invasor)
-        await session.flush()
+        invasor = await session.scalar(select(Estudio).where(Estudio.slug == "tenant-helper-invasor"))
+        if invasor is None:
+            invasor = Estudio(
+                nome="Estudio Tenant Helper Invasor",
+                slug="tenant-helper-invasor",
+                bio="Dados usados para testar isolamento",
+                cidade="Curitiba",
+                uf="PR",
+            )
+            session.add(invasor)
+            await session.flush()
 
-        cliente_demo = Cliente(
-            estudio_id=demo.id,
-            nome="Tenant Helper Cliente Demo",
-            email="tenant-helper-demo@example.com",
-        )
-        cliente_invasor = Cliente(
-            estudio_id=invasor.id,
-            nome="Tenant Helper Cliente Invasor",
-            email="tenant-helper-invasor@example.com",
-        )
-        session.add_all([cliente_demo, cliente_invasor])
-        await session.flush()
+            cliente_demo = Cliente(
+                estudio_id=demo.id,
+                nome="Tenant Helper Cliente Demo",
+                email="tenant-helper-demo@example.com",
+            )
+            cliente_invasor = Cliente(
+                estudio_id=invasor.id,
+                nome="Tenant Helper Cliente Invasor",
+                email="tenant-helper-invasor@example.com",
+            )
+            session.add_all([cliente_demo, cliente_invasor])
+            await session.flush()
 
-        atendimento_demo = Atendimento(
-            estudio_id=demo.id,
-            cliente_id=cliente_demo.id,
-            tipo=TipoAtendimento.TATUAGEM,
-            descricao="Tenant helper atendimento demo",
-        )
-        atendimento_invasor = Atendimento(
-            estudio_id=invasor.id,
-            cliente_id=cliente_invasor.id,
-            tipo=TipoAtendimento.TATUAGEM,
-            descricao="Tenant helper atendimento invasor",
-        )
-        session.add_all([atendimento_demo, atendimento_invasor])
-        await session.flush()
+            atendimento_demo = Atendimento(
+                estudio_id=demo.id,
+                cliente_id=cliente_demo.id,
+                tipo=TipoAtendimento.TATUAGEM,
+                descricao="Tenant helper atendimento demo",
+            )
+            atendimento_invasor = Atendimento(
+                estudio_id=invasor.id,
+                cliente_id=cliente_invasor.id,
+                tipo=TipoAtendimento.TATUAGEM,
+                descricao="Tenant helper atendimento invasor",
+            )
+            session.add_all([atendimento_demo, atendimento_invasor])
+            await session.flush()
 
-        documento_demo = Documento(
-            estudio_id=demo.id,
-            cliente_id=cliente_demo.id,
-            tipo=TipoDocumento.CONSENTIMENTO,
-            titulo="Tenant Helper Documento Demo",
-            versao="1.0",
-        )
-        documento_invasor = Documento(
-            estudio_id=invasor.id,
-            cliente_id=cliente_invasor.id,
-            tipo=TipoDocumento.CONSENTIMENTO,
-            titulo="Tenant Helper Documento Invasor",
-            versao="1.0",
-        )
-        session.add_all([documento_demo, documento_invasor])
+            documento_demo = Documento(
+                estudio_id=demo.id,
+                cliente_id=cliente_demo.id,
+                tipo=TipoDocumento.CONSENTIMENTO,
+                titulo="Tenant Helper Documento Demo",
+                versao="1.0",
+            )
+            documento_invasor = Documento(
+                estudio_id=invasor.id,
+                cliente_id=cliente_invasor.id,
+                tipo=TipoDocumento.CONSENTIMENTO,
+                titulo="Tenant Helper Documento Invasor",
+                versao="1.0",
+            )
+            session.add_all([documento_demo, documento_invasor])
 
-        lancamento_demo = Lancamento(
-            estudio_id=demo.id,
-            tipo=TipoLancamento.ENTRADA,
-            descricao="Tenant Helper Lancamento Demo",
-            valor=100.0,
-        )
-        lancamento_invasor = Lancamento(
-            estudio_id=invasor.id,
-            tipo=TipoLancamento.ENTRADA,
-            descricao="Tenant Helper Lancamento Invasor",
-            valor=100.0,
-        )
-        session.add_all([lancamento_demo, lancamento_invasor])
-        await session.commit()
+            lancamento_demo = Lancamento(
+                estudio_id=demo.id,
+                tipo=TipoLancamento.ENTRADA,
+                descricao="Tenant Helper Lancamento Demo",
+                valor=100.0,
+            )
+            lancamento_invasor = Lancamento(
+                estudio_id=invasor.id,
+                tipo=TipoLancamento.ENTRADA,
+                descricao="Tenant Helper Lancamento Invasor",
+                valor=100.0,
+            )
+            session.add_all([lancamento_demo, lancamento_invasor])
+            await session.commit()
 
 
 async def _estudios():

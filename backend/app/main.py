@@ -39,6 +39,7 @@ from app.api.v1.auth.router import router as auth_router
 from app.api.v1.busca.router import router as busca_router
 from app.api.v1.clientes.router import router as clientes_router
 from app.api.v1.convites.router import router as convites_router
+from app.api.v1.dashboard.router import router as dashboard_router
 from app.api.v1.documentos.router import router as documentos_router
 from app.api.v1.estoque.router import router as estoque_router
 from app.api.v1.estudio.router import router as estudio_router
@@ -217,6 +218,7 @@ app.include_router(clientes_router, prefix="/api/v1")
 app.include_router(atendimentos_router, prefix="/api/v1")
 app.include_router(flash_arts_router, prefix="/api/v1")
 app.include_router(financeiro_router, prefix="/api/v1")
+app.include_router(dashboard_router, prefix="/api/v1")
 app.include_router(estoque_router, prefix="/api/v1")
 app.include_router(publico_router, prefix="/api/v1")
 app.include_router(portfolio_router, prefix="/api/v1")

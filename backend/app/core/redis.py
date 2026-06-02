@@ -1,6 +1,7 @@
 """Cliente Redis assíncrono — refresh tokens e rate limiting."""
 
 import logging
+import secrets
 from typing import Any
 
 from redis.asyncio import Redis
@@ -356,6 +357,81 @@ async def registrar_solicitacao_orcamento(ip: str) -> int:
 # ---------------------------------------------------------------------------
 # Gestão de sessões por usuário
 # ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# MFA — desafio de 2º fator e OTP por e-mail
+# ---------------------------------------------------------------------------
+
+MFA_DESAFIO_PREFIX = "mfa_challenge:"
+MFA_OTP_PREFIX = "mfa_otp:"
+MFA_OTP_RATE_PREFIX = "mfa_otp_rate:"
+MFA_DESAFIO_TTL_SEGUNDOS = 5 * 60  # 5 minutos para concluir o 2º fator
+MFA_OTP_TTL_SEGUNDOS = 5 * 60
+MFA_OTP_MAX_ENVIOS = 5  # por janela de TTL
+
+
+async def salvar_desafio_mfa(usuario_id: str) -> str:
+    """Cria um token de desafio (opaco) vinculado ao usuário; guarda só o hash. Retorna o token."""
+    from app.core.security import hash_refresh_token
+
+    token = secrets.token_urlsafe(32)
+    async with get_redis() as r:
+        await r.set(
+            f"{MFA_DESAFIO_PREFIX}{hash_refresh_token(token)}",
+            usuario_id,
+            ex=MFA_DESAFIO_TTL_SEGUNDOS,
+        )
+    return token
+
+
+async def obter_usuario_do_desafio(token: str) -> str | None:
+    """Retorna o usuario_id vinculado ao desafio MFA, ou None se inválido/expirado."""
+    from app.core.security import hash_refresh_token
+
+    async with get_redis() as r:
+        return await r.get(f"{MFA_DESAFIO_PREFIX}{hash_refresh_token(token)}")
+
+
+async def revogar_desafio_mfa(token: str) -> None:
+    from app.core.security import hash_refresh_token
+
+    async with get_redis() as r:
+        await r.delete(f"{MFA_DESAFIO_PREFIX}{hash_refresh_token(token)}")
+
+
+async def salvar_otp_email(usuario_id: str, codigo: str) -> None:
+    """Armazena o OTP de e-mail (hash) com TTL curto."""
+    from app.core.security import hash_refresh_token
+
+    async with get_redis() as r:
+        await r.set(
+            f"{MFA_OTP_PREFIX}{usuario_id}",
+            hash_refresh_token(codigo),
+            ex=MFA_OTP_TTL_SEGUNDOS,
+        )
+
+
+async def verificar_otp_email(usuario_id: str, codigo: str) -> bool:
+    """Compara o OTP informado com o armazenado; consome (remove) em caso de acerto."""
+    from app.core.security import hash_refresh_token
+
+    async with get_redis() as r:
+        salvo = await r.get(f"{MFA_OTP_PREFIX}{usuario_id}")
+        if salvo and secrets.compare_digest(salvo, hash_refresh_token(codigo)):
+            await r.delete(f"{MFA_OTP_PREFIX}{usuario_id}")
+            return True
+        return False
+
+
+async def registrar_envio_otp(usuario_id: str) -> int:
+    """Conta envios de OTP por usuário na janela; retorna o total. Para rate limiting."""
+    async with get_redis() as r:
+        chave = f"{MFA_OTP_RATE_PREFIX}{usuario_id}"
+        total = await r.incr(chave)
+        if total == 1:
+            await r.expire(chave, MFA_OTP_TTL_SEGUNDOS)
+        return total
 
 
 async def revogar_todas_sessoes_usuario(usuario_id: str) -> int:

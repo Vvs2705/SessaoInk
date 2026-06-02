@@ -3,7 +3,7 @@
 import enum
 import uuid
 
-from sqlalchemy import Enum, ForeignKey, String, Uuid
+from sqlalchemy import Boolean, Enum, ForeignKey, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -59,4 +59,29 @@ class Usuario(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
         default=TipoUsuario.ARTISTA,
     )
 
+    # --- MFA (autenticação de dois fatores) ---
+    # Segredo TOTP (base32). Provisionado no setup, confirmado na ativação.
+    mfa_totp_secret: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    mfa_totp_ativo: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", nullable=False
+    )
+    # Segundo fator por código enviado ao e-mail (OTP via Redis).
+    mfa_email_ativo: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", nullable=False
+    )
+
     estudio: Mapped["Estudio"] = relationship("Estudio", back_populates="usuarios")
+
+    @property
+    def mfa_ativo(self) -> bool:
+        """True se qualquer segundo fator está habilitado."""
+        return self.mfa_totp_ativo or self.mfa_email_ativo
+
+    @property
+    def mfa_metodos(self) -> list[str]:
+        metodos: list[str] = []
+        if self.mfa_totp_ativo:
+            metodos.append("totp")
+        if self.mfa_email_ativo:
+            metodos.append("email")
+        return metodos

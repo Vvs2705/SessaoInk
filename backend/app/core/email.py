@@ -137,6 +137,45 @@ async def enviar_notificacao_orcamento(
         logger.warning(f"Falha ao enviar email via Resend: {exc}")
 
 
+async def enviar_codigo_mfa(email_destino: str, nome: str, codigo: str) -> bool:
+    """Envia o código OTP de verificação em dois fatores. Retorna True se enviado.
+
+    Sem RESEND configurado, registra no log (não falha o fluxo de login) e retorna False —
+    o caller decide como sinalizar ao usuário.
+    """
+    if not _resend_configurado():
+        logger.info("mfa_otp_email_sem_resend", extra={"extra": {"email": email_destino}})
+        return False
+
+    html = f"""
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#050B12;font-family:-apple-system,'Segoe UI',sans-serif;">
+  <div style="max-width:480px;margin:40px auto;background:#0B171C;border:1px solid #243337;border-radius:18px;overflow:hidden;">
+    <div style="background:#2F9285;padding:22px 30px;">
+      <p style="margin:0;font-size:11px;color:#050B12;font-weight:700;letter-spacing:2px;text-transform:uppercase;">SessãoInk · Segurança</p>
+      <h1 style="margin:6px 0 0;font-size:19px;color:#050B12;font-weight:800;">Seu código de verificação</h1>
+    </div>
+    <div style="padding:28px 30px;">
+      <p style="margin:0 0 16px;font-size:14px;color:#F0EADD;line-height:1.6;">Olá {nome}, use o código abaixo para concluir seu login. Ele expira em 5 minutos.</p>
+      <div style="text-align:center;margin:18px 0;">
+        <span style="display:inline-block;font-size:34px;letter-spacing:10px;font-weight:800;color:#2F9285;background:#050B12;border:1px solid #243337;border-radius:14px;padding:16px 24px;">{codigo}</span>
+      </div>
+      <p style="margin:14px 0 0;font-size:12px;color:#87938F;line-height:1.6;">Se você não tentou entrar, ignore este e-mail e considere trocar sua senha.</p>
+    </div>
+  </div>
+</body></html>
+"""
+    try:
+        await asyncio.to_thread(
+            _enviar_sync, email_destino, "[SessãoInk] Seu código de verificação", html
+        )
+        logger.info(f"Código MFA enviado via Resend para {email_destino}")
+        return True
+    except Exception as exc:
+        logger.warning(f"Falha ao enviar código MFA via Resend: {exc}")
+        return False
+
+
 async def enviar_lead_interesse_plano(
     nome: str,
     contato: str,

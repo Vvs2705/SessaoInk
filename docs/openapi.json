@@ -30,7 +30,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TokenResponse"
+                  "$ref": "#/components/schemas/LoginResponse"
                 }
               }
             }
@@ -273,6 +273,353 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/mfa/totp/setup": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Mfa Totp Setup",
+        "description": "Gera um segredo TOTP provisório e retorna a URI + QR Code para o app\nautenticador. O TOTP só passa a valer após `/mfa/totp/ativar`.",
+        "operationId": "mfa_totp_setup_api_v1_auth_mfa_totp_setup_post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MfaSetupResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/mfa/totp/ativar": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Mfa Totp Ativar",
+        "description": "Confirma o TOTP validando um código do app autenticador.",
+        "operationId": "mfa_totp_ativar_api_v1_auth_mfa_totp_ativar_post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MfaAtivarRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/mfa/totp/desativar": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Mfa Totp Desativar",
+        "description": "Desativa o TOTP (exige a senha do usuário, defesa contra sessão sequestrada).",
+        "operationId": "mfa_totp_desativar_api_v1_auth_mfa_totp_desativar_post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MfaDesativarRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/mfa/email/ativar": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Mfa Email Ativar",
+        "description": "Ativa o 2º fator por código enviado ao e-mail do usuário.",
+        "operationId": "mfa_email_ativar_api_v1_auth_mfa_email_ativar_post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MfaEmailToggleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/mfa/email/desativar": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Mfa Email Desativar",
+        "operationId": "mfa_email_desativar_api_v1_auth_mfa_email_desativar_post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MfaDesativarRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MfaEmailToggleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/mfa/email/solicitar": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Mfa Email Solicitar",
+        "description": "Durante o login, envia um OTP ao e-mail do usuário do desafio.",
+        "operationId": "mfa_email_solicitar_api_v1_auth_mfa_email_solicitar_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MfaDesafioRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/mfa/verificar": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Mfa Verificar",
+        "description": "Verifica o 2º fator (TOTP ou OTP de e-mail) e emite a sessão.",
+        "operationId": "mfa_verificar_api_v1_auth_mfa_verificar_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MfaVerificarRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -8908,6 +9255,47 @@
         ],
         "title": "LoginRequest"
       },
+      "LoginResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "Login realizado com sucesso"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "cookie"
+          },
+          "mfa_required": {
+            "type": "boolean",
+            "title": "Mfa Required",
+            "default": false
+          },
+          "metodos": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Metodos",
+            "default": []
+          },
+          "desafio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Desafio"
+          }
+        },
+        "type": "object",
+        "title": "LoginResponse",
+        "description": "Resposta do login. Se MFA estiver ativo, não emite sessão: retorna o\ndesafio para o segundo fator."
+      },
       "MetodoGrafico": {
         "properties": {
           "metodo": {
@@ -8925,6 +9313,104 @@
           "valor"
         ],
         "title": "MetodoGrafico"
+      },
+      "MfaAtivarRequest": {
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "title": "Codigo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "codigo"
+        ],
+        "title": "MfaAtivarRequest"
+      },
+      "MfaDesafioRequest": {
+        "properties": {
+          "desafio": {
+            "type": "string",
+            "title": "Desafio"
+          }
+        },
+        "type": "object",
+        "required": [
+          "desafio"
+        ],
+        "title": "MfaDesafioRequest"
+      },
+      "MfaDesativarRequest": {
+        "properties": {
+          "senha": {
+            "type": "string",
+            "title": "Senha"
+          }
+        },
+        "type": "object",
+        "required": [
+          "senha"
+        ],
+        "title": "MfaDesativarRequest"
+      },
+      "MfaEmailToggleResponse": {
+        "properties": {
+          "mfa_email_ativo": {
+            "type": "boolean",
+            "title": "Mfa Email Ativo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "mfa_email_ativo"
+        ],
+        "title": "MfaEmailToggleResponse"
+      },
+      "MfaSetupResponse": {
+        "properties": {
+          "secret": {
+            "type": "string",
+            "title": "Secret"
+          },
+          "otpauth_uri": {
+            "type": "string",
+            "title": "Otpauth Uri"
+          },
+          "qr_code": {
+            "type": "string",
+            "title": "Qr Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "secret",
+          "otpauth_uri",
+          "qr_code"
+        ],
+        "title": "MfaSetupResponse"
+      },
+      "MfaVerificarRequest": {
+        "properties": {
+          "desafio": {
+            "type": "string",
+            "title": "Desafio"
+          },
+          "codigo": {
+            "type": "string",
+            "title": "Codigo"
+          },
+          "metodo": {
+            "type": "string",
+            "title": "Metodo",
+            "default": "totp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "desafio",
+          "codigo"
+        ],
+        "title": "MfaVerificarRequest"
       },
       "OrcamentoResponse": {
         "properties": {
@@ -9944,6 +10430,16 @@
             "type": "string",
             "format": "uuid",
             "title": "Estudio Id"
+          },
+          "mfa_totp_ativo": {
+            "type": "boolean",
+            "title": "Mfa Totp Ativo",
+            "default": false
+          },
+          "mfa_email_ativo": {
+            "type": "boolean",
+            "title": "Mfa Email Ativo",
+            "default": false
           }
         },
         "type": "object",

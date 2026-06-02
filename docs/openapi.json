@@ -2750,6 +2750,180 @@
         }
       }
     },
+    "/api/v1/pagamentos/config": {
+      "get": {
+        "tags": [
+          "pagamentos"
+        ],
+        "summary": "Config Pagamento",
+        "description": "Dados públicos do gateway para o frontend (public key é seguro expor).",
+        "operationId": "config_pagamento_api_v1_pagamentos_config_get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagamentoConfigResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pagamentos/checkout": {
+      "post": {
+        "tags": [
+          "pagamentos"
+        ],
+        "summary": "Criar Checkout",
+        "description": "Cria a cobrança (assinatura mensal ou cobrança única por ciclo).\n\n503 enquanto `PAGAMENTOS_GO_LIVE` estiver desligado (cobrança não habilitada).",
+        "operationId": "criar_checkout_api_v1_pagamentos_checkout_post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckoutRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pagamentos/webhook": {
+      "post": {
+        "tags": [
+          "pagamentos"
+        ],
+        "summary": "Webhook Mercadopago",
+        "description": "Recebe notificações do Mercado Pago. Idempotente (inbox dedup).\n\nValida a assinatura HMAC (se o webhook secret estiver configurado). Sempre\nresponde 200 rápido para o gateway não reenfileirar — o processamento pesado\né best-effort.",
+        "operationId": "webhook_mercadopago_api_v1_pagamentos_webhook_post",
+        "parameters": [
+          {
+            "name": "x-signature",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Signature"
+            }
+          },
+          {
+            "name": "x-request-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Request-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/estoque/": {
       "get": {
         "tags": [
@@ -7064,6 +7238,72 @@
         ],
         "title": "CategoriaGrafico"
       },
+      "CheckoutRequest": {
+        "properties": {
+          "plano_slug": {
+            "type": "string",
+            "title": "Plano Slug"
+          },
+          "ciclo": {
+            "type": "string",
+            "title": "Ciclo",
+            "default": "mensal"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "plano_slug"
+        ],
+        "title": "CheckoutRequest"
+      },
+      "CheckoutResponse": {
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "init_point": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Init Point"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tipo",
+          "id",
+          "init_point"
+        ],
+        "title": "CheckoutResponse"
+      },
       "ClienteAtendimentoResponse": {
         "properties": {
           "id": {
@@ -9446,6 +9686,29 @@
         ],
         "title": "OrigemLancamento",
         "description": "De onde o lançamento se originou — para rastreabilidade e idempotência."
+      },
+      "PagamentoConfigResponse": {
+        "properties": {
+          "gateway": {
+            "type": "string",
+            "title": "Gateway",
+            "default": "mercadopago"
+          },
+          "public_key": {
+            "type": "string",
+            "title": "Public Key"
+          },
+          "go_live": {
+            "type": "boolean",
+            "title": "Go Live"
+          }
+        },
+        "type": "object",
+        "required": [
+          "public_key",
+          "go_live"
+        ],
+        "title": "PagamentoConfigResponse"
       },
       "PortfolioPublicoItem": {
         "properties": {

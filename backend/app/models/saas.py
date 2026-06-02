@@ -1,9 +1,19 @@
-"""Modelos SaaS: Plano e Assinatura."""
+"""Modelos SaaS: Plano, Assinatura e eventos de pagamento."""
 import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, Boolean, DateTime, Enum, ForeignKey, String, Uuid
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    Enum,
+    ForeignKey,
+    String,
+    UniqueConstraint,
+    Uuid,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -53,5 +63,34 @@ class Assinatura(Base, UUIDMixin, TimestampMixin):
     periodo_inicio: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     periodo_fim: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     cancelar_no_fim: Mapped[bool] = mapped_column(Boolean, default=False)
-    externo_id: Mapped[str | None] = mapped_column(String(200), nullable=True)  # Stripe subscription ID
+    externo_id: Mapped[str | None] = mapped_column(String(200), nullable=True)  # subscription/preapproval ID
     externo_customer_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    gateway: Mapped[str | None] = mapped_column(String(40), nullable=True)  # ex.: "mercadopago"
+    ciclo: Mapped[str | None] = mapped_column(String(20), nullable=True)  # mensal/trimestral/...
+
+
+class PagamentoEvento(Base, UUIDMixin):
+    """Inbox de notificações de gateway (idempotência por evento).
+
+    Dedup em (gateway, evento_tipo, recurso_id): se o mesmo evento chegar de novo,
+    não reprocessa. Append-only; `processado` marca quando a regra de negócio rodou.
+    """
+
+    __tablename__ = "pagamento_eventos"
+    __table_args__ = (
+        UniqueConstraint(
+            "gateway", "evento_tipo", "recurso_id", name="uq_pagamento_evento_dedup"
+        ),
+    )
+
+    gateway: Mapped[str] = mapped_column(String(40), nullable=False, default="mercadopago")
+    evento_tipo: Mapped[str] = mapped_column(String(60), nullable=False)
+    recurso_id: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
+    estudio_id: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True), nullable=True)
+    assinatura_id: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True), nullable=True)
+    status: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    processado: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    dados: Mapped[dict | None] = mapped_column("payload_json", JSON, nullable=True)
+    criado_em: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )

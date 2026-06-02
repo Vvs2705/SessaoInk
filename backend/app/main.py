@@ -45,6 +45,7 @@ from app.api.v1.estoque.router import router as estoque_router
 from app.api.v1.estudio.router import router as estudio_router
 from app.api.v1.financeiro.router import router as financeiro_router
 from app.api.v1.flash_arts.router import router as flash_arts_router
+from app.api.v1.pagamentos.router import router as pagamentos_router
 from app.api.v1.portfolio.router import router as portfolio_router
 from app.api.v1.publico.router import router as publico_router
 from app.api.v1.relatorios.router import router as relatorios_router
@@ -87,6 +88,11 @@ _CSRF_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 _CSRF_EXEMPT_PREFIXES = (
     "/api/v1/public/",     # portal público — sem autenticação
     "/api/v1/auth/login",  # login — ainda não há sessão para proteger
+    # MFA pré-sessão: ocorrem ANTES de a sessão (e o cookie csrf) existirem.
+    # Protegidos pelo token de desafio (vinculado ao usuário, TTL curto).
+    "/api/v1/auth/mfa/verificar",
+    "/api/v1/auth/mfa/email/solicitar",
+    "/api/v1/pagamentos/webhook",  # webhook server-to-server (Mercado Pago), sem browser
     "/health",
 )
 
@@ -219,6 +225,7 @@ app.include_router(atendimentos_router, prefix="/api/v1")
 app.include_router(flash_arts_router, prefix="/api/v1")
 app.include_router(financeiro_router, prefix="/api/v1")
 app.include_router(dashboard_router, prefix="/api/v1")
+app.include_router(pagamentos_router, prefix="/api/v1")
 app.include_router(estoque_router, prefix="/api/v1")
 app.include_router(publico_router, prefix="/api/v1")
 app.include_router(portfolio_router, prefix="/api/v1")

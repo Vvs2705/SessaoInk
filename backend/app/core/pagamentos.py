@@ -1,0 +1,246 @@
+"""Camada de pagamento — Mercado Pago (gateway BR).
+
+Cobre os modos do catálogo (`app/core/planos.py`):
+  - Ciclos avulsos (trimestral/semestral/anual) → Checkout Preference única,
+    com Pix (desconto aplicado no valor) e cartão parcelado.
+  - Mensal → assinatura recorrente (preapproval).
+
+Segurança e segredo:
+  - O ACCESS_TOKEN vive apenas como Fly secret (nunca no repo/logs).
+  - Toda criação de cobrança real é trancada por `settings.PAGAMENTOS_GO_LIVE`
+    no router — esta camada apenas monta payloads e fala com a API quando chamada.
+
+Esta camada NÃO importa o SDK do Mercado Pago: usa httpx direto (timeout-bounded,
+idempotency key), mantendo o módulo importável e testável sem dependências extras.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import hmac
+import logging
+from typing import Any
+
+import httpx
+
+from app.core.config import settings
+from app.core.planos import CICLOS, get_plano, tabela_precos
+
+logger = logging.getLogger(__name__)
+
+MP_API_BASE = "https://api.mercadopago.com"
+_HTTP_TIMEOUT = httpx.Timeout(10.0, connect=5.0)
+
+
+class GatewayNaoConfiguradoError(RuntimeError):
+    """Levantada quando se tenta cobrar sem ACCESS_TOKEN configurado."""
+
+
+class GatewayPagamentoError(RuntimeError):
+    """Erro de comunicação/negócio com o gateway."""
+
+
+def _ciclo_info(chave: str) -> dict[str, Any] | None:
+    return next((c for c in CICLOS if c["chave"] == chave), None)
+
+
+def _linha_preco(plano: dict[str, Any], ciclo: str) -> dict[str, Any] | None:
+    return next((t for t in tabela_precos(plano) if t["ciclo"] == ciclo), None)
+
+
+class GatewayPagamento:
+    """Adaptador fino sobre a API do Mercado Pago."""
+
+    def __init__(self) -> None:
+        self._token = settings.MERCADO_PAGO_ACCESS_TOKEN
+
+    def configurado(self) -> bool:
+        return bool(self._token)
+
+    def _exigir_token(self) -> str:
+        if not self._token:
+            raise GatewayNaoConfiguradoError(
+                "MERCADO_PAGO_ACCESS_TOKEN não configurado — cobrança indisponível."
+            )
+        return self._token
+
+    def _headers(self, idempotency_key: str | None = None) -> dict[str, str]:
+        headers = {
+            "Authorization": f"Bearer {self._exigir_token()}",
+            "Content-Type": "application/json",
+        }
+        if idempotency_key:
+            headers["X-Idempotency-Key"] = idempotency_key
+        return headers
+
+    async def _post(
+        self, path: str, payload: dict[str, Any], idempotency_key: str | None = None
+    ) -> dict[str, Any]:
+        async with httpx.AsyncClient(base_url=MP_API_BASE, timeout=_HTTP_TIMEOUT) as client:
+            resp = await client.post(
+                path, json=payload, headers=self._headers(idempotency_key)
+            )
+        if resp.status_code >= 400:
+            logger.warning(
+                "mercadopago_erro",
+                extra={"extra": {"path": path, "status": resp.status_code}},
+            )
+            raise GatewayPagamentoError(
+                f"Mercado Pago retornou {resp.status_code} em {path}"
+            )
+        return resp.json()
+
+    async def _get(self, path: str) -> dict[str, Any]:
+        async with httpx.AsyncClient(base_url=MP_API_BASE, timeout=_HTTP_TIMEOUT) as client:
+            resp = await client.get(path, headers=self._headers())
+        if resp.status_code >= 400:
+            raise GatewayPagamentoError(
+                f"Mercado Pago retornou {resp.status_code} em {path}"
+            )
+        return resp.json()
+
+    # -- Montagem de payloads (puro — testável sem rede) --------------------
+    def montar_preference(
+        self,
+        *,
+        plano: dict[str, Any],
+        ciclo: str,
+        email_pagador: str,
+        referencia: str,
+    ) -> dict[str, Any]:
+        """Checkout Preference para pagamento avulso (Pix + cartão parcelado).
+
+        O valor já reflete o desconto Pix do ciclo (preço de venda). Parcelamento
+        no cartão segue `cartao_max_parcelas` do ciclo.
+        """
+        linha = _linha_preco(plano, ciclo)
+        ciclo_info = _ciclo_info(ciclo)
+        if not linha or not ciclo_info:
+            raise GatewayPagamentoError(f"Ciclo inválido para o plano: {ciclo}")
+
+        max_parcelas = int(linha["cartao_max_parcelas"] or 1)
+        valor = float(linha["pix_total"])  # valor de venda (Pix com desconto)
+        app_url = settings.APP_URL.rstrip("/")
+
+        return {
+            "items": [
+                {
+                    "title": f"SessãoInk {plano['nome']} — {linha['label']}",
+                    "description": f"Plano {plano['nome']} ({ciclo})",
+                    "quantity": 1,
+                    "currency_id": "BRL",
+                    "unit_price": valor,
+                }
+            ],
+            "payer": {"email": email_pagador},
+            "payment_methods": {
+                "installments": max_parcelas,
+                "default_installments": 1,
+            },
+            "external_reference": referencia,
+            "back_urls": {
+                "success": f"{app_url}/configuracoes?pagamento=sucesso",
+                "pending": f"{app_url}/configuracoes?pagamento=pendente",
+                "failure": f"{app_url}/configuracoes?pagamento=falha",
+            },
+            "auto_return": "approved",
+            "notification_url": f"{app_url}/api/v1/pagamentos/webhook",
+        }
+
+    def montar_preapproval(
+        self, *, plano: dict[str, Any], email_pagador: str, referencia: str
+    ) -> dict[str, Any]:
+        """Assinatura recorrente mensal (preapproval) cobrada no cartão."""
+        valor = float(plano["preco_mensal"])
+        app_url = settings.APP_URL.rstrip("/")
+        return {
+            "reason": f"SessãoInk {plano['nome']} (mensal)",
+            "external_reference": referencia,
+            "payer_email": email_pagador,
+            "auto_recurring": {
+                "frequency": 1,
+                "frequency_type": "months",
+                "transaction_amount": valor,
+                "currency_id": "BRL",
+            },
+            "back_url": f"{app_url}/configuracoes?assinatura=ok",
+            "status": "pending",
+        }
+
+    # -- Chamadas reais (exigem token) -------------------------------------
+    async def criar_cobranca_unica(
+        self, *, plano_slug: str, ciclo: str, email_pagador: str, referencia: str
+    ) -> dict[str, Any]:
+        plano = get_plano(plano_slug)
+        if not plano:
+            raise GatewayPagamentoError(f"Plano inexistente: {plano_slug}")
+        payload = self.montar_preference(
+            plano=plano, ciclo=ciclo, email_pagador=email_pagador, referencia=referencia
+        )
+        data = await self._post(
+            "/checkout/preferences", payload, idempotency_key=referencia
+        )
+        return {
+            "tipo": "cobranca_unica",
+            "id": data.get("id"),
+            "init_point": data.get("init_point") or data.get("sandbox_init_point"),
+        }
+
+    async def criar_assinatura(
+        self, *, plano_slug: str, email_pagador: str, referencia: str
+    ) -> dict[str, Any]:
+        plano = get_plano(plano_slug)
+        if not plano:
+            raise GatewayPagamentoError(f"Plano inexistente: {plano_slug}")
+        payload = self.montar_preapproval(
+            plano=plano, email_pagador=email_pagador, referencia=referencia
+        )
+        data = await self._post("/preapproval", payload, idempotency_key=referencia)
+        return {
+            "tipo": "assinatura",
+            "id": data.get("id"),
+            "init_point": data.get("init_point"),
+        }
+
+    async def obter_pagamento(self, pagamento_id: str) -> dict[str, Any]:
+        """Consulta o status de um pagamento (usado pelo webhook)."""
+        return await self._get(f"/v1/payments/{pagamento_id}")
+
+
+def validar_assinatura_webhook(
+    *,
+    x_signature: str | None,
+    x_request_id: str | None,
+    data_id: str | None,
+    secret: str | None = None,
+) -> bool:
+    """Valida a assinatura HMAC do webhook do Mercado Pago.
+
+    Manifesto: `id:{data.id};request-id:{x-request-id};ts:{ts};`
+    `x-signature` traz `ts=<unix>,v1=<hmac sha256 hex>`.
+    Se não houver secret configurado, retorna True (modo permissivo em ambientes
+    sem segredo — o go-live exige o secret presente).
+    """
+    secret = secret if secret is not None else settings.MERCADO_PAGO_WEBHOOK_SECRET
+    if not secret:
+        return True
+    if not x_signature:
+        return False
+
+    partes = dict(
+        p.split("=", 1) for p in x_signature.split(",") if "=" in p
+    )
+    ts = partes.get("ts", "").strip()
+    v1 = partes.get("v1", "").strip()
+    if not ts or not v1:
+        return False
+
+    manifest = f"id:{data_id or ''};request-id:{x_request_id or ''};ts:{ts};"
+    esperado = hmac.new(
+        secret.encode("utf-8"), manifest.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(esperado, v1)
+
+
+# Instância padrão reutilizável.
+gateway = GatewayPagamento()

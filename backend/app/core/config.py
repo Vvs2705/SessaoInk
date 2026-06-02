@@ -71,7 +71,14 @@ class Settings(BaseSettings):
     # Vendas / Billing
     LEADS_EMAIL: str = ""  # destino das notificações de interesse em planos
     MERCADO_PAGO_ACCESS_TOKEN: str = ""  # token do gateway (preenchido depois)
+    MERCADO_PAGO_PUBLIC_KEY: str = ""
+    MERCADO_PAGO_CLIENT_ID: str = ""
+    MERCADO_PAGO_CLIENT_SECRET: str = ""
     MERCADO_PAGO_WEBHOOK_SECRET: str = ""
+    # Trava de go-live de cobrança real. False = checkout retorna 503
+    # (código pronto, mas NÃO cobra ninguém). Ligar como Fly secret só após
+    # confirmação explícita do dono do produto.
+    PAGAMENTOS_GO_LIVE: bool = False
 
     # Config model configuration
     model_config = SettingsConfigDict(

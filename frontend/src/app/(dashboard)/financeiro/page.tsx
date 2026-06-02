@@ -117,16 +117,16 @@ const STATUS_COLORS: Record<string, string> = {
   PAGO: "text-[#54B88D] bg-[#54B88D]/10 border-[#54B88D]/20",
   PARCIAL: "text-[#5E9ED6] bg-[#5E9ED6]/10 border-[#5E9ED6]/20",
   CANCELADO: "text-[#E35D5B] bg-[#E35D5B]/10 border-[#E35D5B]/20",
-  ESTORNADO: "text-[#C36B3F] bg-[#C36B3F]/10 border-[#C36B3F]/20",
+  ESTORNADO: "text-[#E35D5B] bg-[#E35D5B]/10 border-[#E35D5B]/20",
 };
 
 const TYPE_CONFIG: Record<string, { label: string; cls: string }> = {
   ENTRADA: { label: "Entrada", cls: "text-[#54B88D]" },
   SAIDA: { label: "Saída", cls: "text-[#E35D5B]" },
-  COMISSAO: { label: "Comissão", cls: "text-[#8B7CF6]" },
+  COMISSAO: { label: "Comissão", cls: "text-[#A78BFA]" },
   SINAL: { label: "Sinal", cls: "text-[#5E9ED6]" },
-  RESERVA: { label: "Reserva", cls: "text-[#2F9285]" },
-  ESTORNO: { label: "Estorno", cls: "text-[#C36B3F]" },
+  RESERVA: { label: "Reserva", cls: "text-[#5E9ED6]" }, // Blue color for agenda/reserva status constraint
+  ESTORNO: { label: "Estorno", cls: "text-[#E35D5B]" },
   AJUSTE: { label: "Ajuste", cls: "text-[#87938F]" },
 };
 
@@ -186,6 +186,7 @@ export default function FinanceiroPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isComissaoModalOpen, setIsComissaoModalOpen] = useState(false);
   const [toast, setToast] = useState<{ tipo: "sucesso" | "erro"; mensagem: string } | null>(null);
+  const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
 
   // Filters state
   const [busca, setBusca] = useState("");
@@ -208,7 +209,7 @@ export default function FinanceiroPage() {
   const [consolidadoFim, setConsolidadoFim] = useState(defaultFim.toISOString().split("T")[0]);
 
   // Queries
-  const { data: usuario } = useQuery<{ tipo: string }>({
+  const { data: usuario, isLoading: isLoadingUsuario } = useQuery<{ tipo: string }>({
     queryKey: ["auth-me"],
     queryFn: () => api.get("/api/v1/auth/me"),
   });
@@ -424,6 +425,32 @@ export default function FinanceiroPage() {
     }
   };
 
+  if (isLoadingUsuario) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto space-y-6 animate-pulse">
+        <div className="h-8 w-48 bg-[#102128] rounded mb-2" />
+        <div className="h-4 w-72 bg-[#102128] rounded mb-6" />
+        <div className="h-12 bg-[#0B171C] border border-[#243337] rounded-[18px]" />
+      </div>
+    );
+  }
+
+  if (usuario?.tipo === "ARTISTA") {
+    return (
+      <div className="p-6 max-w-7xl mx-auto flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <AlertCircle size={48} className="text-[#E35D5B] mb-4 animate-bounce" />
+        <h1 className="text-xl font-extrabold text-[#F0EADD]">Acesso Restrito</h1>
+        <p className="text-xs text-[#87938F] mt-2 max-w-md">
+          Como Artista, você não possui permissão para visualizar o painel financeiro ou realizar lançamentos. Entre em contato com o administrador.
+        </p>
+      </div>
+    );
+  }
+
+  if (activeTab === "consolidado" && !isAdmin) {
+    setActiveTab("visao-geral");
+  }
+
   const handleComissaoSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!comArtistId || !comAtendId || !comValor || !comPercent) {
@@ -442,13 +469,20 @@ export default function FinanceiroPage() {
   const handleExportCSV = () => {
     let url = "/api/v1/financeiro/exportar";
     const params = new URLSearchParams();
-    if (activeTab === "visao-geral") {
-      if (filtroCategoria) params.append("categoria", filtroCategoria);
-      if (filtroArtista) params.append("artista_id", filtroArtista);
-      if (dataInicio) params.append("data_inicio", dataInicio);
-      if (dataFim) params.append("data_fim", dataFim);
-    } else if (activeTab === "entradas" || activeTab === "saidas" || activeTab === "comissoes" || activeTab === "reservas") {
-      params.append("tipo", activeTab === "entradas" ? "ENTRADA" : activeTab === "saidas" ? "SAIDA" : activeTab === "comissoes" ? "COMISSAO" : "SINAL");
+    if (busca) params.append("busca", busca);
+    if (filtroCategoria) params.append("categoria", filtroCategoria);
+    if (filtroArtista) params.append("artista_id", filtroArtista);
+    if (dataInicio) params.append("data_inicio", dataInicio);
+    if (dataFim) params.append("data_fim", dataFim);
+
+    if (activeTab === "entradas") {
+      params.append("tipo", "ENTRADA");
+    } else if (activeTab === "saidas") {
+      params.append("tipo", "SAIDA");
+    } else if (activeTab === "comissoes") {
+      params.append("tipo", "COMISSAO");
+    } else if (activeTab === "reservas") {
+      params.append("tipo", "SINAL");
     }
     window.open(url + (params.toString() ? `?${params.toString()}` : ""), "_blank");
   };
@@ -519,7 +553,7 @@ export default function FinanceiroPage() {
           { id: "saidas", label: "Saídas" },
           { id: "comissoes", label: "Comissões" },
           { id: "reservas", label: "Sinais / Reservas" },
-          { id: "consolidado", label: "Consolidado" },
+          ...(isAdmin ? [{ id: "consolidado", label: "Consolidado" }] : []),
         ].map((t) => (
           <button
             key={t.id}
@@ -559,10 +593,19 @@ export default function FinanceiroPage() {
 
           {/* Analytical summary cards */}
           {isLoadingConsolidado ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-28 bg-[#0B171C] border border-[#243337] rounded-[18px] animate-pulse" />
-              ))}
+            <div className="space-y-6 animate-pulse">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-28 bg-[#0B171C] border border-[#243337] rounded-[18px]" />
+                ))}
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="h-64 bg-[#0B171C] border border-[#243337] rounded-[18px]" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="h-64 bg-[#0B171C] border border-[#243337] rounded-[18px]" />
+                  <div className="h-64 bg-[#0B171C] border border-[#243337] rounded-[18px]" />
+                </div>
+              </div>
             </div>
           ) : (
             consolidado && (
@@ -621,9 +664,21 @@ export default function FinanceiroPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Daily Flow Chart (SVG) */}
               <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4 shadow-lg">
-                <div>
-                  <h3 className="text-sm font-bold text-[#F0EADD]">Fluxo diário (Entradas vs Saídas)</h3>
-                  <p className="text-xs text-[#87938F]">Apenas lançamentos confirmados/pagos</p>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-sm font-bold text-[#F0EADD]">Fluxo diário (Entradas vs Saídas)</h3>
+                    <p className="text-xs text-[#87938F]">Apenas lançamentos confirmados/pagos</p>
+                  </div>
+                  <div className="flex items-center gap-3 text-[10px] font-semibold">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded bg-[#54B88D]" />
+                      <span className="text-[#87938F]">Entradas (Pago)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded bg-[#E35D5B]" />
+                      <span className="text-[#87938F]">Saídas (Pago)</span>
+                    </div>
+                  </div>
                 </div>
                 {consolidado.graficos.fluxo_diario.length === 0 ? (
                   <div className="h-48 flex items-center justify-center border border-dashed border-[#243337] rounded-[12px] text-xs text-[#87938F]">Sem dados para exibir no período</div>
@@ -637,7 +692,7 @@ export default function FinanceiroPage() {
                         return (
                           <div key={idx} className="flex-1 flex flex-col items-center group relative h-full justify-end">
                             <div className="w-full flex gap-0.5 justify-center items-end h-full">
-                              <div style={{ height: `${entPct}%` }} className="w-2.5 bg-[#2F9285] rounded-t-[3px] hover:bg-[#3AA99A] transition-all" title={`Entrada: ${formatCurrency(d.entradas)}`} />
+                              <div style={{ height: `${entPct}%` }} className="w-2.5 bg-[#54B88D] rounded-t-[3px] hover:bg-[#68cca0] transition-all" title={`Entrada: ${formatCurrency(d.entradas)}`} />
                               <div style={{ height: `${saiPct}%` }} className="w-2.5 bg-[#E35D5B] rounded-t-[3px] hover:bg-[#c94d4b] transition-all" title={`Saída: ${formatCurrency(d.saidas)}`} />
                             </div>
                             <span className="text-[9px] text-[#87938F] font-semibold mt-2.5 transform -rotate-45 origin-top-left translate-y-1 block whitespace-nowrap">{d.dia.split("-")[2]}</span>
@@ -779,9 +834,20 @@ export default function FinanceiroPage() {
 
           {/* List Loader */}
           {isLoadingLancamentos && (
-            <div className="space-y-3 bg-[#0B171C] border border-[#243337] rounded-[18px] p-5">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-14 bg-[#102128] rounded-[12px] animate-pulse" />
+            <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] overflow-hidden shadow-xl p-5 space-y-3 animate-pulse">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center justify-between py-3 border-b border-[#243337]/30 last:border-b-0">
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="h-4 w-20 bg-[#102128] rounded" />
+                    <div className="h-4 w-40 bg-[#102128] rounded" />
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="h-4 w-16 bg-[#102128] rounded" />
+                    <div className="h-5 w-16 bg-[#102128] rounded-full" />
+                    <div className="h-4 w-20 bg-[#102128] rounded text-right" />
+                    <div className="h-8 w-24 bg-[#102128] rounded-[8px]" />
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -869,7 +935,7 @@ export default function FinanceiroPage() {
                             {item.tipo === "COMISSAO" && item.status === "PENDENTE" && isAdmin && (
                               <button
                                 onClick={() => pagarComissaoMutation.mutate(item.id)}
-                                className="p-1.5 rounded-[8px] bg-[#8B7CF6]/10 border border-[#8B7CF6]/20 hover:bg-[#8B7CF6] hover:text-[#050B12] text-[#8B7CF6] transition-all"
+                                className="p-1.5 rounded-[8px] bg-[#A78BFA]/10 border border-[#A78BFA]/20 hover:bg-[#A78BFA] hover:text-[#050B12] text-[#A78BFA] transition-all"
                                 title="Confirmar pagamento de comissão"
                               >
                                 <Check size={13} />
@@ -885,9 +951,7 @@ export default function FinanceiroPage() {
                                   <Edit2 size={13} />
                                 </button>
                                 <button
-                                  onClick={() => {
-                                    if (confirm("Deseja deletar este lançamento?")) deleteLancamentoMutation.mutate(item.id);
-                                  }}
+                                  onClick={() => setDeleteItemId(item.id)}
                                   className="p-1.5 rounded-[8px] bg-[#E35D5B]/10 border border-[#E35D5B]/20 hover:bg-[#E35D5B] hover:text-white text-[#E35D5B] transition-all"
                                   title="Excluir"
                                 >
@@ -948,9 +1012,7 @@ export default function FinanceiroPage() {
                           <Edit2 size={13} />
                         </button>
                         <button
-                          onClick={() => {
-                            if (confirm("Confirmar exclusão?")) deleteLancamentoMutation.mutate(item.id);
-                          }}
+                          onClick={() => setDeleteItemId(item.id)}
                           className="p-1.5 rounded-[8px] border border-[#E35D5B]/20 text-[#E35D5B]"
                         >
                           <Trash2 size={13} />
@@ -1334,6 +1396,40 @@ export default function FinanceiroPage() {
 
       {/* Toast Alert */}
       {toast && <Toast tipo={toast.tipo} mensagem={toast.mensagem} onClose={() => setToast(null)} />}
+
+      {/* Modal: Confirmar Exclusão */}
+      {deleteItemId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#0B171C] border border-[#E35D5B]/20 w-full max-w-sm rounded-[20px] overflow-hidden shadow-2xl p-6 space-y-4">
+            <div className="flex items-center gap-3 text-[#E35D5B]">
+              <AlertCircle size={24} />
+              <h3 className="text-base font-bold text-[#F0EADD]">Confirmar Exclusão</h3>
+            </div>
+            <p className="text-xs text-[#87938F]">
+              Tem certeza que deseja excluir permanentemente este lançamento financeiro? Esta ação não poderá ser desfeita.
+            </p>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setDeleteItemId(null)}
+                className="flex-1 h-9 rounded-[10px] border border-[#243337] hover:bg-[#102128] text-[#F0EADD] text-xs font-semibold transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  deleteLancamentoMutation.mutate(deleteItemId);
+                  setDeleteItemId(null);
+                }}
+                disabled={deleteLancamentoMutation.isPending}
+                className="flex-1 h-9 rounded-[10px] bg-[#E35D5B] hover:bg-[#c94d4b] text-white text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
+              >
+                {deleteLancamentoMutation.isPending && <Loader2 size={12} className="animate-spin" />}
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

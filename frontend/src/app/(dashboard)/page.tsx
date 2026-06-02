@@ -23,6 +23,14 @@ import { api } from "@/lib/api/client";
 import { formatCurrency, cn } from "@/lib/utils";
 import Link from "next/link";
 
+interface Usuario {
+  id: string;
+  nome: string;
+  email: string;
+  tipo: "ADMIN" | "ARTISTA" | "RECEPCIONISTA";
+  estudio_id: string;
+}
+
 interface DashboardResumo {
   periodo: { inicio: string; fim: string };
   financeiro: {
@@ -93,6 +101,63 @@ function StatCard({
   );
 }
 
+function DashboardSkeleton() {
+  return (
+    <div className="p-6 max-w-7xl mx-auto space-y-6 animate-pulse">
+      {/* Header Skeleton */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-2">
+          <div className="h-8 w-48 bg-[#102128] rounded" />
+          <div className="h-4 w-72 bg-[#102128] rounded" />
+        </div>
+        <div className="h-10 w-44 bg-[#102128] rounded" />
+      </div>
+
+      {/* KPI Cards Skeleton */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 flex items-center justify-between h-28">
+            <div className="space-y-2 flex-1">
+              <div className="h-3 w-20 bg-[#102128] rounded" />
+              <div className="h-8 w-24 bg-[#102128] rounded" />
+              <div className="h-3 w-32 bg-[#102128] rounded" />
+            </div>
+            <div className="w-10 h-10 bg-[#102128] rounded-[12px] border border-[#243337]" />
+          </div>
+        ))}
+      </div>
+
+      {/* Client Portal Link Skeleton */}
+      <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 h-24">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-[#102128] rounded-[12px]" />
+          <div className="space-y-2">
+            <div className="h-4 w-32 bg-[#102128] rounded" />
+            <div className="h-3 w-64 bg-[#102128] rounded" />
+          </div>
+        </div>
+        <div className="h-9 w-24 bg-[#102128] rounded-[12px]" />
+      </div>
+
+      {/* Charts Skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 h-64 lg:col-span-2 space-y-4">
+          <div className="h-4 w-32 bg-[#102128] rounded" />
+          <div className="h-36 bg-[#102128]/40 rounded-[12px]" />
+        </div>
+        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 h-64 space-y-4">
+          <div className="h-4 w-32 bg-[#102128] rounded" />
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-8 bg-[#102128] rounded" />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const [copiado, setCopiado] = useState(false);
 
@@ -103,6 +168,12 @@ export default function DashboardPage() {
 
   const [inicio, setInicio] = useState(defaultInicio.toISOString().split("T")[0]);
   const [fim, setFim] = useState(defaultFim.toISOString().split("T")[0]);
+
+  // Auth User Query
+  const { data: usuario, isLoading: loadUsuario } = useQuery<Usuario>({
+    queryKey: ["auth-me"],
+    queryFn: () => api.get<Usuario>("/api/v1/auth/me"),
+  });
 
   const { data: estudio } = useQuery<any>({
     queryKey: ["estudio"],
@@ -120,6 +191,12 @@ export default function DashboardPage() {
     refetchOnMount: true,
   });
 
+  if (loadUsuario || loadResumo) {
+    return <DashboardSkeleton />;
+  }
+
+  const showFinancials = usuario?.tipo === "ADMIN";
+
   const portalUrl = estudio?.slug ? `https://sessao-ink.vercel.app/${estudio.slug}` : null;
 
   const handleCopiarPortal = () => {
@@ -135,18 +212,35 @@ export default function DashboardPage() {
         return Package;
       case "SEM_PAGAMENTO":
         return DollarSign;
+      case "COMISSAO_PENDENTE":
+        return Percent;
+      case "SINAL_PENDENTE":
+        return Calendar;
+      case "ORCAMENTO_PARADO":
+        return ClipboardList;
       default:
         return AlertCircle;
     }
   };
 
   const getAlertaColor = (tipo: string) => {
-    if (tipo === "SEM_PAGAMENTO" || tipo === "ESTOQUE_BAIXO") return "text-[#E35D5B] bg-[#E35D5B]/10 border-[#E35D5B]/20";
-    return "text-[#D99A3D] bg-[#D99A3D]/10 border-[#D99A3D]/20";
+    switch (tipo) {
+      case "ESTOQUE_BAIXO":
+        return "text-[#E35D5B] bg-[#E35D5B]/10 border-[#E35D5B]/20"; // Red
+      case "SEM_PAGAMENTO":
+        return "text-[#D99A3D] bg-[#D99A3D]/10 border-[#D99A3D]/20"; // Yellow
+      case "COMISSAO_PENDENTE":
+        return "text-[#A78BFA] bg-[#A78BFA]/10 border-[#A78BFA]/20"; // Purple
+      case "SINAL_PENDENTE":
+      case "ORCAMENTO_PARADO":
+        return "text-[#5E9ED6] bg-[#5E9ED6]/10 border-[#5E9ED6]/20"; // Blue
+      default:
+        return "text-[#D99A3D] bg-[#D99A3D]/10 border-[#D99A3D]/20"; // Yellow
+    }
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -182,42 +276,56 @@ export default function DashboardPage() {
 
       {/* Alertas Ativos */}
       {dashboard && dashboard.alertas.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 animate-in fade-in duration-300">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {dashboard.alertas.map((alerta, idx) => {
             const Icon = getAlertaIcon(alerta.tipo);
             const classes = getAlertaColor(alerta.tipo);
-            return (
-              <div key={idx} className={cn("flex items-center justify-between p-3.5 rounded-[16px] border text-xs font-semibold", classes)}>
+            const cardContent = (
+              <div className={cn(
+                "flex items-center justify-between p-3.5 rounded-[16px] border text-xs font-semibold h-full transition-all",
+                classes,
+                alerta.link && "hover:bg-[#102128]/30 hover:border-current cursor-pointer"
+              )}>
                 <div className="flex items-center gap-2.5">
                   <Icon size={16} />
                   <span>{alerta.mensagem}</span>
                 </div>
                 {alerta.link && (
-                  <Link href={alerta.link} className="hover:underline flex items-center gap-1 shrink-0 ml-4">
+                  <span className="hover:underline flex items-center gap-1 shrink-0 ml-4">
                     Ver <ArrowRight size={12} />
-                  </Link>
+                  </span>
                 )}
               </div>
+            );
+
+            return alerta.link ? (
+              <Link key={idx} href={alerta.link} className="block">
+                {cardContent}
+              </Link>
+            ) : (
+              <div key={idx}>{cardContent}</div>
             );
           })}
         </div>
       )}
 
       {/* Main KPI Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard
-          label="Saldo Realizado"
-          value={formatCurrency(dashboard?.financeiro.saldo_realizado ?? 0)}
-          icon={Wallet}
-          color="text-[#54B88D]"
-          loading={loadResumo}
-          subtitle={`Lucro Estimado: ${formatCurrency(dashboard?.financeiro.lucro_estimado ?? 0)}`}
-        />
+      <div className={cn("grid gap-4", showFinancials ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-4" : "grid-cols-1 sm:grid-cols-3")}>
+        {showFinancials && (
+          <StatCard
+            label="Saldo Realizado"
+            value={formatCurrency(dashboard?.financeiro.saldo_realizado ?? 0)}
+            icon={Wallet}
+            color="text-[#54B88D]"
+            loading={loadResumo}
+            subtitle={`Lucro Estimado: ${formatCurrency(dashboard?.financeiro.lucro_estimado ?? 0)}`}
+          />
+        )}
         <StatCard
           label="Sessões Hoje"
           value={String(dashboard?.operacional.sessoes_hoje ?? 0)}
           icon={Calendar}
-          color="text-[#C36B3F]"
+          color="text-[#5E9ED6]" // Blue color for agenda/schedule status constraint
           loading={loadResumo}
           subtitle={`Próximos 7 dias: ${dashboard?.operacional.sessoes_sete_dias ?? 0}`}
         />
@@ -235,7 +343,7 @@ export default function DashboardPage() {
           icon={Users}
           color="text-[#5E9ED6]"
           loading={loadResumo}
-          subtitle={`Ticket Médio: ${formatCurrency(dashboard?.financeiro.ticket_medio ?? 0)}`}
+          subtitle={showFinancials ? `Ticket Médio: ${formatCurrency(dashboard?.financeiro.ticket_medio ?? 0)}` : "Total no período"}
         />
       </div>
 
@@ -278,15 +386,25 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Analytics Charts & Details */}
-      {dashboard && (
+      {/* Analytics Charts & Details - Show only for ADMIN */}
+      {showFinancials && dashboard && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Cash Flow SVG Chart */}
           <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4 shadow-lg lg:col-span-2">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <h3 className="text-sm font-bold text-[#F0EADD]">Fluxo diário no período</h3>
                 <p className="text-xs text-[#87938F]">Entradas e saídas liquidadas</p>
+              </div>
+              <div className="flex items-center gap-3 text-[10px] font-semibold">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded bg-[#54B88D]" />
+                  <span className="text-[#87938F]">Entradas (Pago)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded bg-[#E35D5B]" />
+                  <span className="text-[#87938F]">Saídas (Pago)</span>
+                </div>
               </div>
               <Link href="/financeiro" className="text-xs text-[#2F9285] hover:underline">Ir para financeiro</Link>
             </div>
@@ -301,7 +419,9 @@ export default function DashboardPage() {
                   return (
                     <div key={idx} className="flex-1 flex flex-col items-center h-full justify-end group relative">
                       <div className="w-full flex gap-0.5 justify-center items-end h-full">
-                        <div style={{ height: `${entPct}%` }} className="w-2 bg-[#2F9285] rounded-t-[2px] hover:bg-[#3AA99A] transition-all" title={`Entrada: ${formatCurrency(d.entradas)}`} />
+                        {/* Green color for entradas status constraint */}
+                        <div style={{ height: `${entPct}%` }} className="w-2 bg-[#54B88D] rounded-t-[2px] hover:bg-[#68cca0] transition-all" title={`Entrada: ${formatCurrency(d.entradas)}`} />
+                        {/* Red color for saídas status constraint */}
                         <div style={{ height: `${saiPct}%` }} className="w-2 bg-[#E35D5B] rounded-t-[2px] hover:bg-[#c94d4b] transition-all" title={`Saída: ${formatCurrency(d.saidas)}`} />
                       </div>
                       <span className="text-[8px] text-[#87938F] mt-2 block transform -rotate-45 origin-top-left translate-y-1">{d.dia.split("-")[2]}</span>

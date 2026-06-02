@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Settings,
@@ -21,8 +22,9 @@ import {
   Loader2,
   Upload,
   Image as ImageIcon,
+  CreditCard,
 } from "lucide-react";
-import { api, withCsrfHeaders } from "@/lib/api/client";
+import { api, ApiError, withCsrfHeaders } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -49,6 +51,8 @@ interface Usuario {
   email: string;
   tipo: "ADMIN" | "ARTISTA" | "RECEPCIONISTA";
   estudio_id: string;
+  mfa_totp_ativo: boolean;
+  mfa_email_ativo: boolean;
 }
 
 interface MembroEquipe {
@@ -58,7 +62,7 @@ interface MembroEquipe {
   tipo: "ADMIN" | "ARTISTA" | "RECEPCIONISTA";
 }
 
-type AbaAtiva = "perfil" | "portal" | "equipe" | "seguranca";
+type AbaAtiva = "perfil" | "portal" | "equipe" | "seguranca" | "assinatura";
 
 // ---------------------------------------------------------------------------
 // Sub-componentes
@@ -113,6 +117,7 @@ const TIPO_LABEL: Record<string, string> = {
 
 export default function ConfiguracoesPage() {
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
   const [aba, setAba] = useState<AbaAtiva>("perfil");
   const [toast, setToast] = useState<{
     tipo: "sucesso" | "erro";
@@ -149,10 +154,45 @@ export default function ConfiguracoesPage() {
   const [validandoSlug, setValidandoSlug] = useState(false);
   const [showModalSlug, setShowModalSlug] = useState(false);
 
+  // Estados do MFA
+  const [showTotpSetupModal, setShowTotpSetupModal] = useState(false);
+  const [totpSetupData, setTotpSetupData] = useState<{ secret: string; otpauth_uri: string; qr_code: string } | null>(null);
+  const [totpVerificationCode, setTotpVerificationCode] = useState("");
+  const [totpSetupPending, setTotpSetupPending] = useState(false);
+  const [copiedSecret, setCopiedSecret] = useState(false);
+
+  const [showMfaDisableModal, setShowMfaDisableModal] = useState<{ type: "totp" | "email" } | null>(null);
+  const [mfaDisablePassword, setMfaDisablePassword] = useState("");
+  const [mfaDisablePending, setMfaDisablePending] = useState(false);
+
+  const [mfaEmailActivating, setMfaEmailActivating] = useState(false);
+
+  // Estados de Assinatura / Checkout
+  const [selectedPlanSlug, setSelectedPlanSlug] = useState<string>("profissional");
+  const [selectedCycle, setSelectedCycle] = useState<string>("mensal");
+  const [checkoutPending, setCheckoutPending] = useState(false);
+
   const showToast = (tipo: "sucesso" | "erro", mensagem: string) => {
     setToast({ tipo, mensagem });
     setTimeout(() => setToast(null), 4000);
   };
+
+  // Efeito para capturar parâmetros de retorno de pagamento
+  useEffect(() => {
+    const pagamento = searchParams.get("pagamento");
+    const assinatura = searchParams.get("assinatura");
+
+    if (pagamento === "sucesso" || assinatura === "ok") {
+      showToast("sucesso", "Pagamento aprovado! Sua assinatura foi atualizada com sucesso.");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (pagamento === "pendente") {
+      showToast("sucesso", "Pagamento pendente. A ativação ocorrerá assim que confirmado.");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (pagamento === "falha") {
+      showToast("erro", "O pagamento não foi processado. Tente novamente.");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [searchParams]);
 
   // ---------------------------------------------------------------------------
   // Queries
@@ -170,6 +210,19 @@ export default function ConfiguracoesPage() {
   });
 
   const isAdmin = usuario?.tipo === "ADMIN";
+
+  const { data: planosData, isLoading: loadingPlanos } = useQuery({
+    queryKey: ["planos"],
+    queryFn: () => api.get<{ planos: any[]; trial_dias: number }>("/api/v1/public/planos"),
+  });
+
+  const { data: gatewayConfig, isLoading: loadingGatewayConfig } = useQuery({
+    queryKey: ["gateway-config"],
+    queryFn: () => api.get<{ public_key: string | null; go_live: boolean }>("/api/v1/pagamentos/config"),
+    enabled: isAdmin,
+  });
+
+  const selectedPlan = planosData?.planos?.find((p: any) => p.slug === selectedPlanSlug);
 
   // Inicializa o novoSlug com o slug atual do estúdio
   useEffect(() => {
@@ -417,6 +470,111 @@ export default function ConfiguracoesPage() {
     alterarSenha.mutate();
   };
 
+  // Handlers do MFA
+  const handleStartTotpSetup = async () => {
+    setTotpSetupPending(true);
+    try {
+      const res = await api.post<{ secret: string; otpauth_uri: string; qr_code: string }>(
+        "/api/v1/auth/mfa/totp/setup"
+      );
+      setTotpSetupData(res);
+      setShowTotpSetupModal(true);
+    } catch (e: any) {
+      showToast("erro", e.detail || "Erro ao iniciar configuração do App Autenticador.");
+    } finally {
+      setTotpSetupPending(false);
+    }
+  };
+
+  const handleActivateTotp = async () => {
+    if (!totpVerificationCode) return;
+    setTotpSetupPending(true);
+    try {
+      await api.post("/api/v1/auth/mfa/totp/ativar", {
+        codigo: totpVerificationCode,
+      });
+      showToast("sucesso", "Autenticação por App ativada com sucesso!");
+      setShowTotpSetupModal(false);
+      setTotpSetupData(null);
+      setTotpVerificationCode("");
+      queryClient.invalidateQueries({ queryKey: ["usuario"] });
+    } catch (e: any) {
+      showToast("erro", e.detail || "Código de verificação incorreto.");
+    } finally {
+      setTotpSetupPending(false);
+    }
+  };
+
+  const handleCopySecret = () => {
+    if (!totpSetupData) return;
+    navigator.clipboard.writeText(totpSetupData.secret);
+    setCopiedSecret(true);
+    setTimeout(() => setCopiedSecret(false), 2000);
+  };
+
+  const handleDisableMfa = async () => {
+    if (!showMfaDisableModal || !mfaDisablePassword) return;
+    const type = showMfaDisableModal.type;
+    setMfaDisablePending(true);
+    try {
+      if (type === "totp") {
+         await api.post("/api/v1/auth/mfa/totp/desativar", {
+           senha: mfaDisablePassword,
+         });
+         showToast("sucesso", "Autenticação por App desativada com sucesso!");
+      } else {
+         await api.post("/api/v1/auth/mfa/email/desativar", {
+           senha: mfaDisablePassword,
+         });
+         showToast("sucesso", "Autenticação por E-mail desativada com sucesso!");
+      }
+      setShowMfaDisableModal(null);
+      setMfaDisablePassword("");
+      queryClient.invalidateQueries({ queryKey: ["usuario"] });
+    } catch (e: any) {
+      showToast("erro", e.detail || "Senha incorreta. Tente novamente.");
+    } finally {
+      setMfaDisablePending(false);
+    }
+  };
+
+  const handleActivateEmailMfa = async () => {
+    setMfaEmailActivating(true);
+    try {
+      await api.post("/api/v1/auth/mfa/email/ativar");
+      showToast("sucesso", "Autenticação por E-mail ativada com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ["usuario"] });
+    } catch (e: any) {
+      showToast("erro", e.detail || "Erro ao ativar autenticação por e-mail.");
+    } finally {
+      setMfaEmailActivating(false);
+    }
+  };
+
+  // Handler de Checkout
+  const handleCheckout = async () => {
+    setCheckoutPending(true);
+    try {
+      const res = await api.post<{ init_point: string }>("/api/v1/pagamentos/checkout", {
+        plano_slug: selectedPlanSlug,
+        ciclo: selectedCycle,
+      });
+      if (res?.init_point) {
+        window.location.href = res.init_point;
+      } else {
+        showToast("erro", "Init point de faturamento não retornado.");
+      }
+    } catch (e: any) {
+      if (e instanceof ApiError && e.status === 503) {
+        showToast("erro", "Pagamentos em configuração — cobrança ainda não habilitada.");
+      } else {
+        showToast("erro", e.detail || "Erro ao iniciar processo de pagamento.");
+      }
+    } finally {
+      setCheckoutPending(false);
+    }
+  };
+
   const val = (campo: keyof Estudio) =>
     formEstudio[campo] !== undefined
       ? (formEstudio[campo] as string)
@@ -432,6 +590,9 @@ export default function ConfiguracoesPage() {
     { id: "equipe", icon: Users, label: "Equipe" },
     { id: "seguranca", icon: Lock, label: "Segurança" },
   ];
+  if (isAdmin) {
+    ABAS.push({ id: "assinatura", icon: CreditCard, label: "Assinatura" });
+  }
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -1109,6 +1270,108 @@ export default function ConfiguracoesPage() {
                 </div>
               </div>
 
+              {/* Autenticação de Dois Fatores (MFA) */}
+              <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6 space-y-6">
+                <div>
+                  <h2 className="text-base font-semibold text-[#F0EADD]">
+                    Autenticação de Dois Fatores (MFA)
+                  </h2>
+                  <p className="text-xs text-[#87938F] mt-1">
+                    Adicione uma camada extra de segurança à sua conta exigindo um código de verificação ao fazer login.
+                  </p>
+                </div>
+
+                <div className="divide-y divide-[#243337] space-y-4">
+                  {/* TOTP Option */}
+                  <div className="flex items-center justify-between pt-4 first:pt-0">
+                    <div className="space-y-1 pr-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-[#F0EADD]">
+                          Aplicativo Autenticador (TOTP)
+                        </span>
+                        {usuario?.mfa_totp_ativo ? (
+                          <span className="text-[10px] bg-[#2F9285]/15 text-[#2F9285] font-semibold px-2 py-0.5 rounded-full border border-[#2F9285]/20">
+                            Ativo
+                          </span>
+                        ) : (
+                          <span className="text-[10px] bg-[#87938F]/15 text-[#87938F] font-semibold px-2 py-0.5 rounded-full border border-[#87938F]/10">
+                            Inativo
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-[#87938F]">
+                        Use aplicativos como Google Authenticator, Microsoft Authenticator ou Authy para gerar códigos de segurança de uso único.
+                      </p>
+                    </div>
+                    <div>
+                      {usuario?.mfa_totp_ativo ? (
+                        <button
+                          type="button"
+                          onClick={() => setShowMfaDisableModal({ type: "totp" })}
+                          className="px-3.5 py-2 text-xs font-semibold rounded-[10px] border border-[#E35D5B]/30 hover:bg-[#E35D5B] hover:text-[#F0EADD] text-[#E35D5B] transition-all shrink-0"
+                        >
+                          Desativar
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleStartTotpSetup}
+                          disabled={totpSetupPending}
+                          className="px-3.5 py-2 text-xs font-semibold rounded-[10px] bg-[#2F9285]/10 border border-[#2F9285]/30 hover:bg-[#2F9285] hover:text-[#050B12] text-[#2F9285] transition-all flex items-center gap-1.5 shrink-0"
+                        >
+                          {totpSetupPending && <Loader2 size={12} className="animate-spin" />}
+                          Ativar
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Email Option */}
+                  <div className="flex items-center justify-between pt-4">
+                    <div className="space-y-1 pr-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-[#F0EADD]">
+                          Código por E-mail (OTP)
+                        </span>
+                        {usuario?.mfa_email_ativo ? (
+                          <span className="text-[10px] bg-[#2F9285]/15 text-[#2F9285] font-semibold px-2 py-0.5 rounded-full border border-[#2F9285]/20">
+                            Ativo
+                          </span>
+                        ) : (
+                          <span className="text-[10px] bg-[#87938F]/15 text-[#87938F] font-semibold px-2 py-0.5 rounded-full border border-[#87938F]/10">
+                            Inativo
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-[#87938F]">
+                        Receba um código numérico temporário diretamente no seu e-mail cadastrado a cada tentativa de login.
+                      </p>
+                    </div>
+                    <div>
+                      {usuario?.mfa_email_ativo ? (
+                        <button
+                          type="button"
+                          onClick={() => setShowMfaDisableModal({ type: "email" })}
+                          className="px-3.5 py-2 text-xs font-semibold rounded-[10px] border border-[#E35D5B]/30 hover:bg-[#E35D5B] hover:text-[#F0EADD] text-[#E35D5B] transition-all shrink-0"
+                        >
+                          Desativar
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleActivateEmailMfa}
+                          disabled={mfaEmailActivating}
+                          className="px-3.5 py-2 text-xs font-semibold rounded-[10px] bg-[#2F9285]/10 border border-[#2F9285]/30 hover:bg-[#2F9285] hover:text-[#050B12] text-[#2F9285] transition-all flex items-center gap-1.5 shrink-0"
+                        >
+                          {mfaEmailActivating && <Loader2 size={12} className="animate-spin" />}
+                          Ativar
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Informações de sessão */}
               <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6">
                 <h2 className="text-base font-semibold text-[#F0EADD] mb-4">
@@ -1157,8 +1420,346 @@ export default function ConfiguracoesPage() {
               </div>
             </div>
           )}
+
+          {/* ---- ABA: ASSINATURA ---- */}
+          {aba === "assinatura" && isAdmin && (
+            <div className="space-y-6">
+              <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6 space-y-6">
+                <div>
+                  <h2 className="text-base font-semibold text-[#F0EADD]">
+                    Assinatura do Estúdio
+                  </h2>
+                  <p className="text-xs text-[#87938F] mt-1">
+                    Gerencie seu plano e ciclo de faturamento com segurança através do Mercado Pago.
+                  </p>
+                </div>
+
+                {loadingPlanos || loadingGatewayConfig ? (
+                  <div className="space-y-4">
+                    <div className="h-24 bg-[#102128] rounded-[14px] animate-pulse" />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {[...Array(3)].map((_, i) => (
+                        <div key={i} className="h-48 bg-[#102128] rounded-[14px] animate-pulse" />
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Status do Gateway */}
+                    {gatewayConfig && !gatewayConfig.go_live && (
+                      <div className="p-3 bg-[#C36B3F]/10 border border-[#C36B3F]/20 text-[#C36B3F] text-xs rounded-[10px] flex items-start gap-2.5">
+                        <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-semibold">Ambiente de Testes (go_live desligado)</p>
+                          <p className="mt-0.5">As transações reais estão desabilitadas. Checkouts retornarão erro 503 pelo servidor do estúdio.</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Catálogo de Planos */}
+                    <div className="space-y-4">
+                      <label className="text-xs font-semibold text-[#87938F] uppercase tracking-wider block">
+                        1. Selecione o Plano
+                      </label>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {planosData?.planos?.map((plano: any) => {
+                          const isPopular = plano.destaque;
+                          const isSelected = selectedPlanSlug === plano.slug;
+                          return (
+                            <button
+                              key={plano.slug}
+                              type="button"
+                              onClick={() => {
+                                setSelectedPlanSlug(plano.slug);
+                                const hasCycle = plano.tabela_precos?.some((t: any) => t.ciclo === selectedCycle);
+                                if (!hasCycle) {
+                                  setSelectedCycle("mensal");
+                                }
+                              }}
+                              className={cn(
+                                "flex flex-col text-left p-5 rounded-[16px] border transition-all relative overflow-hidden group",
+                                isSelected
+                                  ? "bg-[#102128] border-[#2F9285] shadow-[0_4px_20px_rgba(47,146,133,0.15)]"
+                                  : "bg-[#050B12] border-[#243337] hover:border-[#87938F]/30"
+                              )}
+                            >
+                              {isPopular && (
+                                <div className="absolute top-0 right-0 bg-[#2F9285] text-[#050B12] text-[9px] font-bold px-2 py-0.5 rounded-bl-[10px]">
+                                  {plano.badge || "Recomendado"}
+                                </div>
+                              )}
+                              <h3 className="text-[#F0EADD] font-bold text-sm">{plano.nome}</h3>
+                              <p className="text-[10px] text-[#87938F] mt-1 line-clamp-2">
+                                {plano.descricao}
+                              </p>
+                              
+                              <div className="mt-4 flex items-baseline gap-1">
+                                <span className="text-base font-bold text-[#F0EADD]">
+                                  R$ {plano.preco_mensal.toFixed(0)}
+                                </span>
+                                <span className="text-[10px] text-[#87938F]">/mês</span>
+                              </div>
+
+                              {plano.promocao && (
+                                <p className="text-[9px] text-[#2F9285] mt-1 font-medium bg-[#2F9285]/10 px-1.5 py-0.5 rounded">
+                                  {plano.promocao.descricao}
+                                </p>
+                              )}
+
+                              <div className="mt-4 pt-3 border-t border-[#243337]/50 w-full space-y-1.5">
+                                {plano.recursos?.slice(0, 4).map((rec: any, idx: number) => (
+                                  <div key={idx} className="flex items-center gap-1.5 text-[10px] text-[#B8C2BF]">
+                                    <CheckCircle size={10} className="text-[#2F9285] shrink-0" />
+                                    <span className="truncate">{rec.label}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Ciclos de Cobrança */}
+                    <div className="space-y-3 pt-2">
+                      <label className="text-xs font-semibold text-[#87938F] uppercase tracking-wider block">
+                        2. Escolha o Ciclo de Faturamento
+                      </label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {planosData?.planos?.find((p: any) => p.slug === selectedPlanSlug)?.tabela_precos?.map((preco: any) => {
+                          const isSelected = selectedCycle === preco.ciclo;
+                          return (
+                            <button
+                              key={preco.ciclo}
+                              type="button"
+                              onClick={() => setSelectedCycle(preco.ciclo)}
+                              className={cn(
+                                "flex items-start text-left p-4 rounded-[14px] border transition-all",
+                                isSelected
+                                  ? "bg-[#102128] border-[#2F9285]"
+                                  : "bg-[#050B12] border-[#243337] hover:border-[#87938F]/30"
+                              )}
+                            >
+                              <div className="flex-1 min-w-0 pr-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-[#F0EADD]">{preco.label}</span>
+                                  {preco.desconto_pix_pct > 0 && (
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#2F9285]/15 text-[#2F9285]">
+                                      -{preco.desconto_pix_pct}% no Pix
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[10px] text-[#87938F] mt-1">{preco.obs}</p>
+                              </div>
+                              <div className="text-right shrink-0">
+                                {preco.ciclo === "mensal" ? (
+                                  <>
+                                    <p className="text-xs font-bold text-[#F0EADD]">R$ {preco.preco_cheio}/mês</p>
+                                    <p className="text-[9px] text-[#87938F]">recorrente</p>
+                                  </>
+                                ) : (
+                                  <>
+                                    <p className="text-xs font-bold text-[#F0EADD]">R$ {preco.pix_total}</p>
+                                    <p className="text-[9px] text-[#87938F] line-through">R$ {preco.preco_cheio}</p>
+                                    {preco.cartao_modo === "parcelado" && (
+                                      <p className="text-[9px] text-[#2F9285]">
+                                        Ou {preco.cartao_max_parcelas}x de R$ {preco.cartao_parcela}
+                                      </p>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Resumo da Compra e Checkout */}
+                    <div className="pt-4 border-t border-[#243337] flex flex-col md:flex-row items-center justify-between gap-4">
+                      <div>
+                        <p className="text-xs text-[#87938F]">Plano e ciclo selecionados:</p>
+                        <p className="text-sm font-bold text-[#F0EADD]">
+                          {selectedPlan?.nome} — {selectedPlan?.tabela_precos?.find((p: any) => p.ciclo === selectedCycle)?.label}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleCheckout}
+                        disabled={checkoutPending}
+                        className="w-full md:w-auto px-6 h-11 bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm rounded-[12px] flex items-center justify-center gap-2 transition-all shadow-[0_4px_12px_rgba(47,146,133,0.2)] disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none"
+                      >
+                        {checkoutPending ? (
+                          <>
+                            <Loader2 size={16} className="animate-spin" />
+                            Redirecionando...
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard size={16} />
+                            Assinar com Mercado Pago
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Modal TOTP Setup */}
+      {showTotpSetupModal && totpSetupData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#0B171C] border border-[#243337] w-full max-w-md rounded-[18px] shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#243337]">
+              <h2 className="text-[#F0EADD] font-bold text-sm">Configurar App Autenticador</h2>
+              <button
+                onClick={() => {
+                  setShowTotpSetupModal(false);
+                  setTotpSetupData(null);
+                  setTotpVerificationCode("");
+                }}
+                className="text-[#87938F] hover:text-[#F0EADD]"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-xs text-[#87938F] leading-relaxed">
+                1. Escaneie o QR Code abaixo com seu aplicativo autenticador (ex: Google Authenticator, Authy):
+              </p>
+              
+              <div className="flex justify-center p-3 bg-white rounded-xl w-48 h-48 mx-auto border border-[#243337]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={totpSetupData.qr_code} alt="QR Code MFA" className="w-full h-full object-contain" />
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-xs text-[#87938F]">
+                  Ou insira a chave manual no aplicativo:
+                </p>
+                <div className="flex items-center gap-2 bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2 text-xs font-mono text-[#F0EADD]">
+                  <span className="flex-1 truncate">{totpSetupData.secret}</span>
+                  <button
+                    type="button"
+                    onClick={handleCopySecret}
+                    className="text-[#2F9285] hover:text-[#3AA99A] shrink-0"
+                  >
+                    {copiedSecret ? "Copiado!" : <Copy size={14} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <label htmlFor="verify-totp-code" className="text-xs font-medium text-[#87938F] block">
+                  2. Digite o código de 6 dígitos gerado pelo aplicativo para confirmar:
+                </label>
+                <input
+                  id="verify-totp-code"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  placeholder="000000"
+                  value={totpVerificationCode}
+                  onChange={(e) => setTotpVerificationCode(e.target.value.replace(/\D/g, ""))}
+                  className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2 text-center text-sm font-mono tracking-[0.2em] text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowTotpSetupModal(false);
+                    setTotpSetupData(null);
+                    setTotpVerificationCode("");
+                  }}
+                  className="flex-1 h-10 rounded-[12px] border border-[#243337] hover:bg-[#102128] text-[#F0EADD] font-semibold text-sm transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={totpSetupPending || totpVerificationCode.length < 6}
+                  onClick={handleActivateTotp}
+                  className="flex-1 h-10 rounded-[12px] bg-[#2F9285] hover:bg-[#3AA99A] disabled:opacity-50 disabled:cursor-not-allowed text-[#050B12] font-semibold text-sm transition-all flex items-center justify-center gap-2"
+                >
+                  {totpSetupPending && <Loader2 size={14} className="animate-spin" />}
+                  Confirmar e Ativar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Desativar MFA */}
+      {showMfaDisableModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#0B171C] border border-[#243337] w-full max-w-md rounded-[18px] shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#243337]">
+              <h2 className="text-[#F0EADD] font-bold text-sm">
+                Desativar {showMfaDisableModal.type === "totp" ? "App Autenticador" : "Código por E-mail"}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowMfaDisableModal(null);
+                  setMfaDisablePassword("");
+                }}
+                className="text-[#87938F] hover:text-[#F0EADD]"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-xs text-[#87938F] leading-relaxed">
+                Por motivos de segurança, digite sua senha atual para confirmar a desativação da autenticação de dois fatores.
+              </p>
+
+              <div className="space-y-1.5">
+                <label htmlFor="disable-mfa-pass" className="text-xs font-medium text-[#87938F] block">
+                  Sua senha
+                </label>
+                <input
+                  id="disable-mfa-pass"
+                  type="password"
+                  value={mfaDisablePassword}
+                  onChange={(e) => setMfaDisablePassword(e.target.value)}
+                  placeholder="Digite sua senha"
+                  className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMfaDisableModal(null);
+                    setMfaDisablePassword("");
+                  }}
+                  className="flex-1 h-10 rounded-[12px] border border-[#243337] hover:bg-[#102128] text-[#F0EADD] font-semibold text-sm transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={mfaDisablePending || !mfaDisablePassword}
+                  onClick={handleDisableMfa}
+                  className="flex-1 h-10 rounded-[12px] bg-[#E35D5B] hover:bg-[#c94d4b] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm transition-all flex items-center justify-center gap-2"
+                >
+                  {mfaDisablePending && <Loader2 size={14} className="animate-spin" />}
+                  Confirmar e Desativar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de confirmação do slug */}
       {showModalSlug && (

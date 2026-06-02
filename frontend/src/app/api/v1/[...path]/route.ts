@@ -109,6 +109,14 @@ async function proxy(
     return NextResponse.json({ detail: "Erro de conexão com o servidor" }, { status: 503 });
   }
 
+  // Status sem corpo (204/205/304): a spec do Fetch PROÍBE corpo — passar um
+  // ArrayBuffer (mesmo vazio) faz o construtor de Response lançar e o proxy
+  // retornar 500. Endpoints como DELETE (arquivar) e logout retornam 204.
+  const NULL_BODY_STATUS = backendRes.status === 204 || backendRes.status === 205 || backendRes.status === 304;
+  if (NULL_BODY_STATUS) {
+    return new NextResponse(null, { status: backendRes.status });
+  }
+
   const contentType = backendRes.headers.get("content-type") ?? "application/json";
   const resBody = await backendRes.arrayBuffer();
 

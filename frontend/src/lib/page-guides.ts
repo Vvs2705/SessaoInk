@@ -99,6 +99,7 @@ export const PAGE_GUIDES: Record<string, PageGuide> = {
       "Faça upload das fotos (JPG/PNG/WEBP). Os metadados/EXIF são removidos automaticamente.",
       "Marque a autorização de publicação quando o cliente permitir.",
       "Defina a visibilidade (privado/público) de cada item.",
+      "Para remover uma foto, passe o mouse e clique no ícone de lixeira para arquivá-la.",
     ],
     paraQueServe:
       "Mostrar seu trabalho com segurança e atrair novos clientes pelo portal.",

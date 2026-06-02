@@ -29,6 +29,10 @@ export default function PortfolioPage() {
   const [pubLoading, setPubLoading] = useState(false);
   const [pubError, setPubError] = useState<string | null>(null);
 
+  // Modal de confirmação de arquivamento
+  const [arqItem, setArqItem] = useState<PortfolioItem | null>(null);
+  const [arqError, setArqError] = useState<string | null>(null);
+
   const visMutation = useMutation({
     mutationFn: ({ id, visibilidade, autorizado }: { id: string; visibilidade: string; autorizado: boolean }) =>
       api.patch(`/api/v1/portfolio/${id}/visibilidade?visibilidade=${visibilidade}&autorizado=${autorizado}`),
@@ -41,9 +45,16 @@ export default function PortfolioPage() {
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.patch(`/api/v1/portfolio/${id}/visibilidade?visibilidade=PRIVADO&autorizado=false`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["portfolio"] }),
+  // Arquivar = DELETE real (soft delete no backend). Remove da listagem e do portal.
+  const arquivarMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/api/v1/portfolio/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["portfolio"] });
+      setArqItem(null);
+    },
+    onError: (err: any) => {
+      setArqError(err?.message ?? "Erro ao arquivar a foto.");
+    },
   });
 
   const { data = [], isLoading } = useQuery<PortfolioItem[]>({
@@ -196,8 +207,68 @@ export default function PortfolioPage() {
                   : <EyeOff size={12} className="text-[#87938F]" />
                 }
               </button>
+              {/* Botão arquivar (canto superior esquerdo) */}
+              <button
+                onClick={() => { setArqItem(item); setArqError(null); }}
+                title="Arquivar foto"
+                aria-label="Arquivar foto"
+                className="absolute top-2 left-2 p-1.5 rounded-full bg-[#050B12]/80 hover:bg-[#E35D5B]/80 transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
+              >
+                <Trash2 size={12} className="text-[#F0EADD]" />
+              </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ─── Modal: Confirmar arquivamento ─── */}
+      {arqItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#0B171C] border border-[#243337] w-full max-w-sm rounded-[18px] shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#243337]">
+              <div className="flex items-center gap-2">
+                <Trash2 size={18} className="text-[#E35D5B]" />
+                <h2 className="text-[#F0EADD] font-bold text-sm">Arquivar foto?</h2>
+              </div>
+              <button onClick={() => setArqItem(null)} className="text-[#87938F] hover:text-[#F0EADD]">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="w-full aspect-square rounded-[12px] overflow-hidden bg-[#050B12] border border-[#243337]">
+                <img
+                  src={`${API}/api/v1/portfolio/${arqItem.id}/imagem`}
+                  alt="Foto para arquivar"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <p className="text-sm text-[#87938F]">
+                Esta foto deixará de aparecer no seu painel e no portal público. Você pode
+                pedir para um administrador restaurá-la depois.
+              </p>
+              {arqError && (
+                <div className="p-2 bg-[#E35D5B]/10 border border-[#E35D5B]/20 text-[#E35D5B] text-xs rounded-lg">
+                  {arqError}
+                </div>
+              )}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setArqItem(null)}
+                  className="flex-1 h-10 rounded-[12px] border border-[#243337] hover:bg-[#102128] text-[#F0EADD] font-semibold text-sm transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  disabled={arquivarMutation.isPending}
+                  onClick={() => arquivarMutation.mutate(arqItem.id)}
+                  className="flex-1 h-10 rounded-[12px] bg-[#E35D5B] hover:bg-[#c94d4b] disabled:opacity-60 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2"
+                >
+                  {arquivarMutation.isPending && <Loader2 size={14} className="animate-spin" />}
+                  {arquivarMutation.isPending ? "Arquivando..." : "Arquivar"}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

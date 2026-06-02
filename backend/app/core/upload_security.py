@@ -16,7 +16,6 @@ import hashlib
 import io
 import secrets
 from dataclasses import dataclass
-from pathlib import Path
 
 from fastapi import HTTPException, UploadFile
 from PIL import Image
@@ -118,12 +117,12 @@ def nome_arquivo_seguro(extensao: str) -> str:
 
 
 def salvar_imagem(imagem: ImagemSegura, *subdirs: str) -> str:
-    """Persiste a imagem sob STORAGE_PATH/uploads/<subdirs>/ e retorna o nome do arquivo."""
+    """Persiste a imagem em `uploads/<subdirs>/<nome>` (local ou R2) e retorna o nome."""
+    from app.core.storage import montar_key, storage
+
     nome = nome_arquivo_seguro(imagem.extensao)
-    destino = Path(settings.STORAGE_PATH).joinpath("uploads", *subdirs)
-    destino.mkdir(parents=True, exist_ok=True)
-    with open(destino / nome, "wb") as f:
-        f.write(imagem.conteudo)
+    key = montar_key(*subdirs, nome)
+    storage.save(key, imagem.conteudo, imagem.content_type_real)
     return nome
 
 

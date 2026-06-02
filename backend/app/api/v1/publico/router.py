@@ -3,7 +3,6 @@
 import hashlib
 import uuid
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 
 from fastapi import (
     APIRouter,
@@ -15,7 +14,6 @@ from fastapi import (
     Request,
     UploadFile,
 )
-from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,6 +22,7 @@ from app.core.config import settings
 from app.core.database import get_session
 from app.core.redis import registrar_solicitacao_orcamento, verificar_limite_orcamento
 from app.core.request_context import get_client_ip, get_user_agent
+from app.core.storage import montar_key, remover_objeto, resposta_imagem
 from app.core.upload_security import processar_upload
 from app.models.atendimento import (
     Atendimento,
@@ -233,17 +232,8 @@ async def imagem_portfolio_publico(
     if not item:
         raise HTTPException(404, "Imagem não encontrada")
 
-    caminho = (
-        Path(settings.STORAGE_PATH)
-        / "uploads"
-        / str(item.estudio_id)
-        / "portfolio"
-        / item.imagem_path
-    )
-    if not caminho.exists():
-        raise HTTPException(404, "Arquivo não encontrado")
-
-    return FileResponse(str(caminho))
+    key = montar_key(str(item.estudio_id), "portfolio", item.imagem_path)
+    return await resposta_imagem(key)
 
 
 class FlashArtPublicaResponse(BaseModel):
@@ -325,17 +315,8 @@ async def imagem_flash_art_publica(
     if not flash.imagem_path:
         raise HTTPException(404, "Imagem não disponível")
 
-    caminho = (
-        Path(settings.STORAGE_PATH)
-        / "uploads"
-        / str(flash.estudio_id)
-        / "flash_arts"
-        / flash.imagem_path
-    )
-    if not caminho.exists():
-        raise HTTPException(404, "Arquivo não encontrado")
-
-    return FileResponse(str(caminho))
+    key = montar_key(str(flash.estudio_id), "flash_arts", flash.imagem_path)
+    return await resposta_imagem(key)
 
 
 @router.post("/{slug}/orcamento", response_model=OrcamentoResponse, status_code=201)
@@ -439,9 +420,8 @@ async def solicitar_orcamento(
         if len(imagens_validas) > 5:
             raise HTTPException(400, "Você pode enviar no máximo 5 imagens de referência.")
 
-        salvos_no_disco = []
+        keys_salvas: list[str] = []
         subdirs = (str(estudio.id), "atendimentos", str(atendimento.id))
-        upload_dir = Path(settings.STORAGE_PATH).joinpath("uploads", *subdirs)
 
         try:
             for imagem in imagens_validas:
@@ -449,7 +429,7 @@ async def solicitar_orcamento(
                 # privado: tamanho, magic bytes, MIME consistente, strip de EXIF,
                 # nome de arquivo seguro. Upload público NÃO é exceção de segurança.
                 novo_nome, _img = await processar_upload(imagem, *subdirs)
-                salvos_no_disco.append(upload_dir / novo_nome)
+                keys_salvas.append(montar_key(*subdirs, novo_nome))
 
                 # Registrar no banco de dados
                 atendimento_imagem = AtendimentoImagem(
@@ -461,11 +441,10 @@ async def solicitar_orcamento(
             await session.flush()
 
         except Exception as e:
-            # Rollback físico: apagar todos os arquivos salvos em disco se der erro
-            for path in salvos_no_disco:
+            # Rollback físico: apagar todos os objetos salvos (local ou R2) se der erro
+            for key in keys_salvas:
                 try:
-                    if path.exists():
-                        path.unlink()
+                    await remover_objeto(key)
                 except Exception:
                     pass
             raise e

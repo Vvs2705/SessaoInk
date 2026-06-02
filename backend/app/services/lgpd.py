@@ -2,13 +2,12 @@
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from pathlib import Path
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
+from app.core.storage import montar_key, remover_objeto
 from app.models.atendimento import Atendimento, StatusOperacional
 
 _STATUS_NAO_CONVERTIDOS = (
@@ -26,20 +25,20 @@ class ResultadoAnonimizacaoLGPD:
     anonimizados: int
 
 
-def _remover_imagem_atendimento(atendimento: Atendimento, imagem_path: str) -> bool:
-    caminho = (
-        Path(settings.STORAGE_PATH)
-        / "uploads"
-        / str(atendimento.estudio_id)
-        / "atendimentos"
-        / str(atendimento.id)
-        / imagem_path
+async def _remover_imagem_atendimento(
+    atendimento: Atendimento, imagem_path: str
+) -> bool:
+    key = montar_key(
+        str(atendimento.estudio_id),
+        "atendimentos",
+        str(atendimento.id),
+        imagem_path,
     )
     try:
-        caminho.unlink(missing_ok=True)
+        await remover_objeto(key)
         return True
-    except OSError:
-        # Falha de filesystem nao deve mascarar a anonimizacao dos dados no banco.
+    except Exception:
+        # Falha de storage nao deve mascarar a anonimizacao dos dados no banco.
         # A referencia original e preservada enquanto a delecao fisica nao ocorrer.
         return False
 
@@ -95,7 +94,9 @@ async def anonimizar_orcamentos_publicos_expirados(
         for imagem in atendimento.imagens:
             caminho_original = imagem.imagem_path
             if caminho_original:
-                removida = _remover_imagem_atendimento(atendimento, caminho_original)
+                removida = await _remover_imagem_atendimento(
+                    atendimento, caminho_original
+                )
                 if removida:
                     imagem.imagem_path = "[anonimizado LGPD]"
                 else:

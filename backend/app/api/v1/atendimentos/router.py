@@ -1,16 +1,15 @@
 """Router de Atendimentos."""
 
+import re
 import uuid
-from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.auth.dependencies import get_usuario_atual
-from app.core.config import settings
 from app.core.database import get_session
+from app.core.storage import listar_objetos, montar_key, resposta_imagem
 from app.models.atendimento import Atendimento, StatusOperacional
 from app.models.usuario import TipoUsuario, Usuario
 from app.schemas.atendimento import (
@@ -219,22 +218,11 @@ async def listar_imagens_atendimento(
         detail="Atendimento não encontrado",
     )
 
-    dir_imagens = (
-        Path(settings.STORAGE_PATH)
-        / "uploads"
-        / str(usuario.estudio_id)
-        / "atendimentos"
-        / str(id)
-    )
-
-    if not dir_imagens.exists() or not dir_imagens.is_dir():
-        return []
-
-    exts = {".jpg", ".jpeg", ".png", ".webp"}
-    return [
-        f.name for f in dir_imagens.iterdir()
-        if f.is_file() and f.suffix.lower() in exts
-    ]
+    prefix = montar_key(str(usuario.estudio_id), "atendimentos", str(id))
+    exts = (".jpg", ".jpeg", ".png", ".webp")
+    keys = await listar_objetos(prefix)
+    nomes = [k.rsplit("/", 1)[-1] for k in keys]
+    return [n for n in nomes if n.lower().endswith(exts)]
 
 
 @router.get("/{id}/imagens/{filename}")
@@ -251,16 +239,9 @@ async def obter_imagem_atendimento(
         detail="Atendimento não encontrado",
     )
 
-    caminho = (
-        Path(settings.STORAGE_PATH)
-        / "uploads"
-        / str(usuario.estudio_id)
-        / "atendimentos"
-        / str(id)
-        / filename
-    )
+    # Defesa contra path traversal: nomes válidos são tokens seguros + extensão.
+    if not re.fullmatch(r"[A-Za-z0-9_-]+\.(jpg|jpeg|png|webp)", filename):
+        raise HTTPException(404, "Imagem não encontrada")
 
-    if not caminho.exists() or not caminho.is_file():
-        raise HTTPException(404, "Imagem não encontrada no disco")
-
-    return FileResponse(str(caminho))
+    key = montar_key(str(usuario.estudio_id), "atendimentos", str(id), filename)
+    return await resposta_imagem(key)

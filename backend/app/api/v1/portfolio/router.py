@@ -1,17 +1,15 @@
 """Router de Portfolio - upload seguro de imagens."""
 
 import uuid
-from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.auth.dependencies import get_usuario_atual
-from app.core.config import settings
 from app.core.database import get_session
+from app.core.storage import montar_key, resposta_imagem
 from app.core.upload_security import processar_upload
 from app.models.portfolio import Portfolio, VisibilidadePortfolio
 from app.models.usuario import TipoUsuario, Usuario
@@ -102,17 +100,8 @@ async def servir_imagem(
     if not item or not _portfolio_visivel_para_usuario(item, usuario):
         raise HTTPException(404, "Imagem nao encontrada")
 
-    caminho = (
-        Path(settings.STORAGE_PATH)
-        / "uploads"
-        / str(item.estudio_id)
-        / "portfolio"
-        / item.imagem_path
-    )
-    if not caminho.exists():
-        raise HTTPException(404, "Arquivo nao encontrado")
-
-    return FileResponse(str(caminho))
+    key = montar_key(str(item.estudio_id), "portfolio", item.imagem_path)
+    return await resposta_imagem(key)
 
 
 @router.delete("/{id}", status_code=204)

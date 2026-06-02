@@ -44,6 +44,12 @@ class Settings(BaseSettings):
     STORAGE_PATH: str = "./storage"
     UPLOAD_MAX_SIZE_MB: int = 15
 
+    # Object storage (Cloudflare R2 / S3-compatível). Vazio = disco local.
+    OBJECT_STORAGE_ENDPOINT: str = ""  # https://<accountid>.r2.cloudflarestorage.com
+    OBJECT_STORAGE_BUCKET: str = ""
+    OBJECT_STORAGE_ACCESS_KEY: str = ""
+    OBJECT_STORAGE_SECRET_KEY: str = ""
+
     # Observabilidade
     SENTRY_DSN: str = ""
     SENTRY_TRACES_SAMPLE_RATE: float = 0.1

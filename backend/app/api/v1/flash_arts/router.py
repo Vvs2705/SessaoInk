@@ -1,17 +1,15 @@
 """Router de Flash Arts."""
 
 import uuid
-from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.auth.dependencies import get_usuario_atual
-from app.core.config import settings
 from app.core.database import get_session
+from app.core.storage import montar_key, resposta_imagem
 from app.core.upload_security import processar_upload
 from app.models.portfolio import FlashArt, StatusFlash
 from app.models.usuario import TipoUsuario, Usuario
@@ -109,17 +107,8 @@ async def servir_imagem(
     if not item.imagem_path:
         raise HTTPException(404, "Imagem nao cadastrada para esta flash art")
 
-    caminho = (
-        Path(settings.STORAGE_PATH)
-        / "uploads"
-        / str(item.estudio_id)
-        / "flash_arts"
-        / item.imagem_path
-    )
-    if not caminho.exists():
-        raise HTTPException(404, "Arquivo nao encontrado")
-
-    return FileResponse(str(caminho))
+    key = montar_key(str(item.estudio_id), "flash_arts", item.imagem_path)
+    return await resposta_imagem(key)
 
 
 @router.patch("/{id}/status", response_model=FlashArtResponse)

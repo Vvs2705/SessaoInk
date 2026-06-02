@@ -194,7 +194,11 @@ async def test_anonimizacao_remove_arquivo_fisico_de_imagem(monkeypatch):
 @pytest.mark.asyncio
 async def test_anonimizacao_mantem_retry_se_remocao_fisica_falhar(monkeypatch):
     agora = datetime(2026, 6, 1, tzinfo=UTC)
-    monkeypatch.setattr(lgpd, "_remover_imagem_atendimento", lambda *_args: False)
+
+    async def _falha_remocao(*_args):
+        return False
+
+    monkeypatch.setattr(lgpd, "_remover_imagem_atendimento", _falha_remocao)
 
     async with async_session() as session:
         estudio = Estudio(nome="LGPD Retry Ink", slug="lgpd-retry-ink")

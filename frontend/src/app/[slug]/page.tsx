@@ -22,6 +22,8 @@ interface EstudioPublico {
   cidade: string | null;
   uf: string | null;
   instagram: string | null;
+  has_logo: boolean;
+  has_foto: boolean;
 }
 
 interface PortfolioItem {
@@ -110,11 +112,32 @@ export default async function PortalPublicoPage({ params }: Props) {
     <div className="min-h-screen bg-[#050B12] text-[#F0EADD]">
       {/* ── Hero ── */}
       <section className="relative px-6 pt-16 pb-12 max-w-2xl mx-auto text-center">
-        {/* Avatar placeholder */}
-        <div className="w-24 h-24 rounded-[20px] bg-[#0B171C] border border-[#243337] mx-auto mb-6 flex items-center justify-center shadow-[0_0_40px_rgba(47,146,133,0.12)]">
-          <span className="text-3xl font-black text-[#2F9285]">
-            {estudio.nome.charAt(0).toUpperCase()}
-          </span>
+        {/* Logo do estúdio */}
+        {estudio.has_logo && (
+          <div className="mb-6">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`/api/v1/public/${slug}/logo`}
+              alt={`Logo de ${estudio.nome}`}
+              className="max-h-16 w-auto object-contain mx-auto"
+            />
+          </div>
+        )}
+
+        {/* Foto / Avatar do estúdio */}
+        <div className="w-24 h-24 rounded-[20px] bg-[#0B171C] border border-[#243337] mx-auto mb-6 flex items-center justify-center overflow-hidden shadow-[0_0_40px_rgba(47,146,133,0.12)]">
+          {estudio.has_foto ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={`/api/v1/public/${slug}/foto`}
+              alt={estudio.nome}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span className="text-3xl font-black text-[#2F9285]">
+              {estudio.nome.charAt(0).toUpperCase()}
+            </span>
+          )}
         </div>
 
         <h1 className="text-3xl font-extrabold tracking-tight mb-2">

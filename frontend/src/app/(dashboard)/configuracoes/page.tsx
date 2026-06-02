@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Settings,
@@ -18,8 +18,11 @@ import {
   Copy,
   ExternalLink,
   Bell,
+  Loader2,
+  Upload,
+  Image as ImageIcon,
 } from "lucide-react";
-import { api } from "@/lib/api/client";
+import { api, withCsrfHeaders } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -36,6 +39,16 @@ interface Estudio {
   telefone: string | null;
   instagram: string | null;
   email_notificacao: string | null;
+  has_logo: boolean;
+  has_foto: boolean;
+}
+
+interface Usuario {
+  id: string;
+  nome: string;
+  email: string;
+  tipo: "ADMIN" | "ARTISTA" | "RECEPCIONISTA";
+  estudio_id: string;
 }
 
 interface MembroEquipe {
@@ -116,6 +129,26 @@ export default function ConfiguracoesPage() {
   const [senhaConfirm, setSenhaConfirm] = useState("");
   const [mostrarSenhas, setMostrarSenhas] = useState(false);
 
+  // Refs para inputs de arquivos (identidade visual)
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const fotoInputRef = useRef<HTMLInputElement>(null);
+
+  // Estados de upload da identidade visual
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoError, setLogoError] = useState<string | null>(null);
+  const [logoTimestamp, setLogoTimestamp] = useState(Date.now());
+
+  const [fotoUploading, setFotoUploading] = useState(false);
+  const [fotoError, setFotoError] = useState<string | null>(null);
+  const [fotoTimestamp, setFotoTimestamp] = useState(Date.now());
+
+  // Estados do slug (portal público)
+  const [novoSlug, setNovoSlug] = useState("");
+  const [slugDisponivel, setSlugDisponivel] = useState<boolean | null>(null);
+  const [motivoSlug, setMotivoSlug] = useState<string | null>(null);
+  const [validandoSlug, setValidandoSlug] = useState(false);
+  const [showModalSlug, setShowModalSlug] = useState(false);
+
   const showToast = (tipo: "sucesso" | "erro", mensagem: string) => {
     setToast({ tipo, mensagem });
     setTimeout(() => setToast(null), 4000);
@@ -129,6 +162,196 @@ export default function ConfiguracoesPage() {
     queryKey: ["estudio"],
     queryFn: () => api.get<Estudio>("/api/v1/estudio/"),
     staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: usuario } = useQuery<Usuario>({
+    queryKey: ["usuario"],
+    queryFn: () => api.get<Usuario>("/api/v1/auth/me"),
+  });
+
+  const isAdmin = usuario?.tipo === "ADMIN";
+
+  // Inicializa o novoSlug com o slug atual do estúdio
+  useEffect(() => {
+    if (estudio?.slug && !novoSlug) {
+      setNovoSlug(estudio.slug);
+    }
+  }, [estudio?.slug]);
+
+  // Validação em tempo real do slug com debounce
+  useEffect(() => {
+    if (!novoSlug) {
+      setSlugDisponivel(null);
+      setMotivoSlug(null);
+      return;
+    }
+
+    if (novoSlug === estudio?.slug) {
+      setSlugDisponivel(true);
+      setMotivoSlug(null);
+      return;
+    }
+
+    // Regras do slug: 3–50 chars, a-z 0-9 e hífens, sem acento/espaço
+    const regexSlug = /^[a-z0-9-]+$/;
+    if (novoSlug.length < 3 || novoSlug.length > 50) {
+      setSlugDisponivel(false);
+      setMotivoSlug("O link deve ter entre 3 e 50 caracteres.");
+      return;
+    }
+    if (!regexSlug.test(novoSlug)) {
+      setSlugDisponivel(false);
+      setMotivoSlug("Use apenas letras minúsculas, números e hífens.");
+      return;
+    }
+
+    setValidandoSlug(true);
+    const handler = setTimeout(async () => {
+      try {
+        const res = await api.get<{ slug: string; disponivel: boolean; motivo?: string }>(
+          `/api/v1/estudio/slug/sugestao?base=${encodeURIComponent(novoSlug)}`
+        );
+        setSlugDisponivel(res.disponivel);
+        setMotivoSlug(res.motivo ?? null);
+      } catch (e: any) {
+        setSlugDisponivel(false);
+        setMotivoSlug("Erro ao verificar disponibilidade.");
+      } finally {
+        setValidandoSlug(false);
+      }
+    }, 400);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [novoSlug, estudio?.slug]);
+
+  // ---------------------------------------------------------------------------
+  // Handlers para Identidade Visual e Slug
+  // ---------------------------------------------------------------------------
+
+  const handleUploadLogo = async (file: File) => {
+    setLogoError(null);
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setLogoError("Apenas JPG, PNG ou WebP são permitidos.");
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      setLogoError("Arquivo muito grande (máx 15MB).");
+      return;
+    }
+    setLogoUploading(true);
+    try {
+      const form = new FormData();
+      form.append("arquivo", file);
+      const res = await fetch("/api/v1/estudio/logo", withCsrfHeaders({
+        method: "POST",
+        credentials: "include",
+        body: form,
+      }));
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: "Erro no upload da logo" }));
+        throw new Error(err.detail ?? "Erro no upload da logo");
+      }
+      const data = await res.json();
+      queryClient.setQueryData(["estudio"], data);
+      queryClient.invalidateQueries({ queryKey: ["estudio"] });
+      setLogoTimestamp(Date.now());
+      showToast("sucesso", "Logo atualizada com sucesso!");
+    } catch (e: any) {
+      setLogoError(e.message ?? "Erro ao fazer upload da logo.");
+      showToast("erro", e.message ?? "Erro ao fazer upload da logo.");
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    setLogoError(null);
+    setLogoUploading(true);
+    try {
+      const res = await api.delete<Estudio>("/api/v1/estudio/logo");
+      queryClient.setQueryData(["estudio"], res);
+      queryClient.invalidateQueries({ queryKey: ["estudio"] });
+      setLogoTimestamp(Date.now());
+      showToast("sucesso", "Logo removida com sucesso!");
+    } catch (e: any) {
+      setLogoError(e.detail ?? "Erro ao remover a logo.");
+      showToast("erro", e.detail ?? "Erro ao remover a logo.");
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  const handleUploadFoto = async (file: File) => {
+    setFotoError(null);
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setFotoError("Apenas JPG, PNG ou WebP são permitidos.");
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      setFotoError("Arquivo muito grande (máx 15MB).");
+      return;
+    }
+    setFotoUploading(true);
+    try {
+      const form = new FormData();
+      form.append("arquivo", file);
+      const res = await fetch("/api/v1/estudio/foto", withCsrfHeaders({
+        method: "POST",
+        credentials: "include",
+        body: form,
+      }));
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: "Erro no upload da foto" }));
+        throw new Error(err.detail ?? "Erro no upload da foto");
+      }
+      const data = await res.json();
+      queryClient.setQueryData(["estudio"], data);
+      queryClient.invalidateQueries({ queryKey: ["estudio"] });
+      setFotoTimestamp(Date.now());
+      showToast("sucesso", "Foto de perfil atualizada com sucesso!");
+    } catch (e: any) {
+      setFotoError(e.message ?? "Erro ao fazer upload da foto.");
+      showToast("erro", e.message ?? "Erro ao fazer upload da foto.");
+    } finally {
+      setFotoUploading(false);
+    }
+  };
+
+  const handleRemoveFoto = async () => {
+    setFotoError(null);
+    setFotoUploading(true);
+    try {
+      const res = await api.delete<Estudio>("/api/v1/estudio/foto");
+      queryClient.setQueryData(["estudio"], res);
+      queryClient.invalidateQueries({ queryKey: ["estudio"] });
+      setFotoTimestamp(Date.now());
+      showToast("sucesso", "Foto de perfil removida com sucesso!");
+    } catch (e: any) {
+      setFotoError(e.detail ?? "Erro ao remover a foto.");
+      showToast("erro", e.detail ?? "Erro ao remover a foto.");
+    } finally {
+      setFotoUploading(false);
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // Mutations
+  // ---------------------------------------------------------------------------
+
+  const atualizarSlug = useMutation({
+    mutationFn: (slug: string) => api.patch<Estudio>("/api/v1/estudio/slug", { slug }),
+    onSuccess: (data) => {
+      queryClient.setQueryData(["estudio"], data);
+      queryClient.invalidateQueries({ queryKey: ["estudio"] });
+      showToast("sucesso", "Link do portal alterado com sucesso!");
+      setShowModalSlug(false);
+    },
+    onError: (err: any) => {
+      showToast("erro", err?.detail ?? "Erro ao alterar o link.");
+      setShowModalSlug(false);
+    },
   });
 
   const { data: equipe, isLoading: loadingEquipe } = useQuery({
@@ -246,128 +469,307 @@ export default function ConfiguracoesPage() {
         {/* Conteúdo */}
         <div className="flex-1 min-w-0">
           {/* ---- ABA: PERFIL DO ESTÚDIO ---- */}
+          {/* ---- ABA: PERFIL DO ESTÚDIO ---- */}
           {aba === "perfil" && (
-            <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6">
-              <h2 className="text-base font-semibold text-[#F0EADD] mb-5">
-                Informações do Estúdio
-              </h2>
-
+            <div className="space-y-6">
               {loadingEstudio ? (
-                <div className="space-y-3">
-                  {[...Array(5)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="h-10 bg-[#102128] rounded-[10px] animate-pulse"
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6 space-y-4">
+                    <div className="h-6 bg-[#102128] rounded-[6px] w-48 animate-pulse" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="h-28 bg-[#102128] rounded-[14px] animate-pulse" />
+                      <div className="h-28 bg-[#102128] rounded-[24px] animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6 space-y-3">
+                    {[...Array(5)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="h-10 bg-[#102128] rounded-[10px] animate-pulse"
+                      />
+                    ))}
+                  </div>
+                </>
               ) : (
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
-                      Nome do estúdio *
-                    </label>
-                    <input
-                      value={val("nome")}
-                      onChange={(e) => handleCampoEstudio("nome", e.target.value)}
-                      className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
-                      placeholder="Nome do seu estúdio"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
-                      Bio / Apresentação
-                    </label>
-                    <textarea
-                      value={val("bio")}
-                      onChange={(e) => handleCampoEstudio("bio", e.target.value)}
-                      rows={3}
-                      className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors resize-none"
-                      placeholder="Apresentação do estúdio para o portal público..."
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
-                        Cidade
-                      </label>
-                      <input
-                        value={val("cidade")}
-                        onChange={(e) =>
-                          handleCampoEstudio("cidade", e.target.value)
-                        }
-                        className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
-                        placeholder="São Paulo"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
-                        UF
-                      </label>
-                      <input
-                        value={val("uf")}
-                        onChange={(e) =>
-                          handleCampoEstudio("uf", e.target.value.toUpperCase().slice(0, 2))
-                        }
-                        maxLength={2}
-                        className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
-                        placeholder="SP"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
-                      WhatsApp / Telefone
-                    </label>
-                    <input
-                      value={val("telefone")}
-                      onChange={(e) =>
-                        handleCampoEstudio("telefone", e.target.value)
-                      }
-                      className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
-                      placeholder="(11) 99999-9999"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
-                      Instagram
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-[#87938F]">@</span>
-                      <input
-                        value={val("instagram")}
-                        onChange={(e) =>
-                          handleCampoEstudio(
-                            "instagram",
-                            e.target.value.replace("@", "")
-                          )
-                        }
-                        className="flex-1 bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
-                        placeholder="seu.estudio"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end pt-2">
-                    <button
-                      onClick={handleSalvarEstudio}
-                      disabled={!formEditado || atualizarEstudio.isPending}
-                      className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm font-medium transition-all",
-                        formEditado
-                          ? "bg-[#2F9285] text-[#050B12] hover:bg-[#2F9285]/90"
-                          : "bg-[#243337] text-[#87938F] cursor-not-allowed"
+                <>
+                  {/* Card Identidade Visual */}
+                  <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6 space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="text-base font-semibold text-[#F0EADD]">
+                          Identidade Visual
+                        </h2>
+                        <p className="text-xs text-[#87938F]">
+                          Personalize a marca e a foto de perfil do seu estúdio no portal
+                        </p>
+                      </div>
+                      {!isAdmin && (
+                        <span className="text-[10px] bg-[#C36B3F]/10 border border-[#C36B3F]/20 text-[#C36B3F] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <Lock size={10} /> Apenas Admin
+                        </span>
                       )}
-                    >
-                      <Save size={14} />
-                      {atualizarEstudio.isPending ? "Salvando..." : "Salvar alterações"}
-                    </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* LOGO */}
+                      <div className="space-y-3">
+                        <label className="text-xs font-semibold text-[#87938F] block">
+                          Logo do Estúdio
+                        </label>
+                        <div className="flex items-center gap-4">
+                          <div className="relative w-28 h-28 bg-[#050B12] border border-[#243337] rounded-[14px] overflow-hidden flex items-center justify-center group shrink-0">
+                            {estudio?.has_logo ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={`/api/v1/estudio/logo?t=${logoTimestamp}`}
+                                alt="Logo do estúdio"
+                                className="w-full h-full object-contain p-2"
+                              />
+                            ) : (
+                              <div className="text-center p-2">
+                                <ImageIcon size={24} className="text-[#243337] mx-auto mb-1" />
+                                <span className="text-[10px] text-[#87938F]">Sem logo</span>
+                              </div>
+                            )}
+                            {logoUploading && (
+                              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                <Loader2 className="w-5 h-5 text-[#2F9285] animate-spin" />
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => logoInputRef.current?.click()}
+                                disabled={!isAdmin || logoUploading}
+                                className="px-3 py-1.5 rounded-[8px] bg-[#2F9285]/10 border border-[#2F9285]/30 hover:bg-[#2F9285] hover:text-[#050B12] text-[#2F9285] disabled:opacity-50 disabled:hover:bg-[#2F9285]/10 disabled:hover:text-[#2F9285] text-xs font-medium transition-all"
+                              >
+                                Alterar Logo
+                              </button>
+                              {estudio?.has_logo && (
+                                <button
+                                  type="button"
+                                  onClick={handleRemoveLogo}
+                                  disabled={!isAdmin || logoUploading}
+                                  className="px-3 py-1.5 rounded-[8px] bg-transparent border border-[#E35D5B]/30 hover:bg-[#E35D5B] hover:text-[#F0EADD] text-[#E35D5B] disabled:opacity-50 text-xs font-medium transition-all"
+                                >
+                                  Remover
+                                </button>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-[#87938F]">
+                              JPEG, PNG ou WebP. Máx 15MB.
+                            </p>
+                            {logoError && (
+                              <p className="text-[10px] text-[#E35D5B] font-medium">
+                                {logoError}
+                              </p>
+                            )}
+                          </div>
+                          <input
+                            ref={logoInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleUploadLogo(file);
+                              e.target.value = "";
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* FOTO */}
+                      <div className="space-y-3">
+                        <label className="text-xs font-semibold text-[#87938F] block">
+                          Foto / Avatar do Estúdio
+                        </label>
+                        <div className="flex items-center gap-4">
+                          <div className="relative w-28 h-28 bg-[#050B12] border border-[#243337] rounded-[24px] overflow-hidden flex items-center justify-center group shrink-0">
+                            {estudio?.has_foto ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={`/api/v1/estudio/foto?t=${fotoTimestamp}`}
+                                alt="Foto do estúdio"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="text-center p-2">
+                                <User size={24} className="text-[#243337] mx-auto mb-1" />
+                                <span className="text-[10px] text-[#87938F]">Sem foto</span>
+                              </div>
+                            )}
+                            {fotoUploading && (
+                              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                <Loader2 className="w-5 h-5 text-[#2F9285] animate-spin" />
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => fotoInputRef.current?.click()}
+                                disabled={!isAdmin || fotoUploading}
+                                className="px-3 py-1.5 rounded-[8px] bg-[#2F9285]/10 border border-[#2F9285]/30 hover:bg-[#2F9285] hover:text-[#050B12] text-[#2F9285] disabled:opacity-50 disabled:hover:bg-[#2F9285]/10 disabled:hover:text-[#2F9285] text-xs font-medium transition-all"
+                              >
+                                Alterar Foto
+                              </button>
+                              {estudio?.has_foto && (
+                                <button
+                                  type="button"
+                                  onClick={handleRemoveFoto}
+                                  disabled={!isAdmin || fotoUploading}
+                                  className="px-3 py-1.5 rounded-[8px] bg-transparent border border-[#E35D5B]/30 hover:bg-[#E35D5B] hover:text-[#F0EADD] text-[#E35D5B] disabled:opacity-50 text-xs font-medium transition-all"
+                                >
+                                  Remover
+                                </button>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-[#87938F]">
+                              JPEG, PNG ou WebP. Máx 15MB.
+                            </p>
+                            {fotoError && (
+                              <p className="text-[10px] text-[#E35D5B] font-medium">
+                                {fotoError}
+                              </p>
+                            )}
+                          </div>
+                          <input
+                            ref={fotoInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleUploadFoto(file);
+                              e.target.value = "";
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+
+                  {/* Informações do Estúdio */}
+                  <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6">
+                    <h2 className="text-base font-semibold text-[#F0EADD] mb-5">
+                      Informações do Estúdio
+                    </h2>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                          Nome do estúdio *
+                        </label>
+                        <input
+                          value={val("nome")}
+                          onChange={(e) => handleCampoEstudio("nome", e.target.value)}
+                          className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                          placeholder="Nome do seu estúdio"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                          Bio / Apresentação
+                        </label>
+                        <textarea
+                          value={val("bio")}
+                          onChange={(e) => handleCampoEstudio("bio", e.target.value)}
+                          rows={3}
+                          className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors resize-none"
+                          placeholder="Apresentação do estúdio para o portal público..."
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                            Cidade
+                          </label>
+                          <input
+                            value={val("cidade")}
+                            onChange={(e) =>
+                              handleCampoEstudio("cidade", e.target.value)
+                            }
+                            className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                            placeholder="São Paulo"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                            UF
+                          </label>
+                          <input
+                            value={val("uf")}
+                            onChange={(e) =>
+                              handleCampoEstudio("uf", e.target.value.toUpperCase().slice(0, 2))
+                            }
+                            maxLength={2}
+                            className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                            placeholder="SP"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                          WhatsApp / Telefone
+                        </label>
+                        <input
+                          value={val("telefone")}
+                          onChange={(e) =>
+                            handleCampoEstudio("telefone", e.target.value)
+                          }
+                          className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                          placeholder="(11) 99999-9999"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                          Instagram
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-[#87938F]">@</span>
+                          <input
+                            value={val("instagram")}
+                            onChange={(e) =>
+                              handleCampoEstudio(
+                                "instagram",
+                                e.target.value.replace("@", "")
+                              )
+                            }
+                            className="flex-1 bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                            placeholder="seu.estudio"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end pt-2">
+                        <button
+                          type="button"
+                          onClick={handleSalvarEstudio}
+                          disabled={!formEditado || atualizarEstudio.isPending}
+                          className={cn(
+                            "flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm font-medium transition-all",
+                            formEditado
+                              ? "bg-[#2F9285] text-[#050B12] hover:bg-[#2F9285]/90"
+                              : "bg-[#243337] text-[#87938F] cursor-not-allowed"
+                          )}
+                        >
+                          <Save size={14} />
+                          {atualizarEstudio.isPending ? "Salvando..." : "Salvar alterações"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           )}
@@ -389,7 +791,7 @@ export default function ConfiguracoesPage() {
                       {/* URL com botões */}
                       <div>
                         <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
-                          URL pública — compartilhe com seus clientes
+                          URL pública atual — compartilhe com seus clientes
                         </label>
                         <div className="flex items-center gap-2">
                           <div className="flex-1 flex items-center gap-0 bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 min-w-0">
@@ -417,10 +819,77 @@ export default function ConfiguracoesPage() {
                             <ExternalLink size={15} />
                           </a>
                         </div>
-                        <p className="text-xs text-[#87938F] mt-1.5">
-                          O slug não pode ser alterado após criação. Entre em contato com o suporte se necessário.
-                        </p>
                       </div>
+
+                      {/* Input de edição do link (apenas Admin) */}
+                      {isAdmin ? (
+                        <div className="space-y-3 pt-4 border-t border-[#243337]">
+                          <label className="text-xs font-medium text-[#87938F] block">
+                            Alterar link personalizado (slug)
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 flex items-center gap-0 bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 min-w-0">
+                              <span className="text-sm text-[#87938F] shrink-0">sessao-ink.vercel.app/</span>
+                              <input
+                                type="text"
+                                value={novoSlug}
+                                onChange={(e) => setNovoSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                                disabled={atualizarSlug.isPending}
+                                className="w-full bg-transparent text-sm text-[#2F9285] font-bold focus:outline-none placeholder-gray-600"
+                                placeholder="link-do-seu-estudio"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setShowModalSlug(true)}
+                              disabled={!slugDisponivel || validandoSlug || novoSlug === estudio?.slug || atualizarSlug.isPending}
+                              className={cn(
+                                "shrink-0 h-10 px-4 flex items-center justify-center rounded-[10px] text-xs font-semibold transition-all",
+                                slugDisponivel && novoSlug !== estudio?.slug
+                                  ? "bg-[#2F9285] text-[#050B12] hover:bg-[#3AA99A]"
+                                  : "bg-[#243337] text-[#87938F] cursor-not-allowed"
+                              )}
+                            >
+                              {atualizarSlug.isPending ? (
+                                <Loader2 size={14} className="animate-spin" />
+                              ) : (
+                                "Salvar link"
+                              )}
+                            </button>
+                          </div>
+
+                          {/* Status da validação em tempo real */}
+                          {novoSlug && novoSlug !== estudio?.slug && (
+                            <div className="flex items-center gap-1.5 text-xs mt-1">
+                              {validandoSlug ? (
+                                <>
+                                  <Loader2 size={13} className="text-[#87938F] animate-spin" />
+                                  <span className="text-[#87938F]">Verificando disponibilidade...</span>
+                                </>
+                              ) : slugDisponivel ? (
+                                <>
+                                  <CheckCircle size={13} className="text-[#2F9285]" />
+                                  <span className="text-[#2F9285]">Endereço disponível!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <AlertCircle size={13} className="text-[#E35D5B]" />
+                                  <span className="text-[#E35D5B]">{motivoSlug ?? "Link indisponível."}</span>
+                                </>
+                              )}
+                            </div>
+                          )}
+
+                          <p className="text-[10px] text-[#87938F]">
+                            Regras do link: 3 a 50 caracteres, apenas letras minúsculas (sem acentos), números e hífens.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="pt-4 border-t border-[#243337] flex items-start gap-2 text-xs text-[#87938F]">
+                          <Lock size={14} className="text-[#C36B3F] shrink-0 mt-0.5" />
+                          <span>Apenas administradores podem alterar o endereço do portal.</span>
+                        </div>
+                      )}
 
                       {/* O que o cliente vê */}
                       <div className="bg-[#050B12] border border-[#243337] rounded-[14px] p-4 space-y-2">
@@ -690,6 +1159,52 @@ export default function ConfiguracoesPage() {
           )}
         </div>
       </div>
+
+      {/* Modal de confirmação do slug */}
+      {showModalSlug && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#0B171C] border border-[#243337] w-full max-w-md rounded-[18px] shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#243337]">
+              <div className="flex items-center gap-2">
+                <AlertCircle size={18} className="text-[#C36B3F]" />
+                <h2 className="text-[#F0EADD] font-bold text-sm">Alterar link do portal?</h2>
+              </div>
+              <button onClick={() => setShowModalSlug(false)} className="text-[#87938F] hover:text-[#F0EADD]">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-sm text-[#87938F] leading-relaxed">
+                Tem certeza que deseja alterar o endereço do seu estúdio de{" "}
+                <strong className="text-[#F0EADD]">sessao-ink.vercel.app/{estudio?.slug}</strong> para{" "}
+                <strong className="text-[#2F9285]">sessao-ink.vercel.app/{novoSlug}</strong>?
+              </p>
+              <div className="p-3 bg-[#E35D5B]/5 border border-[#E35D5B]/20 text-[#E35D5B] text-xs rounded-[10px] space-y-1">
+                <p className="font-semibold">Atenção:</p>
+                <p>O link antigo deixará de funcionar imediatamente. Seus clientes que usam o link antigo não conseguirão mais acessar a página.</p>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowModalSlug(false)}
+                  className="flex-1 h-10 rounded-[12px] border border-[#243337] hover:bg-[#102128] text-[#F0EADD] font-semibold text-sm transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={atualizarSlug.isPending}
+                  onClick={() => atualizarSlug.mutate(novoSlug)}
+                  className="flex-1 h-10 rounded-[12px] bg-[#E35D5B] hover:bg-[#c94d4b] disabled:opacity-60 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2"
+                >
+                  {atualizarSlug.isPending && <Loader2 size={14} className="animate-spin" />}
+                  Confirmar e Mudar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast */}
       {toast && (

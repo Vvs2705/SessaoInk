@@ -15,4 +15,4 @@ Pillow>=10.0.0
 boto3>=1.34.0
 pyotp>=2.9.0
 qrcode>=7.4.0
-httpx>=0.27.0
+httpx>=0.27.0,<0.28

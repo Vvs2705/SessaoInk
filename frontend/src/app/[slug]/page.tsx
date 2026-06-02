@@ -211,7 +211,8 @@ export default async function PortalPublicoPage({ params }: Props) {
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={`${API_URL}/api/v1/public/${slug}/portfolio/${item.id}/imagem`}
+                  /* same-origin (proxy): o backend cross-origin é bloqueado pelo CSP img-src 'self' */
+                  src={`/api/v1/public/${slug}/portfolio/${item.id}/imagem`}
                   alt={item.titulo ?? "Trabalho do portfólio"}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />

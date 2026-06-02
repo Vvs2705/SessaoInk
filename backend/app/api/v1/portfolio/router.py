@@ -2,17 +2,19 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.auth.dependencies import get_usuario_atual
+from app.api.v1.auth.dependencies import get_usuario_atual, require_role
 from app.core.database import get_session
-from app.core.storage import montar_key, resposta_imagem
+from app.core.request_context import get_client_ip, get_user_agent
+from app.core.storage import montar_key, remover_objeto, resposta_imagem
 from app.core.upload_security import processar_upload
 from app.models.portfolio import Portfolio, VisibilidadePortfolio
 from app.models.usuario import TipoUsuario, Usuario
+from app.services.audit import log_event
 
 router = APIRouter(prefix="/portfolio", tags=["portfolio"])
 
@@ -49,6 +51,28 @@ async def listar_portfolio(
 
     result = await session.execute(
         select(Portfolio).where(*filtros).order_by(Portfolio.criado_em.desc())
+    )
+    return result.scalars().all()
+
+
+@router.get("/arquivados", response_model=list[PortfolioResponse])
+async def listar_arquivados(
+    session: AsyncSession = Depends(get_session),
+    usuario: Usuario = Depends(get_usuario_atual),
+):
+    """Lista as fotos arquivadas (soft-deleted) do estúdio.
+
+    Artista vê apenas as próprias; ADMIN/recepção veem todas do estúdio.
+    """
+    filtros = [
+        Portfolio.estudio_id == usuario.estudio_id,
+        Portfolio.ativo.is_(False),
+    ]
+    if usuario.tipo == TipoUsuario.ARTISTA:
+        filtros.append(Portfolio.artista_id == usuario.id)
+
+    result = await session.execute(
+        select(Portfolio).where(*filtros).order_by(Portfolio.atualizado_em.desc())
     )
     return result.scalars().all()
 
@@ -122,6 +146,83 @@ async def arquivar_portfolio(
         raise HTTPException(404, "Item nao encontrado")
     item.ativo = False
     await session.flush()
+    return None
+
+
+@router.patch("/{id}/restaurar", response_model=PortfolioResponse)
+async def restaurar_portfolio(
+    id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    usuario: Usuario = Depends(get_usuario_atual),
+):
+    """Restaura uma foto arquivada (volta a ativo=True, como privada)."""
+    result = await session.execute(
+        select(Portfolio).where(
+            Portfolio.id == id,
+            Portfolio.estudio_id == usuario.estudio_id,
+        )
+    )
+    item = result.scalar_one_or_none()
+    if not item or not _portfolio_visivel_para_usuario(item, usuario):
+        raise HTTPException(404, "Item nao encontrado")
+    item.ativo = True
+    # Ao restaurar, volta a privado por segurança (re-publicação é ação explícita).
+    item.visibilidade = VisibilidadePortfolio.PRIVADO
+    item.autorizado_publicacao = False
+    await session.flush()
+    await session.refresh(item)
+    return item
+
+
+@router.delete("/{id}/permanente", status_code=204)
+async def excluir_permanente_portfolio(
+    id: uuid.UUID,
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+    usuario: Usuario = Depends(require_role(TipoUsuario.ADMIN)),
+):
+    """Exclusão PERMANENTE (apenas ADMIN): remove o registro, o arquivo físico
+    e grava log de auditoria. Irreversível."""
+    result = await session.execute(
+        select(Portfolio).where(
+            Portfolio.id == id,
+            Portfolio.estudio_id == usuario.estudio_id,
+        )
+    )
+    item = result.scalar_one_or_none()
+    if not item:
+        raise HTTPException(404, "Item nao encontrado")
+
+    key = montar_key(str(item.estudio_id), "portfolio", item.imagem_path)
+    dados_audit = {
+        "portfolio_id": str(item.id),
+        "artista_id": str(item.artista_id),
+        "imagem_path": item.imagem_path,
+        "titulo": item.titulo,
+    }
+
+    await session.delete(item)
+    await session.flush()
+
+    # Remove o arquivo do storage (best-effort; o registro já saiu do banco).
+    try:
+        await remover_objeto(key)
+    except Exception:
+        pass
+
+    await log_event(
+        session,
+        acao="portfolio.exclusao_permanente",
+        estudio_id=usuario.estudio_id,
+        actor_usuario_id=usuario.id,
+        actor_tipo=usuario.tipo.value,
+        entidade="portfolio",
+        entidade_id=str(id),
+        ip=get_client_ip(request),
+        user_agent=get_user_agent(request),
+        dados=dados_audit,
+        commit=True,
+    )
     return None
 
 

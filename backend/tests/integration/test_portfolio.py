@@ -151,3 +151,69 @@ class TestVisibilidade:
         assert r.json()["autorizado_publicacao"] is True
 
         await autenticado.delete(f"/api/v1/portfolio/{foto_id}")
+
+
+class TestArquivamento:
+    async def test_arquivar_some_da_listagem_e_aparece_em_arquivados(
+        self, autenticado: AsyncClient
+    ):
+        """Arquivar (DELETE) tira a foto da listagem ativa e a põe em /arquivados."""
+        up = await autenticado.post(
+            "/api/v1/portfolio/upload",
+            files={"arquivo": ("foto.jpg", io.BytesIO(jpeg_minimo()), "image/jpeg")},
+        )
+        foto_id = up.json()["id"]
+
+        assert (await autenticado.delete(f"/api/v1/portfolio/{foto_id}")).status_code == 204
+
+        ativos = (await autenticado.get("/api/v1/portfolio/")).json()
+        assert foto_id not in [x["id"] for x in ativos]
+
+        arquivados = (await autenticado.get("/api/v1/portfolio/arquivados")).json()
+        assert foto_id in [x["id"] for x in arquivados]
+
+        # cleanup
+        await autenticado.delete(f"/api/v1/portfolio/{foto_id}/permanente")
+
+    async def test_restaurar_volta_para_ativos_como_privado(
+        self, autenticado: AsyncClient
+    ):
+        """Restaurar reativa a foto (privada) e some de /arquivados."""
+        up = await autenticado.post(
+            "/api/v1/portfolio/upload",
+            files={"arquivo": ("foto.jpg", io.BytesIO(jpeg_minimo()), "image/jpeg")},
+        )
+        foto_id = up.json()["id"]
+        await autenticado.delete(f"/api/v1/portfolio/{foto_id}")
+
+        r = await autenticado.patch(f"/api/v1/portfolio/{foto_id}/restaurar")
+        assert r.status_code == 200, r.text
+        assert r.json()["ativo"] is True
+        assert r.json()["visibilidade"] == "PRIVADO"
+
+        ativos = (await autenticado.get("/api/v1/portfolio/")).json()
+        assert foto_id in [x["id"] for x in ativos]
+
+        await autenticado.delete(f"/api/v1/portfolio/{foto_id}/permanente")
+
+    async def test_exclusao_permanente_remove_de_vez(self, autenticado: AsyncClient):
+        """Exclusão permanente (ADMIN) remove o registro de forma irreversível."""
+        up = await autenticado.post(
+            "/api/v1/portfolio/upload",
+            files={"arquivo": ("foto.jpg", io.BytesIO(jpeg_minimo()), "image/jpeg")},
+        )
+        foto_id = up.json()["id"]
+
+        r = await autenticado.delete(f"/api/v1/portfolio/{foto_id}/permanente")
+        assert r.status_code == 204, r.text
+
+        # Não aparece nem em ativos nem em arquivados; restaurar dá 404.
+        arquivados = (await autenticado.get("/api/v1/portfolio/arquivados")).json()
+        assert foto_id not in [x["id"] for x in arquivados]
+        assert (
+            await autenticado.patch(f"/api/v1/portfolio/{foto_id}/restaurar")
+        ).status_code == 404
+
+    async def test_arquivados_sem_auth_retorna_401(self, client: AsyncClient):
+        r = await client.get("/api/v1/portfolio/arquivados")
+        assert r.status_code == 401

@@ -2586,6 +2586,60 @@
         }
       }
     },
+    "/api/v1/portfolio/arquivados": {
+      "get": {
+        "tags": [
+          "portfolio"
+        ],
+        "summary": "Listar Arquivados",
+        "description": "Lista as fotos arquivadas (soft-deleted) do estúdio.\n\nArtista vê apenas as próprias; ADMIN/recepção veem todas do estúdio.",
+        "operationId": "listar_arquivados_api_v1_portfolio_arquivados_get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PortfolioResponse"
+                  },
+                  "title": "Response Listar Arquivados Api V1 Portfolio Arquivados Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/portfolio/upload": {
       "post": {
         "tags": [
@@ -2712,6 +2766,119 @@
         "summary": "Arquivar Portfolio",
         "description": "Soft delete - oculta a foto.",
         "operationId": "arquivar_portfolio_api_v1_portfolio__id__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/portfolio/{id}/restaurar": {
+      "patch": {
+        "tags": [
+          "portfolio"
+        ],
+        "summary": "Restaurar Portfolio",
+        "description": "Restaura uma foto arquivada (volta a ativo=True, como privada).",
+        "operationId": "restaurar_portfolio_api_v1_portfolio__id__restaurar_patch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/portfolio/{id}/permanente": {
+      "delete": {
+        "tags": [
+          "portfolio"
+        ],
+        "summary": "Excluir Permanente Portfolio",
+        "description": "Exclusão PERMANENTE (apenas ADMIN): remove o registro, o arquivo físico\ne grava log de auditoria. Irreversível.",
+        "operationId": "excluir_permanente_portfolio_api_v1_portfolio__id__permanente_delete",
         "parameters": [
           {
             "name": "id",

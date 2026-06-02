@@ -52,6 +52,8 @@ class EstudioPublicoResponse(BaseModel):
     cidade: str | None
     uf: str | None
     instagram: str | None
+    has_logo: bool = False
+    has_foto: bool = False
     model_config = {"from_attributes": True}
 
 
@@ -158,7 +160,50 @@ async def perfil_publico(
     estudio = result.scalar_one_or_none()
     if not estudio:
         raise HTTPException(404, "Estúdio não encontrado")
-    return estudio
+    return EstudioPublicoResponse(
+        slug=estudio.slug,
+        nome=estudio.nome,
+        bio=estudio.bio,
+        cidade=estudio.cidade,
+        uf=estudio.uf,
+        instagram=estudio.instagram,
+        has_logo=bool(estudio.logo_path),
+        has_foto=bool(estudio.foto_path),
+    )
+
+
+@router.get("/{slug}/logo")
+async def servir_logo_publica(
+    slug: str,
+    session: AsyncSession = Depends(get_session),
+):
+    """Serve a logo do estúdio no portal público (same-origin via proxy)."""
+    result = await session.execute(
+        select(Estudio).where(Estudio.slug == slug, Estudio.ativo)
+    )
+    estudio = result.scalar_one_or_none()
+    if not estudio or not estudio.logo_path:
+        raise HTTPException(404, "Logo não encontrada")
+    return await resposta_imagem(
+        montar_key(str(estudio.id), "branding", estudio.logo_path)
+    )
+
+
+@router.get("/{slug}/foto")
+async def servir_foto_publica(
+    slug: str,
+    session: AsyncSession = Depends(get_session),
+):
+    """Serve a foto/avatar do estúdio no portal público (same-origin via proxy)."""
+    result = await session.execute(
+        select(Estudio).where(Estudio.slug == slug, Estudio.ativo)
+    )
+    estudio = result.scalar_one_or_none()
+    if not estudio or not estudio.foto_path:
+        raise HTTPException(404, "Foto não encontrada")
+    return await resposta_imagem(
+        montar_key(str(estudio.id), "branding", estudio.foto_path)
+    )
 
 
 @router.get("/{slug}/portfolio", response_model=list[PortfolioPublicoItem])

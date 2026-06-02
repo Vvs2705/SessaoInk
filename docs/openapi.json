@@ -2111,6 +2111,88 @@
         }
       }
     },
+    "/api/v1/public/{slug}/logo": {
+      "get": {
+        "tags": [
+          "portal-público"
+        ],
+        "summary": "Servir Logo Publica",
+        "description": "Serve a logo do estúdio no portal público (same-origin via proxy).",
+        "operationId": "servir_logo_publica_api_v1_public__slug__logo_get",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/{slug}/foto": {
+      "get": {
+        "tags": [
+          "portal-público"
+        ],
+        "summary": "Servir Foto Publica",
+        "description": "Serve a foto/avatar do estúdio no portal público (same-origin via proxy).",
+        "operationId": "servir_foto_publica_api_v1_public__slug__foto_get",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/public/{slug}/portfolio": {
       "get": {
         "tags": [
@@ -3108,7 +3190,7 @@
           "estudio"
         ],
         "summary": "Atualizar Estudio",
-        "description": "Atualiza dados do estúdio. Apenas ADMIN pode alterar.",
+        "description": "Atualiza dados do estúdio. Apenas ADMIN.",
         "operationId": "atualizar_estudio_api_v1_estudio__patch",
         "parameters": [
           {
@@ -3138,6 +3220,433 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstudioResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/estudio/slug/sugestao": {
+      "get": {
+        "tags": [
+          "estudio"
+        ],
+        "summary": "Sugerir Slug",
+        "description": "Sugere/valida um slug a partir de um texto (ex.: nome do estúdio).",
+        "operationId": "sugerir_slug_api_v1_estudio_slug_sugestao_get",
+        "parameters": [
+          {
+            "name": "base",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Base"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlugDisponibilidadeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/estudio/slug": {
+      "patch": {
+        "tags": [
+          "estudio"
+        ],
+        "summary": "Alterar Slug",
+        "description": "Altera o slug (link do portal). Apenas ADMIN.\n\nAtenção: links antigos deixam de funcionar após a troca.",
+        "operationId": "alterar_slug_api_v1_estudio_slug_patch",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SlugAlterarRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstudioResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/estudio/logo": {
+      "post": {
+        "tags": [
+          "estudio"
+        ],
+        "summary": "Upload Logo",
+        "description": "Envia/substitui a logo do estúdio. Apenas ADMIN.",
+        "operationId": "upload_logo_api_v1_estudio_logo_post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_logo_api_v1_estudio_logo_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstudioResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "estudio"
+        ],
+        "summary": "Servir Logo",
+        "description": "Serve a logo do estúdio do usuário autenticado.",
+        "operationId": "servir_logo_api_v1_estudio_logo_get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "estudio"
+        ],
+        "summary": "Remover Logo",
+        "description": "Remove a logo do estúdio. Apenas ADMIN.",
+        "operationId": "remover_logo_api_v1_estudio_logo_delete",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstudioResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/estudio/foto": {
+      "post": {
+        "tags": [
+          "estudio"
+        ],
+        "summary": "Upload Foto",
+        "description": "Envia/substitui a foto/avatar do estúdio. Apenas ADMIN.",
+        "operationId": "upload_foto_api_v1_estudio_foto_post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_foto_api_v1_estudio_foto_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstudioResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "estudio"
+        ],
+        "summary": "Servir Foto",
+        "description": "Serve a foto/avatar do estúdio do usuário autenticado.",
+        "operationId": "servir_foto_api_v1_estudio_foto_get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "estudio"
+        ],
+        "summary": "Remover Foto",
+        "description": "Remove a foto/avatar do estúdio. Apenas ADMIN.",
+        "operationId": "remover_foto_api_v1_estudio_foto_delete",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -5196,6 +5705,20 @@
         ],
         "title": "Body_solicitar_orcamento_api_v1_public__slug__orcamento_post"
       },
+      "Body_upload_foto_api_v1_estudio_foto_post": {
+        "properties": {
+          "arquivo": {
+            "type": "string",
+            "format": "binary",
+            "title": "Arquivo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "arquivo"
+        ],
+        "title": "Body_upload_foto_api_v1_estudio_foto_post"
+      },
       "Body_upload_foto_api_v1_portfolio_upload_post": {
         "properties": {
           "arquivo": {
@@ -5242,6 +5765,20 @@
           "arquivo"
         ],
         "title": "Body_upload_foto_api_v1_portfolio_upload_post"
+      },
+      "Body_upload_logo_api_v1_estudio_logo_post": {
+        "properties": {
+          "arquivo": {
+            "type": "string",
+            "format": "binary",
+            "title": "Arquivo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "arquivo"
+        ],
+        "title": "Body_upload_logo_api_v1_estudio_logo_post"
       },
       "BuscaResponse": {
         "properties": {
@@ -6038,6 +6575,16 @@
               }
             ],
             "title": "Instagram"
+          },
+          "has_logo": {
+            "type": "boolean",
+            "title": "Has Logo",
+            "default": false
+          },
+          "has_foto": {
+            "type": "boolean",
+            "title": "Has Foto",
+            "default": false
           }
         },
         "type": "object",
@@ -6131,6 +6678,16 @@
               }
             ],
             "title": "Email Notificacao"
+          },
+          "has_logo": {
+            "type": "boolean",
+            "title": "Has Logo",
+            "default": false
+          },
+          "has_foto": {
+            "type": "boolean",
+            "title": "Has Foto",
+            "default": false
           }
         },
         "type": "object",
@@ -7262,6 +7819,48 @@
           "cliente_id"
         ],
         "title": "SessaoResponse"
+      },
+      "SlugAlterarRequest": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slug"
+        ],
+        "title": "SlugAlterarRequest"
+      },
+      "SlugDisponibilidadeResponse": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "disponivel": {
+            "type": "boolean",
+            "title": "Disponivel"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slug",
+          "disponivel"
+        ],
+        "title": "SlugDisponibilidadeResponse"
       },
       "StatusConvite": {
         "type": "string",

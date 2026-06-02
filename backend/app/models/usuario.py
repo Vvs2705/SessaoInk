@@ -29,6 +29,8 @@ class Estudio(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     telefone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     instagram: Mapped[str | None] = mapped_column(String(100), nullable=True)
     logo_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    # Foto/avatar do estúdio exibida no hero do portal público (separada da logo)
+    foto_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     # Email para receber notificações de novos orçamentos pelo portal público
     email_notificacao: Mapped[str | None] = mapped_column(String(320), nullable=True)
 

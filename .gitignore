@@ -71,3 +71,6 @@ backend/test.db
 backend/**/*.db
 backend/**/.pytest_cache/
 backend/tests/**/__pycache__/
+
+# Scratch local (uploads de execuções/ensaios locais — nunca versionar)
+backend/.tmp/

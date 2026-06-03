@@ -1,19 +1,23 @@
-import { Sidebar } from "@/components/layout/Sidebar";
+import type { ReactNode } from "react";
+
 import { BottomNav } from "@/components/layout/BottomNav";
+import { MobileTopBar } from "@/components/layout/MobileTopBar";
+import { Sidebar } from "@/components/layout/Sidebar";
 import { PageGuide } from "@/components/PageGuide";
-import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-};
-
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-[#050B12]">
+    <div className="min-h-app bg-[#050B12] text-[#F0EADD] lg:flex">
       <Sidebar />
-      <main className="flex-1 min-w-0 pb-16 lg:pb-0">
-        {children}
-      </main>
+
+      <div className="flex min-h-app min-w-0 flex-1 flex-col">
+        <MobileTopBar />
+
+        <main className="pb-mobile-nav flex-1 px-4 py-4 sm:px-5 lg:px-8 lg:py-8 lg:pb-8">
+          <div className="mx-auto w-full max-w-7xl">{children}</div>
+        </main>
+      </div>
+
       <BottomNav />
       <PageGuide />
     </div>

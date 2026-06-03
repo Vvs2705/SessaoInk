@@ -4,27 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  Calendar, ClipboardList, Users, Image, Zap,
-  Wallet, Package, FileText, BarChart2, Settings,
-  LogOut, Search, BarChart,
+  LogOut, Search, Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BuscaModal } from "@/components/BuscaModal";
 import { BrandLogo } from "@/components/BrandLogo";
 import { withCsrfHeaders } from "@/lib/api/client";
-
-const NAV = [
-  { href: "/",              label: "Início",        icon: BarChart2 },
-  { href: "/agenda",        label: "Agenda",        icon: Calendar },
-  { href: "/atendimentos",  label: "Atendimentos",  icon: ClipboardList },
-  { href: "/clientes",      label: "Clientes",      icon: Users },
-  { href: "/portfolio",     label: "Portfólio",     icon: Image },
-  { href: "/flash-arts",    label: "Flash Arts",    icon: Zap },
-  { href: "/financeiro",    label: "Financeiro",    icon: Wallet },
-  { href: "/estoque",       label: "Estoque",       icon: Package },
-  { href: "/documentos",    label: "Documentos",    icon: FileText },
-  { href: "/relatorios",    label: "Relatórios",    icon: BarChart },
-];
+import { DESKTOP_NAV_ITEMS } from "./navigation";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -65,7 +51,7 @@ export function Sidebar() {
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto" aria-label="Navegação principal">
-          {NAV.map(({ href, label, icon: Icon }) => {
+          {DESKTOP_NAV_ITEMS.map(({ href, label, icon: Icon }) => {
             const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
             return (
               <Link

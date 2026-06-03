@@ -2,38 +2,67 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, ClipboardList, Users, MoreHorizontal } from "lucide-react";
-import { cn } from "@/lib/utils";
 
-const TABS = [
-  { href: "/agenda",       label: "Agenda",       icon: Calendar },
-  { href: "/atendimentos", label: "Atend.",        icon: ClipboardList },
-  { href: "/clientes",     label: "Clientes",      icon: Users },
-  { href: "/mais",         label: "Mais",          icon: MoreHorizontal },
-];
+import {
+  MOBILE_MORE_ITEMS,
+  MOBILE_MORE_TAB_ITEM,
+  MOBILE_TAB_ITEMS,
+} from "./navigation";
+import { cn } from "@/lib/utils";
 
 export function BottomNav() {
   const pathname = usePathname();
+
+  const items = [...MOBILE_TAB_ITEMS, MOBILE_MORE_TAB_ITEM];
+
+  const isActive = (href: string) => {
+    if (href === MOBILE_MORE_TAB_ITEM.href) {
+      return (
+        pathname === "/mais" ||
+        MOBILE_MORE_ITEMS.some(
+          (item) =>
+            pathname === item.href || pathname.startsWith(`${item.href}/`),
+        )
+      );
+    }
+
+    if (href === "/") {
+      return pathname === "/";
+    }
+
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
+
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#0B171C] border-t border-[#243337] z-50 safe-bottom"
-      aria-label="Navegação mobile"
+      className={cn(
+        "safe-bottom fixed inset-x-0 bottom-0 z-50 lg:hidden",
+        "border-t border-[#243337] bg-[#0B171C]/95 backdrop-blur-xl",
+      )}
+      aria-label="Navegação principal mobile"
     >
-      <div className="grid grid-cols-4 h-16">
-        {TABS.map(({ href, label, icon: Icon }) => {
-          const active = pathname.startsWith(href);
+      <div className="grid h-16 grid-cols-5">
+        {items.map(({ href, shortLabel, icon: Icon }) => {
+          const active = isActive(href);
+
           return (
             <Link
               key={href}
               href={href}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors",
-                active ? "text-[#2F9285]" : "text-[#87938F]"
+                "relative flex flex-col items-center justify-center gap-1",
+                "text-[11px] font-medium transition-colors",
+                "active:scale-[0.97]",
+                active ? "text-[#2F9285]" : "text-[#87938F]",
               )}
               aria-current={active ? "page" : undefined}
             >
-              <Icon size={20} />
-              {label}
+              <Icon size={21} strokeWidth={active ? 2.6 : 2} />
+              <span className="leading-none">{shortLabel}</span>
+
+              {active && (
+                <span className="absolute bottom-1 h-1 w-6 rounded-full bg-[#2F9285]" />
+              )}
             </Link>
           );
         })}

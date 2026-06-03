@@ -153,14 +153,52 @@ class R2Storage:
         return keys
 
 
+class _R2ComFallbackLocal:
+    """R2 como primário, com fallback de LEITURA para o disco local.
+
+    Usado na transição disco→R2 (zero-downtime): novas escritas vão para o R2;
+    imagens antigas que ainda estão no volume continuam sendo servidas até a
+    migração concluir. `delete` remove dos dois (LGPD/limpeza). Quando a migração
+    termina, o fallback simplesmente nunca é acionado — é seguro mantê-lo.
+    """
+
+    def __init__(self, primario: StorageBackend, fallback: StorageBackend) -> None:
+        self._primario = primario
+        self._fallback = fallback
+
+    def save(self, key: str, data: bytes, content_type: str) -> None:
+        self._primario.save(key, data, content_type)
+
+    def read(self, key: str) -> tuple[bytes, str]:
+        try:
+            return self._primario.read(key)
+        except ObjetoNaoEncontradoError:
+            return self._fallback.read(key)  # relança se também faltar no disco
+
+    def exists(self, key: str) -> bool:
+        return self._primario.exists(key) or self._fallback.exists(key)
+
+    def delete(self, key: str) -> None:
+        self._primario.delete(key)
+        try:
+            self._fallback.delete(key)  # best-effort: não falha se já não existir
+        except Exception:  # noqa: BLE001
+            pass
+
+    def list_keys(self, prefix: str) -> list[str]:
+        return self._primario.list_keys(prefix)
+
+
 def _construir_backend() -> StorageBackend:
     if settings.OBJECT_STORAGE_BUCKET and settings.OBJECT_STORAGE_ENDPOINT:
-        return R2Storage(
+        r2 = R2Storage(
             endpoint=settings.OBJECT_STORAGE_ENDPOINT,
             access_key=settings.OBJECT_STORAGE_ACCESS_KEY,
             secret_key=settings.OBJECT_STORAGE_SECRET_KEY,
             bucket=settings.OBJECT_STORAGE_BUCKET,
         )
+        # Durante a transição, leituras que faltarem no R2 caem para o disco.
+        return _R2ComFallbackLocal(r2, LocalStorage())
     return LocalStorage()
 
 

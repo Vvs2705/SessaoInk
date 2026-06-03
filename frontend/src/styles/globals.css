@@ -228,4 +228,18 @@ textarea {
   }
 }
 
+/* ── Piso de legibilidade no mobile ──────────────────────────────
+   Texto abaixo de 12px é o que causa o "preciso dar zoom" no celular.
+   Eleva o mínimo só no mobile (<640px); a densidade do desktop fica
+   intacta. As tabelas desktop que usam 9–10px ficam em `lg:block`
+   (ocultas aqui), então não são afetadas. */
+@media (max-width: 639px) {
+  .text-\[9px\],
+  .text-\[10px\],
+  .text-\[11px\] {
+    font-size: 12px !important;
+    line-height: 1.35;
+  }
+}
+
 

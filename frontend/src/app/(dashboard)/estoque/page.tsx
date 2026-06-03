@@ -218,7 +218,87 @@ export default function EstoquePage() {
 
       {/* Lista de itens */}
       {!isLoading && itens.length > 0 && (
-        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] overflow-hidden">
+        <>
+        {/* Mobile: cards legíveis (sem zoom) */}
+        <div className="space-y-2.5 lg:hidden">
+          {itens.map((item) => (
+            <div
+              key={item.id}
+              className={cn(
+                "bg-[#0B171C] border rounded-[16px] p-4",
+                item.alerta_minimo ? "border-[#D99A3D]/40" : "border-[#243337]"
+              )}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  {item.alerta_minimo && (
+                    <AlertTriangle size={15} className="text-[#D99A3D] shrink-0" />
+                  )}
+                  <span className="truncate text-[15px] font-semibold text-[#F0EADD]">
+                    {item.nome}
+                  </span>
+                </div>
+                <span
+                  className={cn(
+                    "shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide",
+                    CATEGORIA_CONFIG[item.categoria]?.cls
+                  )}
+                >
+                  {CATEGORIA_CONFIG[item.categoria]?.label ?? item.categoria}
+                </span>
+              </div>
+
+              <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-[10px] bg-[#102128] py-2">
+                  <p className="text-[11px] text-[#87938F]">Atual</p>
+                  <p
+                    className={cn(
+                      "text-sm font-bold tabular-nums",
+                      item.alerta_minimo ? "text-[#D99A3D]" : "text-[#F0EADD]"
+                    )}
+                  >
+                    {formatQuantity(item.quantidade_atual, item.unidade)} {item.unidade}
+                  </p>
+                </div>
+                <div className="rounded-[10px] bg-[#102128] py-2">
+                  <p className="text-[11px] text-[#87938F]">Mínimo</p>
+                  <p className="text-sm font-semibold tabular-nums text-[#F0EADD]">
+                    {formatQuantity(item.quantidade_minima, item.unidade)} {item.unidade}
+                  </p>
+                </div>
+                <div className="rounded-[10px] bg-[#102128] py-2">
+                  <p className="text-[11px] text-[#87938F]">Custo</p>
+                  <p className="text-sm font-semibold tabular-nums text-[#F0EADD]">
+                    {formatCurrency(item.preco_custo)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={() => handleOpenMov(item)}
+                  className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[12px] border border-[#2F9285]/20 bg-[#2F9285]/10 text-sm font-semibold text-[#2F9285] active:scale-[0.98]"
+                >
+                  <ChevronUp size={15} /> Movimentar
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm(`Arquivar "${item.nome}"?`)) {
+                      deleteMutation.mutate(item.id);
+                    }
+                  }}
+                  title="Arquivar item"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border border-[#E35D5B]/10 bg-[#E35D5B]/5 text-[#E35D5B]/70 hover:text-[#E35D5B] active:scale-[0.98]"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop: tabela */}
+        <div className="hidden lg:block bg-[#0B171C] border border-[#243337] rounded-[18px] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -298,6 +378,7 @@ export default function EstoquePage() {
             </table>
           </div>
         </div>
+        </>
       )}
 
       {/* ─── Modal Novo Item ─── */}

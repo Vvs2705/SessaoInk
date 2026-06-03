@@ -25,6 +25,8 @@ from app.core.pagamentos import (
 from app.core.planos import get_plano
 from app.models.saas import Assinatura, PagamentoEvento
 from app.models.usuario import TipoUsuario, Usuario
+from app.services.assinatura import get_assinatura
+from app.services.assinatura import resumo as resumo_assinatura
 from app.services.audit import log_event
 
 logger = logging.getLogger(__name__)
@@ -106,6 +108,17 @@ async def criar_checkout(
             status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)
         ) from exc
 
+    # Vincula a intenção de assinatura ao estúdio (ATIVA de fato só no webhook
+    # quando o pagamento for aprovado).
+    assinatura = await get_assinatura(session, usuario.estudio_id)
+    if assinatura is not None:
+        assinatura.plano_slug = dados.plano_slug
+        assinatura.ciclo = dados.ciclo
+        assinatura.gateway = "mercadopago"
+        if resultado.get("id"):
+            assinatura.externo_id = str(resultado.get("id"))
+        await session.flush()
+
     await log_event(
         session,
         acao="pagamento.checkout.criado",
@@ -118,6 +131,16 @@ async def criar_checkout(
         commit=True,
     )
     return CheckoutResponse(**resultado)
+
+
+@router.get("/assinatura")
+async def status_assinatura(
+    session: AsyncSession = Depends(get_session),
+    usuario: Usuario = Depends(get_usuario_atual),
+):
+    """Status da assinatura do estúdio (plano, trial, dias restantes) para o frontend."""
+    assinatura = await get_assinatura(session, usuario.estudio_id)
+    return resumo_assinatura(assinatura)
 
 
 @router.post("/webhook", status_code=200)

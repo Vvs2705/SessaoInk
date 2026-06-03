@@ -360,6 +360,32 @@ async def registrar_solicitacao_orcamento(ip: str) -> int:
 
 
 # ---------------------------------------------------------------------------
+# Rate limiting — cadastro self-serve por IP (anti-abuso)
+# ---------------------------------------------------------------------------
+
+SIGNUP_LIMIT_PREFIX = "signup_limit:"
+SIGNUP_MAX_POR_JANELA = 5
+SIGNUP_JANELA_SEGUNDOS = 60 * 60  # 5 cadastros por IP por hora
+
+
+async def verificar_limite_signup(ip: str) -> bool:
+    """True se o IP excedeu o limite de cadastros na janela."""
+    async with get_redis() as r:
+        val = await r.get(f"{SIGNUP_LIMIT_PREFIX}{ip}")
+        return int(val) >= SIGNUP_MAX_POR_JANELA if val else False
+
+
+async def registrar_tentativa_signup(ip: str) -> int:
+    """Incrementa o contador de cadastros do IP; retorna o total."""
+    async with get_redis() as r:
+        chave = f"{SIGNUP_LIMIT_PREFIX}{ip}"
+        total = await r.incr(chave)
+        if total == 1:
+            await r.expire(chave, SIGNUP_JANELA_SEGUNDOS)
+        return total
+
+
+# ---------------------------------------------------------------------------
 # MFA — desafio de 2º fator e OTP por e-mail
 # ---------------------------------------------------------------------------
 

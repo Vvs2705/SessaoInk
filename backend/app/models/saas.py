@@ -67,6 +67,9 @@ class Assinatura(Base, UUIDMixin, TimestampMixin):
     externo_customer_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
     gateway: Mapped[str | None] = mapped_column(String(40), nullable=True)  # ex.: "mercadopago"
     ciclo: Mapped[str | None] = mapped_column(String(20), nullable=True)  # mensal/trimestral/...
+    # Slug do plano (catálogo em app/core/planos.py) — fonte do enforcement de
+    # entitlements. No trial guarda o tier oferecido (ex.: "profissional").
+    plano_slug: Mapped[str | None] = mapped_column(String(40), nullable=True)
 
 
 class PagamentoEvento(Base, UUIDMixin):

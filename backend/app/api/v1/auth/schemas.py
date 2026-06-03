@@ -2,12 +2,22 @@
 
 import uuid
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class LoginRequest(BaseModel):
     email: EmailStr
     senha: str
+
+
+class RegistroRequest(BaseModel):
+    """Cadastro self-serve de um novo estúdio (cria estúdio + admin + trial)."""
+
+    nome_estudio: str = Field(min_length=2, max_length=200)
+    nome: str = Field(min_length=2, max_length=200)
+    email: EmailStr
+    senha: str = Field(min_length=8, max_length=200)
+    website: str | None = None  # honeypot anti-bot (deve vir vazio)
 
 
 class TokenResponse(BaseModel):

@@ -88,6 +88,7 @@ _CSRF_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 _CSRF_EXEMPT_PREFIXES = (
     "/api/v1/public/",     # portal público — sem autenticação
     "/api/v1/auth/login",  # login — ainda não há sessão para proteger
+    "/api/v1/auth/registrar",  # cadastro self-serve — pré-sessão
     # MFA pré-sessão: ocorrem ANTES de a sessão (e o cookie csrf) existirem.
     # Protegidos pelo token de desafio (vinculado ao usuário, TTL curto).
     "/api/v1/auth/mfa/verificar",

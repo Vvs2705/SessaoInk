@@ -17,6 +17,7 @@ from app.api.v1.auth.schemas import (
     MfaEmailToggleResponse,
     MfaSetupResponse,
     MfaVerificarRequest,
+    RegistroRequest,
     SenhaAlterarRequest,
     TokenResponse,
     UsuarioResponse,
@@ -32,6 +33,7 @@ from app.core.redis import (
     obter_usuario_do_desafio,
     obter_usuario_do_refresh,
     registrar_envio_otp,
+    registrar_tentativa_signup,
     revogar_desafio_mfa,
     revogar_refresh_token,
     revogar_todas_sessoes_usuario,
@@ -39,6 +41,7 @@ from app.core.redis import (
     salvar_otp_email,
     salvar_refresh_token,
     verificar_bloqueio_login,
+    verificar_limite_signup,
     verificar_otp_email,
 )
 from app.core.request_context import get_client_ip, get_user_agent
@@ -48,7 +51,9 @@ from app.core.security import (
     hash_senha,
     verificar_senha,
 )
-from app.models.usuario import Usuario
+from app.core.slug import SLUG_MAX, SLUGS_RESERVADOS, slugify
+from app.models.usuario import Estudio, TipoUsuario, Usuario
+from app.services.assinatura import criar_trial
 from app.services.audit import log_event
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -130,6 +135,91 @@ async def _emitir_sessao(response: Response, usuario: Usuario) -> None:
         path="/api/v1/auth/refresh",
     )
     _set_csrf_cookie(response)
+
+
+async def _slug_unico(session: AsyncSession, nome_base: str) -> str:
+    """Gera um slug único para o estúdio a partir do nome (evita reservados/colisões)."""
+    base = slugify(nome_base)[:SLUG_MAX] or "estudio"
+    if len(base) < 3:
+        base = f"{base}-estudio"[:SLUG_MAX]
+
+    async def _ocupado(s: str) -> bool:
+        if s in SLUGS_RESERVADOS:
+            return True
+        return bool(await session.scalar(select(Estudio.id).where(Estudio.slug == s)))
+
+    candidato = base
+    n = 1
+    while await _ocupado(candidato):
+        n += 1
+        sufixo = f"-{n}"
+        candidato = f"{base[: SLUG_MAX - len(sufixo)]}{sufixo}"
+    return candidato
+
+
+@router.post("/registrar", response_model=LoginResponse, status_code=201)
+async def registrar(
+    dados: RegistroRequest,
+    request: Request,
+    response: Response,
+    session: AsyncSession = Depends(get_session),
+):
+    """Cadastro self-serve: cria estúdio + usuário ADMIN + trial e já loga.
+
+    Pré-sessão (isento de CSRF). Honeypot + rate limit por IP contra abuso.
+    """
+    # Honeypot: bot preencheu o campo oculto → finge sucesso e descarta.
+    if dados.website:
+        return LoginResponse(message="Cadastro realizado com sucesso")
+
+    ip = get_client_ip(request)
+    if await verificar_limite_signup(ip):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Muitos cadastros a partir deste IP. Tente novamente mais tarde.",
+        )
+
+    email = dados.email.lower().strip()
+    if await session.scalar(select(Usuario.id).where(Usuario.email == email)):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Já existe uma conta com este e-mail.",
+        )
+
+    slug = await _slug_unico(session, dados.nome_estudio)
+    estudio = Estudio(nome=dados.nome_estudio.strip(), slug=slug)
+    session.add(estudio)
+    await session.flush()
+
+    usuario = Usuario(
+        estudio_id=estudio.id,
+        nome=dados.nome.strip(),
+        email=email,
+        senha_hash=hash_senha(dados.senha),
+        tipo=TipoUsuario.ADMIN,
+    )
+    session.add(usuario)
+    await session.flush()
+
+    await criar_trial(session, estudio.id)
+    await registrar_tentativa_signup(ip)
+    await log_event(
+        session,
+        acao="auth.signup",
+        estudio_id=estudio.id,
+        actor_usuario_id=usuario.id,
+        actor_tipo=usuario.tipo.value,
+        entidade="estudio",
+        entidade_id=str(estudio.id),
+        ip=ip,
+        user_agent=get_user_agent(request),
+        dados={"slug": slug},
+    )
+    await session.commit()
+    await session.refresh(usuario)
+
+    await _emitir_sessao(response, usuario)
+    return LoginResponse(message="Cadastro realizado com sucesso")
 
 
 @router.post("/login", response_model=LoginResponse)

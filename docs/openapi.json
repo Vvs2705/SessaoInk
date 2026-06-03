@@ -676,6 +676,79 @@
         }
       }
     },
+    "/api/v1/auth/esqueci-senha": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Esqueci Senha",
+        "operationId": "esqueci_senha_api_v1_auth_esqueci_senha_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EsqueciSenhaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/resetar-senha": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Resetar Senha",
+        "operationId": "resetar_senha_api_v1_auth_resetar_senha_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetarSenhaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/lgpd/anonimizar": {
       "post": {
         "tags": [
@@ -8117,6 +8190,20 @@
         ],
         "title": "DocumentoResponse"
       },
+      "EsqueciSenhaRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "EsqueciSenhaRequest"
+      },
       "EstoqueItemCreate": {
         "properties": {
           "nome": {
@@ -8298,6 +8385,127 @@
               }
             ],
             "title": "Email Notificacao"
+          },
+          "endereco_cep": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endereco Cep"
+          },
+          "endereco_logradouro": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endereco Logradouro"
+          },
+          "endereco_numero": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endereco Numero"
+          },
+          "endereco_complemento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endereco Complemento"
+          },
+          "endereco_bairro": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endereco Bairro"
+          },
+          "endereco_cidade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endereco Cidade"
+          },
+          "endereco_uf": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endereco Uf"
+          },
+          "endereco_pais": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endereco Pais"
+          },
+          "google_negocio_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Google Negocio Url"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
           }
         },
         "type": "object",
@@ -8366,6 +8574,28 @@
             "type": "boolean",
             "title": "Has Foto",
             "default": false
+          },
+          "endereco_completo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endereco Completo"
+          },
+          "como_chegar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Como Chegar Url"
           }
         },
         "type": "object",
@@ -8469,6 +8699,149 @@
             "type": "boolean",
             "title": "Has Foto",
             "default": false
+          },
+          "endereco_cep": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endereco Cep"
+          },
+          "endereco_logradouro": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endereco Logradouro"
+          },
+          "endereco_numero": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endereco Numero"
+          },
+          "endereco_complemento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endereco Complemento"
+          },
+          "endereco_bairro": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endereco Bairro"
+          },
+          "endereco_cidade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endereco Cidade"
+          },
+          "endereco_uf": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endereco Uf"
+          },
+          "endereco_pais": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endereco Pais"
+          },
+          "google_negocio_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Google Negocio Url"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "endereco_completo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endereco Completo"
+          },
+          "como_chegar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Como Chegar Url"
           }
         },
         "type": "object",
@@ -10109,6 +10482,28 @@
           "dados"
         ],
         "title": "RelatorioTemporalResponse"
+      },
+      "ResetarSenhaRequest": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 20,
+            "title": "Token"
+          },
+          "senha_nova": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 8,
+            "title": "Senha Nova"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "senha_nova"
+        ],
+        "title": "ResetarSenhaRequest"
       },
       "ResultadoAtendimento": {
         "properties": {

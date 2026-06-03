@@ -34,6 +34,18 @@ class Estudio(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     # Email para receber notificações de novos orçamentos pelo portal público
     email_notificacao: Mapped[str | None] = mapped_column(String(320), nullable=True)
 
+    endereco_cep: Mapped[str | None] = mapped_column(String(12), nullable=True)
+    endereco_logradouro: Mapped[str | None] = mapped_column(String(180), nullable=True)
+    endereco_numero: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    endereco_complemento: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    endereco_bairro: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    endereco_cidade: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    endereco_uf: Mapped[str | None] = mapped_column(String(2), nullable=True)
+    endereco_pais: Mapped[str | None] = mapped_column(String(80), nullable=True, default="Brasil")
+    google_negocio_url: Mapped[str | None] = mapped_column(String(600), nullable=True)
+    latitude: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    longitude: Mapped[str | None] = mapped_column(String(40), nullable=True)
+
     usuarios: Mapped[list["Usuario"]] = relationship(
         "Usuario", back_populates="estudio", lazy="selectin"
     )

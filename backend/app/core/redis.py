@@ -481,3 +481,64 @@ async def revogar_todas_sessoes_usuario(usuario_id: str) -> int:
             )
         return revogadas
 
+
+# ---------------------------------------------------------------------------
+# Recuperação de senha
+# ---------------------------------------------------------------------------
+
+RESET_SENHA_PREFIX = "reset_senha:"
+RESET_SENHA_RATE_PREFIX = "reset_senha_rate:"
+RESET_SENHA_TTL_SEGUNDOS = 30 * 60
+RESET_SENHA_MAX_SOLICITACOES = 5
+
+
+async def salvar_token_reset_senha(usuario_id: str) -> str:
+    """Cria um token opaco de reset e salva somente o hash no Redis."""
+    from app.core.security import hash_refresh_token
+
+    token = secrets.token_urlsafe(32)
+
+    async with get_redis() as r:
+        await r.set(
+            f"{RESET_SENHA_PREFIX}{hash_refresh_token(token)}",
+            usuario_id,
+            ex=RESET_SENHA_TTL_SEGUNDOS,
+        )
+
+    return token
+
+
+async def obter_usuario_do_token_reset_senha(token: str) -> str | None:
+    """Retorna o usuario_id do token de reset ou None."""
+    from app.core.security import hash_refresh_token
+
+    async with get_redis() as r:
+        return await r.get(f"{RESET_SENHA_PREFIX}{hash_refresh_token(token)}")
+
+
+async def revogar_token_reset_senha(token: str) -> None:
+    """Consome o token de reset."""
+    from app.core.security import hash_refresh_token
+
+    async with get_redis() as r:
+        await r.delete(f"{RESET_SENHA_PREFIX}{hash_refresh_token(token)}")
+
+
+async def registrar_solicitacao_reset_senha(ip: str) -> int:
+    """Conta solicitações de reset por IP."""
+    async with get_redis() as r:
+        chave = f"{RESET_SENHA_RATE_PREFIX}{ip}"
+        total = await r.incr(chave)
+
+        if total == 1:
+            await r.expire(chave, RESET_SENHA_TTL_SEGUNDOS)
+
+        return total
+
+
+async def verificar_limite_reset_senha(ip: str) -> bool:
+    """Retorna True quando o IP excedeu o limite."""
+    async with get_redis() as r:
+        val = await r.get(f"{RESET_SENHA_RATE_PREFIX}{ip}")
+        return int(val) >= RESET_SENHA_MAX_SOLICITACOES if val else False
+

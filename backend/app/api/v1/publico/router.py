@@ -54,6 +54,8 @@ class EstudioPublicoResponse(BaseModel):
     instagram: str | None
     has_logo: bool = False
     has_foto: bool = False
+    endereco_completo: str | None = None
+    como_chegar_url: str | None = None
     model_config = {"from_attributes": True}
 
 
@@ -154,6 +156,8 @@ async def perfil_publico(
     slug: str,
     session: AsyncSession = Depends(get_session),
 ):
+    from app.utils.endereco import como_chegar_url_estudio, endereco_completo_estudio
+
     result = await session.execute(
         select(Estudio).where(Estudio.slug == slug, Estudio.ativo)
     )
@@ -169,6 +173,8 @@ async def perfil_publico(
         instagram=estudio.instagram,
         has_logo=bool(estudio.logo_path),
         has_foto=bool(estudio.foto_path),
+        endereco_completo=endereco_completo_estudio(estudio),
+        como_chegar_url=como_chegar_url_estudio(estudio),
     )
 
 

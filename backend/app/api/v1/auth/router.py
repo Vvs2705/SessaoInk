@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.auth.dependencies import get_usuario_atual
 from app.api.v1.auth.schemas import (
+    EsqueciSenhaRequest,
     LoginRequest,
     LoginResponse,
     MfaAtivarRequest,
@@ -18,6 +19,7 @@ from app.api.v1.auth.schemas import (
     MfaSetupResponse,
     MfaVerificarRequest,
     RegistroRequest,
+    ResetarSenhaRequest,
     SenhaAlterarRequest,
     TokenResponse,
     UsuarioResponse,
@@ -25,22 +27,27 @@ from app.api.v1.auth.schemas import (
 from app.core import mfa as mfa_core
 from app.core.config import settings
 from app.core.database import get_session
-from app.core.email import enviar_codigo_mfa
+from app.core.email import enviar_codigo_mfa, enviar_email_reset_senha
 from app.core.redis import (
     MFA_OTP_MAX_ENVIOS,
     incrementar_tentativa_login,
     limpar_tentativas_login,
     obter_usuario_do_desafio,
     obter_usuario_do_refresh,
+    obter_usuario_do_token_reset_senha,
     registrar_envio_otp,
+    registrar_solicitacao_reset_senha,
     registrar_tentativa_signup,
     revogar_desafio_mfa,
     revogar_refresh_token,
     revogar_todas_sessoes_usuario,
+    revogar_token_reset_senha,
     salvar_desafio_mfa,
     salvar_otp_email,
     salvar_refresh_token,
+    salvar_token_reset_senha,
     verificar_bloqueio_login,
+    verificar_limite_reset_senha,
     verificar_limite_signup,
     verificar_otp_email,
 )
@@ -696,3 +703,111 @@ async def mfa_verificar(
     )
     await _emitir_sessao(response, usuario)
     return LoginResponse()
+
+
+@router.post("/esqueci-senha", status_code=status.HTTP_202_ACCEPTED)
+async def esqueci_senha(
+    dados: EsqueciSenhaRequest,
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+):
+    ip = get_client_ip(request)
+
+    if await verificar_limite_reset_senha(ip):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Muitas solicitações. Aguarde alguns minutos.",
+        )
+
+    await registrar_solicitacao_reset_senha(ip)
+
+    email = dados.email.lower().strip()
+
+    usuario = await session.scalar(
+        select(Usuario).where(
+            Usuario.email == email,
+            Usuario.ativo,
+        )
+    )
+
+    mensagem_generica = {
+        "message": "Se o e-mail existir, enviaremos instruções de recuperação."
+    }
+
+    if not usuario:
+        return mensagem_generica
+
+    token = await salvar_token_reset_senha(str(usuario.id))
+    reset_url = f"{settings.APP_URL}/resetar-senha?token={token}"
+
+    await enviar_email_reset_senha(usuario.email, usuario.nome, reset_url)
+
+    await log_event(
+        session,
+        acao="auth.password_reset.request",
+        estudio_id=usuario.estudio_id,
+        actor_usuario_id=usuario.id,
+        actor_tipo=usuario.tipo.value,
+        entidade="usuario",
+        entidade_id=str(usuario.id),
+        ip=get_client_ip(request),
+        user_agent=get_user_agent(request),
+        commit=True,
+    )
+
+    return mensagem_generica
+
+
+@router.post("/resetar-senha", status_code=status.HTTP_204_NO_CONTENT)
+async def resetar_senha(
+    dados: ResetarSenhaRequest,
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+):
+    usuario_id_str = await obter_usuario_do_token_reset_senha(dados.token)
+
+    if not usuario_id_str:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Link inválido ou expirado.",
+        )
+
+    try:
+        usuario_id = uuid.UUID(usuario_id_str)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Link inválido ou expirado.",
+        ) from exc
+
+    usuario = await session.scalar(
+        select(Usuario).where(
+            Usuario.id == usuario_id,
+            Usuario.ativo,
+        )
+    )
+
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Link inválido ou expirado.",
+        )
+
+    usuario.senha_hash = hash_senha(dados.senha_nova)
+
+    await revogar_token_reset_senha(dados.token)
+    await revogar_todas_sessoes_usuario(str(usuario.id))
+
+    await log_event(
+        session,
+        acao="auth.password_reset.success",
+        estudio_id=usuario.estudio_id,
+        actor_usuario_id=usuario.id,
+        actor_tipo=usuario.tipo.value,
+        entidade="usuario",
+        entidade_id=str(usuario.id),
+        ip=get_client_ip(request),
+        user_agent=get_user_agent(request),
+    )
+
+    await session.commit()

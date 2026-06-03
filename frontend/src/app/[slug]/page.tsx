@@ -24,6 +24,8 @@ interface EstudioPublico {
   instagram: string | null;
   has_logo: boolean;
   has_foto: boolean;
+  endereco_completo: string | null;
+  como_chegar_url: string | null;
 }
 
 interface PortfolioItem {
@@ -145,12 +147,26 @@ export default async function PortalPublicoPage({ params }: Props) {
         </h1>
 
         {/* Localização */}
-        {(estudio.cidade || estudio.uf) && (
-          <div className="flex items-center justify-center gap-1.5 text-sm text-[#87938F] mb-3">
-            <MapPin size={14} className="text-[#2F9285]" />
-            <span>
-              {[estudio.cidade, estudio.uf].filter(Boolean).join(" — ")}
-            </span>
+        {(estudio.endereco_completo || estudio.cidade || estudio.uf) && (
+          <div className="mt-4 flex flex-col items-center gap-3 mb-4">
+            <div className="flex max-w-xl items-center justify-center gap-2 text-center text-sm text-[#87938F]">
+              <MapPin size={16} className="shrink-0 text-[#2F9285]" />
+              <span>
+                {estudio.endereco_completo ||
+                  [estudio.cidade, estudio.uf].filter(Boolean).join(" — ")}
+              </span>
+            </div>
+
+            {estudio.como_chegar_url && (
+              <a
+                href={estudio.como_chegar_url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-9 items-center justify-center rounded-full border border-[#2F9285]/30 bg-[#2F9285]/10 px-5 text-xs font-bold text-[#2F9285] transition hover:bg-[#2F9285] hover:text-[#050B12]"
+              >
+                Como chegar
+              </a>
+            )}
           </div>
         )}
 

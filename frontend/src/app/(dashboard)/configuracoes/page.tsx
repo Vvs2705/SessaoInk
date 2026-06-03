@@ -43,6 +43,20 @@ interface Estudio {
   email_notificacao: string | null;
   has_logo: boolean;
   has_foto: boolean;
+
+  endereco_cep: string | null;
+  endereco_logradouro: string | null;
+  endereco_numero: string | null;
+  endereco_complemento: string | null;
+  endereco_bairro: string | null;
+  endereco_cidade: string | null;
+  endereco_uf: string | null;
+  endereco_pais: string | null;
+  google_negocio_url: string | null;
+  latitude: string | null;
+  longitude: string | null;
+  endereco_completo: string | null;
+  como_chegar_url: string | null;
 }
 
 interface Usuario {
@@ -928,6 +942,152 @@ export default function ConfiguracoesPage() {
                           {atualizarEstudio.isPending ? "Salvando..." : "Salvar alterações"}
                         </button>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Endereço do Estúdio */}
+                  <div className="rounded-[18px] border border-[#243337] bg-[#0B171C] p-6 space-y-6">
+                    <div>
+                      <h2 className="text-base font-semibold text-[#F0EADD]">
+                        Endereço do Estúdio
+                      </h2>
+                      <p className="text-xs text-[#87938F]">
+                        Essas informações aparecem no portal público para o cliente saber como chegar.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                          CEP
+                        </label>
+                        <input
+                          value={val("endereco_cep")}
+                          onChange={(event) => handleCampoEstudio("endereco_cep", event.target.value)}
+                          className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                          placeholder="00000-000"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                          Bairro
+                        </label>
+                        <input
+                          value={val("endereco_bairro")}
+                          onChange={(event) => handleCampoEstudio("endereco_bairro", event.target.value)}
+                          className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                          placeholder="Centro"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                          Rua / Logradouro
+                        </label>
+                        <input
+                          value={val("endereco_logradouro")}
+                          onChange={(event) => handleCampoEstudio("endereco_logradouro", event.target.value)}
+                          className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                          placeholder="Rua Exemplo"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                          Número
+                        </label>
+                        <input
+                          value={val("endereco_numero")}
+                          onChange={(event) => handleCampoEstudio("endereco_numero", event.target.value)}
+                          className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                          placeholder="123"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                          Complemento
+                        </label>
+                        <input
+                          value={val("endereco_complemento")}
+                          onChange={(event) => handleCampoEstudio("endereco_complemento", event.target.value)}
+                          className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                          placeholder="Sala 2, fundos, etc."
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                          Cidade
+                        </label>
+                        <input
+                          value={val("endereco_cidade")}
+                          onChange={(event) => handleCampoEstudio("endereco_cidade", event.target.value)}
+                          className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                          placeholder="São Paulo"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                          UF
+                        </label>
+                        <input
+                          value={val("endereco_uf")}
+                          onChange={(event) =>
+                            handleCampoEstudio("endereco_uf", event.target.value.toUpperCase().slice(0, 2))
+                          }
+                          maxLength={2}
+                          className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm uppercase text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                          placeholder="SP"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                          Link do Google Negócios / Google Maps
+                        </label>
+                        <input
+                          value={val("google_negocio_url")}
+                          onChange={(event) => handleCampoEstudio("google_negocio_url", event.target.value)}
+                          className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                          placeholder="https://maps.app.goo.gl/..."
+                        />
+                        <p className="text-[10px] text-[#87938F] mt-1">
+                          Esse link será usado no botão “Como chegar” do portal público.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2">
+                      {estudio?.como_chegar_url ? (
+                        <a
+                          href={estudio.como_chegar_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[#2F9285]/30 bg-[#2F9285]/10 px-4 text-xs font-semibold text-[#2F9285] hover:bg-[#2F9285] hover:text-[#050B12] transition-colors"
+                        >
+                          Testar como chegar
+                        </a>
+                      ) : (
+                        <div />
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={handleSalvarEstudio}
+                        disabled={!formEditado || atualizarEstudio.isPending}
+                        className={cn(
+                          "flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm font-medium transition-all",
+                          formEditado
+                            ? "bg-[#2F9285] text-[#050B12] hover:bg-[#2F9285]/90"
+                            : "bg-[#243337] text-[#87938F] cursor-not-allowed"
+                        )}
+                      >
+                        <Save size={14} />
+                        {atualizarEstudio.isPending ? "Salvando..." : "Salvar alterações"}
+                      </button>
                     </div>
                   </div>
                 </>

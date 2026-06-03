@@ -94,3 +94,138 @@ textarea {
   display: none;
 }
 
+.tattoo-login-svg {
+  transform-origin: 70% 28%;
+}
+
+.tattoo-line {
+  stroke-dasharray: 620;
+  stroke-dashoffset: 620;
+  animation: tattooDraw 4.8s ease-in-out infinite;
+}
+
+.tattoo-line-two {
+  animation-delay: 0.45s;
+}
+
+.tattoo-line-three {
+  animation-delay: 0.85s;
+}
+
+.tattoo-machine {
+  transform-origin: 260px 130px;
+  animation: tattooMachineMove 4.8s ease-in-out infinite;
+}
+
+.tattoo-sparks {
+  animation: tattooSparkPulse 1.2s ease-in-out infinite;
+}
+
+.tattoo-login-once {
+  opacity: 1;
+  animation: tattooLoginLayerFadeOut 5.6s ease forwards;
+  contain: layout paint;
+}
+
+.tattoo-login-once .tattoo-line,
+.tattoo-login-once .tattoo-machine,
+.tattoo-login-once .tattoo-sparks {
+  animation-iteration-count: 1;
+}
+
+.tattoo-login-once .tattoo-line {
+  animation-fill-mode: forwards;
+}
+
+@keyframes tattooDraw {
+  0% {
+    stroke-dashoffset: 620;
+    opacity: 0;
+  }
+
+  14% {
+    opacity: 1;
+  }
+
+  55% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+
+  78% {
+    stroke-dashoffset: 0;
+    opacity: 0.9;
+  }
+
+  100% {
+    stroke-dashoffset: -620;
+    opacity: 0;
+  }
+}
+
+@keyframes tattooMachineMove {
+  0% {
+    transform: translate3d(28px, -12px, 0) rotate(-10deg);
+  }
+
+  28% {
+    transform: translate3d(-18px, 44px, 0) rotate(8deg);
+  }
+
+  52% {
+    transform: translate3d(-68px, 96px, 0) rotate(14deg);
+  }
+
+  76% {
+    transform: translate3d(-26px, 34px, 0) rotate(2deg);
+  }
+
+  100% {
+    transform: translate3d(28px, -12px, 0) rotate(-10deg);
+  }
+}
+
+@keyframes tattooSparkPulse {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  45% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  70% {
+    opacity: 0.25;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes tattooLoginLayerFadeOut {
+  0%,
+  82% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tattoo-line,
+  .tattoo-machine,
+  .tattoo-sparks,
+  .tattoo-login-once {
+    animation: none !important;
+  }
+
+  .tattoo-line {
+    stroke-dashoffset: 0;
+    opacity: 0.65;
+  }
+}
+
+

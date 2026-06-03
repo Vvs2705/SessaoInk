@@ -226,3 +226,49 @@ async def enviar_lead_interesse_plano(
         logger.info(f"Lead de interesse enviado para {destino} (plano {plano})")
     except Exception as exc:
         logger.warning(f"Falha ao enviar lead via Resend: {exc}")
+
+
+async def enviar_email_reset_senha(
+    email_destino: str,
+    nome: str,
+    reset_url: str,
+) -> bool:
+    """Envia e-mail com link de redefinição de senha."""
+    if not _resend_configurado():
+        logger.info(
+            "reset_senha_email_sem_resend",
+            extra={"extra": {"email": email_destino, "reset_url": reset_url}},
+        )
+        return False
+
+    html = f"""
+    <div style="font-family:Arial,sans-serif;background:#050B12;color:#F0EADD;padding:32px">
+      <div style="max-width:560px;margin:0 auto;background:#0B171C;border:1px solid #243337;border-radius:24px;padding:28px">
+        <p style="color:#2F9285;font-weight:700;letter-spacing:.12em;text-transform:uppercase">SessãoInk</p>
+        <h1 style="margin:0 0 12px;font-size:24px">Redefinição de senha</h1>
+        <p style="color:#87938F;line-height:1.6">Olá {nome}, recebemos uma solicitação para redefinir sua senha.</p>
+        <p style="color:#87938F;line-height:1.6">O link abaixo expira em 30 minutos.</p>
+        <p style="margin:28px 0">
+          <a href="{reset_url}" style="background:#2F9285;color:#050B12;padding:14px 18px;border-radius:14px;text-decoration:none;font-weight:700">
+            Criar nova senha
+          </a>
+        </p>
+        <p style="color:#87938F;font-size:13px;line-height:1.6">
+          Se você não solicitou essa alteração, ignore este e-mail.
+        </p>
+      </div>
+    </div>
+    """
+
+    try:
+        await asyncio.to_thread(
+            _enviar_sync,
+            email_destino,
+            "[SessãoInk] Redefinição de senha",
+            html,
+        )
+        logger.info(f"Email de reset enviado para {email_destino}")
+        return True
+    except Exception as exc:
+        logger.warning(f"Falha ao enviar email de reset: {exc}")
+        return False

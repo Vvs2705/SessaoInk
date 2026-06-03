@@ -79,3 +79,12 @@ class UsuarioResponse(BaseModel):
 class SenhaAlterarRequest(BaseModel):
     senha_atual: str
     senha_nova: str
+
+
+class EsqueciSenhaRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetarSenhaRequest(BaseModel):
+    token: str = Field(min_length=20, max_length=300)
+    senha_nova: str = Field(min_length=8, max_length=200)

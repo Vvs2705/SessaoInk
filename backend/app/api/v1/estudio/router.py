@@ -35,8 +35,27 @@ class EstudioResponse(BaseModel):
     has_logo: bool = False
     has_foto: bool = False
 
+    endereco_cep: str | None = None
+    endereco_logradouro: str | None = None
+    endereco_numero: str | None = None
+    endereco_complemento: str | None = None
+    endereco_bairro: str | None = None
+    endereco_cidade: str | None = None
+    endereco_uf: str | None = None
+    endereco_pais: str | None = None
+    google_negocio_url: str | None = None
+    latitude: str | None = None
+    longitude: str | None = None
+    endereco_completo: str | None = None
+    como_chegar_url: str | None = None
+
     @classmethod
     def de_estudio(cls, estudio: Estudio) -> "EstudioResponse":
+        from app.utils.endereco import (
+            como_chegar_url_estudio,
+            endereco_completo_estudio,
+        )
+
         return cls(
             id=estudio.id,
             nome=estudio.nome,
@@ -49,6 +68,19 @@ class EstudioResponse(BaseModel):
             email_notificacao=estudio.email_notificacao,
             has_logo=bool(estudio.logo_path),
             has_foto=bool(estudio.foto_path),
+            endereco_cep=estudio.endereco_cep,
+            endereco_logradouro=estudio.endereco_logradouro,
+            endereco_numero=estudio.endereco_numero,
+            endereco_complemento=estudio.endereco_complemento,
+            endereco_bairro=estudio.endereco_bairro,
+            endereco_cidade=estudio.endereco_cidade,
+            endereco_uf=estudio.endereco_uf,
+            endereco_pais=estudio.endereco_pais,
+            google_negocio_url=estudio.google_negocio_url,
+            latitude=estudio.latitude,
+            longitude=estudio.longitude,
+            endereco_completo=endereco_completo_estudio(estudio),
+            como_chegar_url=como_chegar_url_estudio(estudio),
         )
 
 
@@ -60,6 +92,18 @@ class EstudioAtualizarRequest(BaseModel):
     telefone: str | None = None
     instagram: str | None = None
     email_notificacao: str | None = None
+
+    endereco_cep: str | None = None
+    endereco_logradouro: str | None = None
+    endereco_numero: str | None = None
+    endereco_complemento: str | None = None
+    endereco_bairro: str | None = None
+    endereco_cidade: str | None = None
+    endereco_uf: str | None = None
+    endereco_pais: str | None = None
+    google_negocio_url: str | None = None
+    latitude: str | None = None
+    longitude: str | None = None
 
 
 class SlugAlterarRequest(BaseModel):
@@ -118,10 +162,29 @@ async def atualizar_estudio(
     usuario: Usuario = Depends(require_role(TipoUsuario.ADMIN)),
 ):
     """Atualiza dados do estúdio. Apenas ADMIN."""
+    from app.utils.endereco import validar_google_url
+
     estudio = await _carregar_estudio(session, usuario.estudio_id)
     campos = dados.model_dump(exclude_unset=True)
+
+    if "google_negocio_url" in campos:
+        try:
+            campos["google_negocio_url"] = validar_google_url(campos["google_negocio_url"])
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=str(exc),
+            ) from exc
+
+    if "endereco_uf" in campos and campos["endereco_uf"]:
+        campos["endereco_uf"] = campos["endereco_uf"].upper()[:2]
+
+    if "uf" in campos and campos["uf"]:
+        campos["uf"] = campos["uf"].upper()[:2]
+
     for campo, valor in campos.items():
         setattr(estudio, campo, valor)
+
     await session.commit()
     await session.refresh(estudio)
     return EstudioResponse.de_estudio(estudio)

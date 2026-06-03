@@ -334,7 +334,7 @@ export default function EstoquePage() {
               </div>
 
               {/* Categoria + Unidade */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[#87938F]">Categoria</label>
                   <select
@@ -361,7 +361,7 @@ export default function EstoquePage() {
               </div>
 
               {/* Qtd Atual + Mínima */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[#87938F]">Qtd. Atual</label>
                   <input
@@ -441,7 +441,7 @@ export default function EstoquePage() {
               </div>
 
               {/* Direção */}
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setDeltaDir("entrada")}

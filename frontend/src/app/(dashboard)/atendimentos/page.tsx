@@ -150,7 +150,7 @@ function NovoAtendimentoModal({ onClose }: { onClose: () => void }) {
               <label className={labelCls}>
                 Tipo <span className="text-[#E35D5B]">*</span>
               </label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {TIPOS.map(t => (
                   <button
                     key={t}
@@ -170,7 +170,7 @@ function NovoAtendimentoModal({ onClose }: { onClose: () => void }) {
             </div>
 
             {/* Estilo + Parte do corpo */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Estilo</label>
                 <input
@@ -204,7 +204,7 @@ function NovoAtendimentoModal({ onClose }: { onClose: () => void }) {
             </div>
 
             {/* Valores */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Valor Total (R$)</label>
                 <input

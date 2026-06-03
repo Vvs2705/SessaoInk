@@ -374,7 +374,7 @@ export default function FlashArtsPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Input: Preço */}
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[#87938F] flex items-center gap-1"><DollarSign size={12} /> Preço (R$)</label>

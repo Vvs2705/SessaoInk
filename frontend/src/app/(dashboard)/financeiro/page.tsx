@@ -1039,7 +1039,7 @@ export default function FinanceiroPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[#87938F]">Tipo de Lançamento *</label>
                   <select
@@ -1087,7 +1087,7 @@ export default function FinanceiroPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[#87938F]">Valor Bruto *</label>
                   <input
@@ -1132,7 +1132,7 @@ export default function FinanceiroPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[#87938F]">Categoria</label>
                   <select
@@ -1166,7 +1166,7 @@ export default function FinanceiroPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[#87938F]">Forma de Pagamento</label>
                   <select
@@ -1195,7 +1195,7 @@ export default function FinanceiroPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[#87938F]">Artista</label>
                   <select
@@ -1228,7 +1228,7 @@ export default function FinanceiroPage() {
               </div>
 
               {recorrencia !== "NENHUMA" && (
-                <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in slide-in-from-top-2">
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-[#2F9285]">Parcela Atual</label>
                     <input
@@ -1323,7 +1323,7 @@ export default function FinanceiroPage() {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[#87938F]">Valor do Serviço *</label>
                   <input

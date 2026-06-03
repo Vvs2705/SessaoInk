@@ -192,7 +192,7 @@ export default function AtendimentoDetalhePage() {
           <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4">
             <h3 className="text-xs font-bold text-[#87938F] uppercase tracking-wider">Dados do Pedido</h3>
             
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-xs text-[#87938F] block mb-0.5">Estilo</span>
                 <span className="text-[#F0EADD] font-medium">{atendimento.estilo || "—"}</span>
@@ -235,7 +235,7 @@ export default function AtendimentoDetalhePage() {
                 <Loader2 size={18} className="animate-spin text-[#2F9285]" /> Buscando referências...
               </div>
             ) : imagens.length > 0 ? (
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {imagens.map((filename) => {
                   const imgUrl = `${API_URL}/api/v1/atendimentos/${id}/imagens/${filename}`;
                   return (

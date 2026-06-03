@@ -161,7 +161,7 @@ export default function DetalhesAtendimentoModal({ atendimento, onClose }: Detal
             <div className="bg-[#050B12] border border-[#243337] rounded-[14px] p-4 space-y-3">
               <h3 className="text-xs font-bold text-[#87938F] uppercase tracking-wider">Dados do Pedido</h3>
               
-              <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                 <div>
                   <span className="text-xs text-[#87938F] block">Estilo</span>
                   <span className="text-[#F0EADD] font-medium">{atendimento.estilo || "—"}</span>
@@ -248,7 +248,7 @@ export default function DetalhesAtendimentoModal({ atendimento, onClose }: Detal
                   Buscando referências...
                 </div>
               ) : imagens.length > 0 ? (
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {imagens.map((filename) => {
                     const imgUrl = `${API_URL}/api/v1/atendimentos/${atendimento.id}/imagens/${filename}`;
                     return (
@@ -299,7 +299,7 @@ export default function DetalhesAtendimentoModal({ atendimento, onClose }: Detal
               </div>
 
               {/* Valores */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-[#87938F] mb-1.5">
                     Valor Total (R$)

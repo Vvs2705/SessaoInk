@@ -141,7 +141,7 @@ function ClienteModal({ cliente, onClose }: ClienteModalProps) {
             </div>
 
             {/* Telefone + Instagram */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={cn(labelCls, "flex items-center gap-1")}>
                   <Phone size={11} />
@@ -170,7 +170,7 @@ function ClienteModal({ cliente, onClose }: ClienteModalProps) {
             </div>
 
             {/* Email + Data nascimento */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={cn(labelCls, "flex items-center gap-1")}>
                   <Mail size={11} />

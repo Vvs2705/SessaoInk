@@ -66,6 +66,15 @@ _equipes/
 ROADMAP.md
 # docs/ agora é versionado (P1 — documentação operacional do MVP)
 
+# Handoffs / passo a passo / planejamento de agentes — APENAS LOCAL (nunca versionar).
+# Não fazem parte do código/sistema; evitam ruído no repo e na CI.
+# (README.md, CHANGELOG.md, CLAUDE.md e docs/ continuam versionados.)
+FINALIZACOES_NECESSARIAS.md
+CORRECAO_MOBILE_RESPONSIVO.md
+*HANDOFF*.md
+PLANO_*.md
+CONTINUACAO_*.md
+
 # Testes — o CÓDIGO de teste sobe (CI bloqueante P0-09); só artefatos são ignorados
 backend/test.db
 backend/**/*.db

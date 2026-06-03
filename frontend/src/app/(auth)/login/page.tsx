@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -383,6 +384,15 @@ export default function LoginPage() {
                 ) : "Entrar"}
               </button>
             </form>
+          )}
+
+          {!mfaRequired && (
+            <p className="mt-4 text-center text-xs text-[#87938F]">
+              Não tem conta?{" "}
+              <Link href="/cadastro" className="text-[#2F9285] font-semibold hover:underline">
+                Criar conta grátis
+              </Link>
+            </p>
           )}
         </div>
 

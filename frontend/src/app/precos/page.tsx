@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Check, X, Star } from "lucide-react";
 
 type Recurso = { label: string; incluso: boolean; detalhe: string | null };
@@ -159,15 +160,21 @@ export default function PrecosPage() {
                     </p>
                   )}
 
-                  <button
-                    onClick={() => setLeadPlano(p)}
-                    className={`mt-4 mb-5 w-full py-2.5 rounded-[12px] font-semibold text-sm transition-colors ${
+                  <Link
+                    href="/cadastro"
+                    className={`mt-4 block w-full py-2.5 rounded-[12px] font-semibold text-sm text-center transition-colors ${
                       p.destaque
                         ? "bg-[#2F9285] text-[#050B12] hover:bg-[#34a394]"
                         : "bg-[#102128] text-[#F0EADD] border border-[#243337] hover:border-[#2F9285]/40"
                     }`}
                   >
-                    Tenho interesse
+                    Começar grátis
+                  </Link>
+                  <button
+                    onClick={() => setLeadPlano(p)}
+                    className="mb-5 mt-2 w-full text-xs text-[#87938F] hover:text-[#F0EADD] transition-colors"
+                  >
+                    ou falar com vendas
                   </button>
 
                   <ul className="space-y-2 text-sm">

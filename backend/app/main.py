@@ -89,6 +89,10 @@ _CSRF_EXEMPT_PREFIXES = (
     "/api/v1/public/",     # portal público — sem autenticação
     "/api/v1/auth/login",  # login — ainda não há sessão para proteger
     "/api/v1/auth/registrar",  # cadastro self-serve — pré-sessão
+    # Recuperação de senha: o usuário está deslogado (sem cookie csrf).
+    # Protegidas por rate-limit (esqueci) e por token de uso único + TTL (resetar).
+    "/api/v1/auth/esqueci-senha",
+    "/api/v1/auth/resetar-senha",
     # MFA pré-sessão: ocorrem ANTES de a sessão (e o cookie csrf) existirem.
     # Protegidos pelo token de desafio (vinculado ao usuário, TTL curto).
     "/api/v1/auth/mfa/verificar",

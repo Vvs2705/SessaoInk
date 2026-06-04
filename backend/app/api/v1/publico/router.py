@@ -151,6 +151,34 @@ async def registrar_interesse_plano(
     }
 
 
+class EstudioSitemapItem(BaseModel):
+    slug: str
+    atualizado_em: datetime | None = None
+
+
+@router.get("/estudios", response_model=list[EstudioSitemapItem])
+async def listar_estudios_publicos(
+    session: AsyncSession = Depends(get_session),
+):
+    """Slugs dos estúdios com presença pública (≥1 item de portfólio PUBLICO).
+
+    Usado pelo sitemap do frontend para indexar os portais. Só lista estúdios
+    ativos com conteúdo público — evita indexar páginas vazias (thin content) e
+    estúdios que não publicaram nada.
+    """
+    rows = await session.execute(
+        select(Estudio.slug, Estudio.atualizado_em)
+        .join(Portfolio, Portfolio.estudio_id == Estudio.id)
+        .where(
+            Estudio.ativo,
+            Portfolio.visibilidade == VisibilidadePortfolio.PUBLICO,
+        )
+        .distinct()
+        .limit(5000)
+    )
+    return [EstudioSitemapItem(slug=s, atualizado_em=a) for s, a in rows.all()]
+
+
 @router.get("/{slug}", response_model=EstudioPublicoResponse)
 async def perfil_publico(
     slug: str,

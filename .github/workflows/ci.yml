@@ -134,15 +134,21 @@ jobs:
   sast:
     name: SAST (Semgrep)
     runs-on: ubuntu-latest
-    # Advisory na 1ª fase: a varredura inicial de SAST costuma trazer muitos
-    # achados a triar. Promover a bloqueante depois de zerar/baselinar falsos-positivos.
-    continue-on-error: true
+    # Agora BLOQUEANTE: baseline zerado. A única regra excluída é a de
+    # dangerouslySetInnerHTML — nossos dois usos são controlados (script do SW e
+    # JSON-LD com `<` escapado contra breakout de </script>), não renderizam HTML
+    # de usuário. Se um achado novo aparecer, o merge trava até triagem.
     container:
       image: semgrep/semgrep
     steps:
       - uses: actions/checkout@v4
       - name: Semgrep (regras FastAPI + Next.js/TS + segurança)
-        run: semgrep scan --config p/python --config p/react --config p/typescript --config p/security-audit --config p/secrets --error
+        run: >-
+          semgrep scan
+          --config p/python --config p/react --config p/typescript
+          --config p/security-audit --config p/secrets
+          --exclude-rule typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
+          --error
 
   docker-sbom:
     name: Docker/SBOM Scan (advisory)

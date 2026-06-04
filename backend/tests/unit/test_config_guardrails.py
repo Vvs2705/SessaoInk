@@ -74,3 +74,52 @@ def test_desenvolvimento_nao_aplica_guardrails():
         REDIS_URL="redis://localhost:6379",
     )
     assert s.ENVIRONMENT == "development"
+
+
+# ── P0-04 — guardrails de go-live de pagamentos ──────────────────────────────
+
+_GO_LIVE_OK = dict(
+    PAGAMENTOS_GO_LIVE=True,
+    MERCADO_PAGO_ACCESS_TOKEN="tok-prod-xyz",
+    MERCADO_PAGO_PUBLIC_KEY="pub-prod-xyz",
+    MERCADO_PAGO_WEBHOOK_SECRET="whsec-xyz",
+    APP_URL="https://sessao-ink.vercel.app",
+    CSRF_STRICT_MODE=True,
+    SENTRY_DSN="https://abc@o1.ingest.sentry.io/1",
+)
+
+
+def test_go_live_desligado_nao_exige_mercadopago():
+    # Estado atual de produção: go-live off → sem exigências de MP.
+    s = _settings(PAGAMENTOS_GO_LIVE=False)
+    assert s.PAGAMENTOS_GO_LIVE is False
+
+
+def test_go_live_completo_inicia():
+    s = _settings(**_GO_LIVE_OK)
+    assert s.PAGAMENTOS_GO_LIVE is True
+
+
+def test_go_live_sem_webhook_secret_aborta():
+    with pytest.raises(ValueError):
+        _settings(**{**_GO_LIVE_OK, "MERCADO_PAGO_WEBHOOK_SECRET": ""})
+
+
+def test_go_live_sem_access_token_aborta():
+    with pytest.raises(ValueError):
+        _settings(**{**_GO_LIVE_OK, "MERCADO_PAGO_ACCESS_TOKEN": ""})
+
+
+def test_go_live_app_url_sem_https_aborta():
+    with pytest.raises(ValueError):
+        _settings(**{**_GO_LIVE_OK, "APP_URL": "http://sessao-ink.vercel.app"})
+
+
+def test_go_live_csrf_nao_estrito_aborta():
+    with pytest.raises(ValueError):
+        _settings(**{**_GO_LIVE_OK, "CSRF_STRICT_MODE": False})
+
+
+def test_go_live_sem_sentry_aborta():
+    with pytest.raises(ValueError):
+        _settings(**{**_GO_LIVE_OK, "SENTRY_DSN": ""})

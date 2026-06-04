@@ -79,6 +79,13 @@ async function proxy(
     request.headers.get("x-real-ip");
   if (clientIp) headers.set("X-Forwarded-For", clientIp);
 
+  // P0-03 — segredo proxy↔backend: prova que o X-Forwarded-For acima veio do
+  // nosso proxy (e não de um atacante falando direto com a Fly). O backend só
+  // confia no XFF quando este header bate com INTERNAL_PROXY_SECRET. Inerte
+  // enquanto a env var não estiver definida na Vercel.
+  const proxySecret = process.env.INTERNAL_PROXY_SECRET;
+  if (proxySecret) headers.set("X-Internal-Proxy-Secret", proxySecret);
+
   // Correlation ID — rastreabilidade ponta a ponta (P1-05). Reaproveita o id do
   // browser se houver, senão gera um. O backend ecoa em X-Correlation-ID.
   const correlationId =

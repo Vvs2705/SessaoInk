@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     # Quando True, `get_client_ip` confia em X-Forwarded-For/Fly-Client-IP.
     # Desligue apenas se o backend passar a receber tráfego direto não confiável.
     TRUSTED_PROXY_ENABLED: bool = True
+    # P0-03 — segredo compartilhado proxy↔backend. Quando definido, o backend
+    # só confia em headers de IP de proxy (X-Forwarded-For etc.) se o request
+    # trouxer `X-Internal-Proxy-Secret` igual a este valor. Vazio = comportamento
+    # legado (confia no XFF sempre que TRUSTED_PROXY_ENABLED) — retrocompatível.
+    INTERNAL_PROXY_SECRET: str = ""
 
     # Database
     DATABASE_URL: str
@@ -131,12 +136,48 @@ class Settings(BaseSettings):
         if not self.LGPD_RETENTION_TOKEN or len(self.LGPD_RETENTION_TOKEN) < 32:
             erros.append("LGPD_RETENTION_TOKEN deve ter pelo menos 32 caracteres em producao")
 
+        # P0-04 — guardrails específicos de cobrança real. Só valem quando o
+        # go-live está ligado; com PAGAMENTOS_GO_LIVE=false são ignorados (estado
+        # atual de produção não é afetado).
+        erros.extend(erros_go_live(self))
+
         if erros:
             raise ValueError(
                 "Configuração de produção insegura — startup abortado:\n  - "
                 + "\n  - ".join(erros)
             )
         return self
+
+
+def erros_go_live(s: "Settings") -> list[str]:
+    """P0-04 — pré-condições para habilitar cobrança real (Mercado Pago).
+
+    Retorna a lista de erros que impedem o go-live seguro. Vazia = pronto.
+    Só aplica quando `PAGAMENTOS_GO_LIVE=true` e ambiente de produção — fora
+    disso retorna vazio (não bloqueia dev/sandbox nem o estado atual sem cobrança).
+
+    Reutilizado por `scripts/check_go_live.py` para um relatório pré-deploy.
+    """
+    if not s.PAGAMENTOS_GO_LIVE or s.ENVIRONMENT != "production":
+        return []
+
+    erros: list[str] = []
+    if not s.MERCADO_PAGO_ACCESS_TOKEN:
+        erros.append("PAGAMENTOS_GO_LIVE=true exige MERCADO_PAGO_ACCESS_TOKEN")
+    if not s.MERCADO_PAGO_PUBLIC_KEY:
+        erros.append("PAGAMENTOS_GO_LIVE=true exige MERCADO_PAGO_PUBLIC_KEY")
+    if not s.MERCADO_PAGO_WEBHOOK_SECRET:
+        erros.append(
+            "PAGAMENTOS_GO_LIVE=true exige MERCADO_PAGO_WEBHOOK_SECRET "
+            "(sem ele o webhook seria permissivo)"
+        )
+    if not s.APP_URL.lower().startswith("https://"):
+        erros.append("PAGAMENTOS_GO_LIVE=true exige APP_URL com HTTPS")
+    if not s.CSRF_STRICT_MODE:
+        erros.append("PAGAMENTOS_GO_LIVE=true exige CSRF_STRICT_MODE=true")
+    if not s.SENTRY_DSN:
+        erros.append("PAGAMENTOS_GO_LIVE=true exige SENTRY_DSN (observabilidade de cobrança)")
+    return erros
 
 
 settings = Settings()

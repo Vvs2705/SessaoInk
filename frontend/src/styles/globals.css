@@ -311,12 +311,13 @@ textarea {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   Animação de tatuagem do login (mão + máquina tatuando o contorno).
-   Duração total: 5,2s. Toda a coreografia roda na GPU (transform/opacity).
-   Os componentes ficam em src/components/auth/{DailyTattooLoginAnimation,
-   TattooLoginIllustration}.tsx. As porcentagens dos keyframes mapeiam o
-   storyboard: 0–0.6s entrada · 0.9–4.0s contorno (topo→dir→base→esq) ·
-   4.0–4.6s detalhes · 4.6–5.0s assentar · 5.0–5.2s saída.
+   Animação de login — fineline (a tinta se desenha sozinha).
+   Uma arte fineline em ouro traçada por uma ponta de agulha luminosa, com
+   sangramento de tinta por baixo e grão sobre a cena. Duração ~2,6s; assenta
+   e some, revelando o formulário. Coreografia na GPU (transform/opacity),
+   exceto o deslocamento da agulha (animateMotion no SVG).
+   Componentes: src/components/auth/{DailyTattooLoginAnimation,
+   TattooLoginIllustration}.tsx.
    ════════════════════════════════════════════════════════════════════ */
 
 .tattoo-login-once {
@@ -327,85 +328,102 @@ textarea {
   border-radius: 2rem;
   pointer-events: none;
   will-change: opacity;
-  animation: tattooLayerFade 5.2s ease forwards;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(201, 169, 110, 0.07), transparent 62%),
+    #0b171c;
+  animation: inkLayerFade 2.6s ease forwards;
 }
 
-/* Lavagem sutil de "tinta fresca" que assenta e some. */
-.tattoo-sheen {
+/* Grão sutil (textura de pele/papel) sobre a cena. */
+.tattoo-login-once::after {
+  content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(
-      circle at 28% 22%,
-      rgba(47, 146, 133, 0.16),
-      transparent 45%
-    ),
-    radial-gradient(circle at 78% 82%, rgba(195, 107, 63, 0.12), transparent 48%);
-  opacity: 0;
-  animation: tattooSheen 5.2s ease forwards;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
 }
 
-/* ── Traço do contorno ──────────────────────────────────────────────── */
-.tattoo-border {
+.ink-stage {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  display: grid;
+  place-items: center;
 }
 
-.tattoo-trace {
-  stroke-dasharray: 100;
-  stroke-dashoffset: 100;
-  animation: tattooTrace 5.2s linear forwards;
-}
-
-.tattoo-trace-glow {
-  filter: drop-shadow(0 0 4px rgba(47, 146, 133, 0.85));
-  opacity: 0.9;
-}
-
-.tattoo-detail {
-  stroke-dasharray: 100;
-  stroke-dashoffset: 100;
-  animation: tattooTrace 5.2s linear forwards;
-}
-
-.tattoo-detail-title {
-  animation-name: tattooDetailTitle;
-}
-
-.tattoo-detail-button {
-  animation-name: tattooDetailButton;
-}
-
-/* ── Mão + máquina ──────────────────────────────────────────────────── */
-.tattoo-hand-layer {
-  position: absolute;
-  top: 80%;
-  left: 70%;
-  width: 58%;
-  aspect-ratio: 1 / 1;
-  will-change: left, top, opacity;
-  animation: tattooHandPath 5.2s ease-in-out forwards;
-}
-
-.tattoo-hand {
-  width: 100%;
-  height: 100%;
+.ink-svg {
+  width: min(58%, 230px);
+  height: auto;
   overflow: visible;
 }
 
-.tattoo-machine {
-  transform-origin: 118px 92px;
-  animation: tattooMachineTremor 0.06s steps(2, end) infinite;
+/* Linha principal (e sangramento) traçadas via dashoffset. */
+.ink-line,
+.ink-bleed {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: inkDraw 1.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.ink-bleed {
+  opacity: 0.55;
+}
+.ink-accent {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: inkDraw 0.5s ease-out 1.5s forwards;
+}
+/* Ponta de agulha luminosa: aparece, segue o traço (animateMotion no SVG) e some. */
+.ink-needle {
+  animation: inkNeedleFade 2.6s ease forwards;
+}
+/* A arte inteira "assenta" e some no fim. */
+.ink-settle {
+  transform-origin: center;
+  animation: inkSettle 2.6s ease forwards;
 }
 
-.tattoo-sparks {
-  transform-origin: 50px 44px;
-  animation: tattooSparks 0.5s ease-in-out infinite;
+@keyframes inkLayerFade {
+  0%,
+  86% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
-
-.tattoo-redness {
-  animation: tattooRedness 5.2s ease-in-out forwards;
+@keyframes inkDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes inkNeedleFade {
+  0% {
+    opacity: 0;
+  }
+  6% {
+    opacity: 1;
+  }
+  64% {
+    opacity: 1;
+  }
+  74%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes inkSettle {
+  0%,
+  70% {
+    transform: scale(1);
+  }
+  80% {
+    transform: scale(1.018);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* ── Botão Pular ────────────────────────────────────────────────────── */
@@ -430,188 +448,6 @@ textarea {
 .tattoo-skip-button:hover,
 .tattoo-skip-button:focus-visible {
   opacity: 1;
-}
-
-@keyframes tattooLayerFade {
-  0%,
-  94% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0;
-  }
-}
-
-@keyframes tattooSheen {
-  0% {
-    opacity: 0;
-  }
-
-  20% {
-    opacity: 1;
-  }
-
-  88% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0;
-  }
-}
-
-/* Reveal do contorno sincronizado com o trajeto da mão:
-   topo (17–35%) · direita (35–50%) · base (50–63%) · esquerda (63–77%). */
-@keyframes tattooTrace {
-  0%,
-  17% {
-    stroke-dashoffset: 100;
-  }
-
-  35% {
-    stroke-dashoffset: 75;
-  }
-
-  50% {
-    stroke-dashoffset: 50;
-  }
-
-  63% {
-    stroke-dashoffset: 25;
-  }
-
-  77%,
-  100% {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes tattooDetailTitle {
-  0%,
-  77% {
-    stroke-dashoffset: 100;
-  }
-
-  83%,
-  100% {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes tattooDetailButton {
-  0%,
-  83% {
-    stroke-dashoffset: 100;
-  }
-
-  88%,
-  100% {
-    stroke-dashoffset: 0;
-  }
-}
-
-/* Mão percorre o contorno. left/top em % do card; a agulha (canto sup.-esq.
-   do conteúdo) lidera o traço. */
-@keyframes tattooHandPath {
-  0% {
-    left: 70%;
-    top: 80%;
-    opacity: 0;
-  }
-
-  8% {
-    opacity: 1;
-  }
-
-  17% {
-    left: -8%;
-    top: -14%;
-  }
-
-  35% {
-    left: 78%;
-    top: -14%;
-  }
-
-  50% {
-    left: 78%;
-    top: 70%;
-  }
-
-  63% {
-    left: -8%;
-    top: 70%;
-  }
-
-  77% {
-    left: -8%;
-    top: -14%;
-  }
-
-  88% {
-    left: 30%;
-    top: 22%;
-    opacity: 1;
-  }
-
-  94% {
-    left: 46%;
-    top: 40%;
-    opacity: 1;
-  }
-
-  100% {
-    left: 72%;
-    top: 84%;
-    opacity: 0;
-  }
-}
-
-@keyframes tattooMachineTremor {
-  0% {
-    transform: translate3d(0, 0, 0);
-  }
-
-  50% {
-    transform: translate3d(1.4px, -1.1px, 0);
-  }
-
-  100% {
-    transform: translate3d(-1px, 1.3px, 0);
-  }
-}
-
-@keyframes tattooSparks {
-  0%,
-  100% {
-    opacity: 0;
-    transform: scale(0.7);
-  }
-
-  45% {
-    opacity: 1;
-    transform: scale(1.1);
-  }
-}
-
-@keyframes tattooRedness {
-  0%,
-  14% {
-    opacity: 0;
-  }
-
-  22% {
-    opacity: 1;
-  }
-
-  82% {
-    opacity: 0.8;
-  }
-
-  100% {
-    opacity: 0;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

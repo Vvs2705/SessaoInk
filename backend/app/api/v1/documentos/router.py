@@ -95,6 +95,16 @@ async def criar_documento(
     session.add(doc)
     await session.flush()
     await session.refresh(doc)
+    await log_event(
+        session,
+        acao="documento.created",
+        estudio_id=usuario.estudio_id,
+        actor_usuario_id=usuario.id,
+        actor_tipo=usuario.tipo.value,
+        entidade="documento",
+        entidade_id=str(doc.id),
+        dados={"tipo": doc.tipo.value, "versao": doc.versao},
+    )
     return doc
 
 
@@ -125,7 +135,19 @@ async def deletar_documento(
         estudio_id=usuario.estudio_id,
         detail="Documento não encontrado",
     )
+    doc_id = str(doc.id)
+    doc_tipo = doc.tipo.value
     await session.delete(doc)
+    await log_event(
+        session,
+        acao="documento.deleted",
+        estudio_id=usuario.estudio_id,
+        actor_usuario_id=usuario.id,
+        actor_tipo=usuario.tipo.value,
+        entidade="documento",
+        entidade_id=doc_id,
+        dados={"tipo": doc_tipo},
+    )
     return None
 
 

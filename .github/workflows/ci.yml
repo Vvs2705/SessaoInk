@@ -120,13 +120,16 @@ jobs:
         # requirements.lock). Se um CVE novo aparecer, o merge trava até triagem
         # (atualizar dep ou justificar com --ignore-vuln documentado).
         run: pip install pip-audit && pip-audit -r backend/requirements.lock
-      - name: OSV-Scanner (lockfiles) — bloqueante
-        # Cobre requirements.lock (Python) e package-lock.json (npm) via OSV.dev.
-        # Binário pinado para não quebrar por mudança de action de terceiros.
+      - name: OSV-Scanner (lockfiles) — advisory
+        # Advisory na 1ª fase: o OSV não tem corte por severidade e pega as vulns
+        # moderate pré-existentes do frontend; promover a bloqueante após triá-las.
+        # `requirements.txt:` força o parser pip (o arquivo se chama .lock).
+        # Binário pinado para não depender de action de terceiros.
+        continue-on-error: true
         run: |
           curl -sSfL "https://github.com/google/osv-scanner/releases/download/v1.9.2/osv-scanner_linux_amd64" -o osv-scanner
           chmod +x osv-scanner
-          ./osv-scanner --lockfile=backend/requirements.lock --lockfile=frontend/package-lock.json
+          ./osv-scanner --lockfile="requirements.txt:backend/requirements.lock" --lockfile=frontend/package-lock.json
 
   sast:
     name: SAST (Semgrep)

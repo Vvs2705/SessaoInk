@@ -161,11 +161,17 @@ export default async function PortalPublicoPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-[#050B12] text-[#F0EADD]">
-      {/* Dados estruturados (rich results — negócio local de tatuagem) */}
+      {/* Dados estruturados (rich results — negócio local de tatuagem).
+          Escapa `<` para impedir breakout de </script> via bio/nome do estúdio
+          (campos controlados pelo dono) — defesa contra XSS armazenado. */}
+      {/* nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(estudioJsonLd(estudio, slug)),
+          __html: JSON.stringify(estudioJsonLd(estudio, slug)).replace(
+            /</g,
+            "\\u003c",
+          ),
         }}
       />
       {/* ── Hero ── */}

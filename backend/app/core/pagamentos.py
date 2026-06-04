@@ -49,6 +49,22 @@ def _linha_preco(plano: dict[str, Any], ciclo: str) -> dict[str, Any] | None:
     return next((t for t in tabela_precos(plano) if t["ciclo"] == ciclo), None)
 
 
+def valor_venda_centavos(plano: dict[str, Any], ciclo: str) -> int:
+    """Valor de venda (em centavos) calculado SEMPRE no servidor (P0-06).
+
+    Mensal = preço mensal; demais ciclos = `pix_total` (preço de venda com
+    desconto do ciclo). Nunca confiar em valor vindo do cliente.
+    """
+    if ciclo == "mensal":
+        reais = float(plano["preco_mensal"])
+    else:
+        linha = _linha_preco(plano, ciclo)
+        if not linha:
+            raise GatewayPagamentoError(f"Ciclo inválido para o plano: {ciclo}")
+        reais = float(linha["pix_total"])
+    return int(round(reais * 100))
+
+
 class GatewayPagamento:
     """Adaptador fino sobre a API do Mercado Pago."""
 

@@ -1,15 +1,33 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Outfit, Cormorant, JetBrains_Mono } from "next/font/google";
 import "../styles/globals.css";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { PostHogProvider } from "@/providers/PostHogProvider";
 import { Suspense } from "react";
 
-const inter = Inter({
+// Fontes do design system, self-hosted via next/font (sem FOUT, sem request
+// extra ao Google). Cada uma amarra sua CSS variable usada em tokens.css.
+const outfit = Outfit({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
 });
+const cormorant = Cormorant({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["400", "500", "600"],
+  display: "swap",
+});
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+});
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://sessao-ink.vercel.app";
+const TITLE = "SessãoInk | O Sistema Operacional do Tatuador";
+const DESCRIPTION =
+  "Gerencie clientes, orçamentos, agenda, sinal e documentos do seu estúdio de tatuagem de forma segura e profissional com a SessãoInk.";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -19,11 +37,28 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "SessãoInk | O Sistema Operacional do Tatuador",
-  description: "Gerencie seus clientes, orçamentos, agenda, sinal e documentos de forma segura e profissional com a SessãoInk.",
-  robots: {
-    index: true,
-    follow: true,
+  metadataBase: new URL(APP_URL),
+  title: {
+    default: TITLE,
+    template: "%s | SessãoInk",
+  },
+  description: DESCRIPTION,
+  applicationName: "SessãoInk",
+  robots: { index: true, follow: true },
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    url: "/",
+    siteName: "SessãoInk",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [{ url: "/icon-512.png", width: 512, height: 512, alt: "SessãoInk" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ["/icon-512.png"],
   },
 };
 
@@ -33,7 +68,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} h-full`}>
+    <html
+      lang="pt-BR"
+      className={`${outfit.variable} ${cormorant.variable} ${jetbrainsMono.variable} h-full`}
+    >
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

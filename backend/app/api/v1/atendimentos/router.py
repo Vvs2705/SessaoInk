@@ -18,6 +18,7 @@ from app.schemas.atendimento import (
     AtendimentoStatusUpdate,
     AtendimentoUpdate,
 )
+from app.services.audit import log_event
 from app.services.tenant import (
     get_atendimento_do_estudio,
     get_cliente_do_estudio,
@@ -25,6 +26,19 @@ from app.services.tenant import (
 )
 
 router = APIRouter(prefix="/atendimentos", tags=["atendimentos"])
+
+
+async def _audit_atendimento(session, usuario, acao, atendimento_id, dados=None):
+    await log_event(
+        session,
+        acao=acao,
+        estudio_id=usuario.estudio_id,
+        actor_usuario_id=usuario.id,
+        actor_tipo=usuario.tipo.value,
+        entidade="atendimento",
+        entidade_id=str(atendimento_id),
+        dados=dados,
+    )
 
 
 def _atendimento_visivel_para_usuario(item: Atendimento, usuario: Usuario) -> bool:
@@ -91,6 +105,7 @@ async def criar_atendimento(
     session.add(atendimento)
     await session.flush()
     await session.refresh(atendimento)
+    await _audit_atendimento(session, usuario, "atendimento.created", atendimento.id)
     return atendimento
 
 
@@ -157,10 +172,15 @@ async def atualizar_atendimento(
             detail="Artista inválido ou não pertence ao seu estúdio",
         )
 
-    for k, v in dados.model_dump(exclude_none=True).items():
+    campos = dados.model_dump(exclude_none=True)
+    for k, v in campos.items():
         setattr(item, k, v)
     await session.flush()
     await session.refresh(item)
+    await _audit_atendimento(
+        session, usuario, "atendimento.updated", item.id,
+        dados={"campos": sorted(campos.keys())},
+    )
     return item
 
 
@@ -185,6 +205,13 @@ async def alterar_status(
         item.status_financeiro = dados.status_financeiro
     await session.flush()
     await session.refresh(item)
+    await _audit_atendimento(
+        session, usuario, "atendimento.status_changed", item.id,
+        dados={
+            "status_operacional": item.status_operacional.value if item.status_operacional else None,
+            "status_financeiro": item.status_financeiro.value if item.status_financeiro else None,
+        },
+    )
     return item
 
 
@@ -203,6 +230,7 @@ async def arquivar_atendimento(
     if not _atendimento_visivel_para_usuario(item, usuario):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Atendimento nao encontrado")
     item.ativo = False
+    await _audit_atendimento(session, usuario, "atendimento.cancelled", item.id)
 
 
 @router.get("/{id}/imagens", response_model=list[str])

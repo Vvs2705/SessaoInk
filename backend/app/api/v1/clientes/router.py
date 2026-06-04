@@ -11,7 +11,21 @@ from app.core.database import get_session
 from app.models.cliente import Cliente
 from app.models.usuario import Usuario
 from app.schemas.cliente import ClienteCreate, ClienteResponse, ClienteUpdate
+from app.services.audit import log_event
 from app.services.tenant import get_cliente_do_estudio
+
+
+async def _audit_cliente(session, usuario, acao, cliente_id, dados=None):
+    await log_event(
+        session,
+        acao=acao,
+        estudio_id=usuario.estudio_id,
+        actor_usuario_id=usuario.id,
+        actor_tipo=usuario.tipo.value,
+        entidade="cliente",
+        entidade_id=str(cliente_id),
+        dados=dados,
+    )
 
 router = APIRouter(prefix="/clientes", tags=["clientes"])
 
@@ -43,6 +57,7 @@ async def criar_cliente(
     session.add(cliente)
     await session.flush()
     await session.refresh(cliente)
+    await _audit_cliente(session, usuario, "cliente.created", cliente.id)
     return cliente
 
 
@@ -73,10 +88,15 @@ async def atualizar_cliente(
         estudio_id=usuario.estudio_id,
         detail="Cliente não encontrado",
     )
-    for k, v in dados.model_dump(exclude_none=True).items():
+    campos = dados.model_dump(exclude_none=True)
+    for k, v in campos.items():
         setattr(cliente, k, v)
     await session.flush()
     await session.refresh(cliente)
+    await _audit_cliente(
+        session, usuario, "cliente.updated", cliente.id,
+        dados={"campos": sorted(campos.keys())},
+    )
     return cliente
 
 
@@ -93,3 +113,4 @@ async def arquivar_cliente(
         detail="Cliente não encontrado",
     )
     cliente.ativo = False
+    await _audit_cliente(session, usuario, "cliente.deleted", cliente.id)

@@ -1,115 +1,217 @@
+/**
+ * Ilustração da animação de tatuagem do login.
+ *
+ * Overlay posicionado sobre o card de login (lado direito). Uma mão estilizada
+ * segura uma máquina de tatuagem e "tatua" o contorno do formulário: o traço de
+ * tinta surge exatamente onde a agulha passa, com micro-vibração da máquina,
+ * partículas de tinta e um leve halo de vermelhidão na linha recém-feita.
+ *
+ * Toda a coreografia de tempo vive no CSS (globals.css) para rodar na GPU e
+ * manter 60fps. A duração total é de 5,2s — ver `DailyTattooLoginAnimation`.
+ *
+ * A paleta segue a marca SessãoInk (tinta teal/cobre sobre o card escuro) em
+ * vez do "tom de pele" genérico, para não destoar do tema premium do produto.
+ */
 export function TattooLoginIllustration() {
   return (
-    <div
-      className="pointer-events-none flex flex-col items-center gap-5 px-8 text-center"
-      aria-hidden="true"
-    >
+    <>
+      {/* Lavagem sutil que "assenta" a tinta e some no fim. */}
+      <div className="tattoo-sheen" />
+
+      {/* Traço do contorno do card. preserveAspectRatio=none faz o retângulo
+          acompanhar o formato real do card em qualquer largura. pathLength=100
+          normaliza o comprimento, então o reveal por dashoffset é exato. */}
       <svg
-        className="tattoo-login-svg h-[260px] w-[260px] drop-shadow-[0_12px_45px_rgba(47,146,133,0.3)] sm:h-[340px] sm:w-[340px]"
-        viewBox="0 0 420 420"
+        className="tattoo-border"
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
         fill="none"
+        aria-hidden="true"
       >
-        <defs>
-          <linearGradient id="tattooInk" x1="0" x2="1" y1="0" y2="1">
-            <stop offset="0%" stopColor="#2F9285" />
-            <stop offset="55%" stopColor="#F0EADD" />
-            <stop offset="100%" stopColor="#C36B3F" />
-          </linearGradient>
-
-          <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
-            <feGaussianBlur stdDeviation="4" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-
         <path
-          className="tattoo-line tattoo-line-one"
-          d="M79 274 C131 196 207 184 288 224 C326 243 343 279 329 305 C315 331 267 338 221 319 C171 299 139 302 107 339"
-          stroke="url(#tattooInk)"
-          strokeWidth="4"
-          strokeLinecap="round"
-          filter="url(#softGlow)"
-        />
-
-        <path
-          className="tattoo-line tattoo-line-two"
-          d="M112 238 C152 195 221 172 283 190 C324 202 351 233 355 268"
+          className="tattoo-trace tattoo-trace-glow"
+          pathLength={100}
+          d="M16 1.5 H84 Q98.5 1.5 98.5 16 V84 Q98.5 98.5 84 98.5 H16 Q1.5 98.5 1.5 84 V16 Q1.5 1.5 16 1.5 Z"
           stroke="#2F9285"
-          strokeWidth="3"
+          strokeWidth={2.6}
           strokeLinecap="round"
-          opacity="0.75"
+          strokeLinejoin="round"
         />
-
         <path
-          className="tattoo-line tattoo-line-three"
-          d="M151 292 C187 264 239 260 284 285"
-          stroke="#F0EADD"
-          strokeWidth="3"
+          className="tattoo-trace tattoo-trace-ink"
+          pathLength={100}
+          d="M16 1.5 H84 Q98.5 1.5 98.5 16 V84 Q98.5 98.5 84 98.5 H16 Q1.5 98.5 1.5 84 V16 Q1.5 1.5 16 1.5 Z"
+          stroke="#0F1A1A"
+          strokeWidth={1.3}
           strokeLinecap="round"
-          opacity="0.55"
+          strokeLinejoin="round"
         />
 
-        <g className="tattoo-machine">
-          <path
-            d="M260 70 C282 64 307 73 319 94 L336 124 C344 139 338 158 323 166 L296 181 C281 189 262 184 254 169 L236 134 C223 109 234 78 260 70Z"
-            fill="#141F26"
-            stroke="#34484B"
-            strokeWidth="3"
-          />
-
-          <path
-            d="M259 111 L219 154"
-            stroke="#87938F"
-            strokeWidth="10"
-            strokeLinecap="round"
-          />
-
-          <path
-            d="M213 160 L185 192"
-            stroke="#2F9285"
-            strokeWidth="5"
-            strokeLinecap="round"
-          />
-
-          <circle cx="289" cy="116" r="19" fill="#2F9285" opacity="0.9" />
-          <circle cx="289" cy="116" r="7" fill="#F0EADD" />
-
-          <path
-            d="M214 157 C202 149 187 150 176 158 L148 178 C132 190 112 195 93 190 L80 187"
-            stroke="#5F6F70"
-            strokeWidth="12"
-            strokeLinecap="round"
-          />
-
-          <path
-            d="M177 158 C172 181 181 204 201 216"
-            stroke="#8D5B42"
-            strokeWidth="18"
-            strokeLinecap="round"
-          />
-
-          <path
-            d="M187 189 C204 193 218 204 225 220"
-            stroke="#A86E4E"
-            strokeWidth="14"
-            strokeLinecap="round"
-          />
-        </g>
-
-        <g className="tattoo-sparks">
-          <circle cx="141" cy="237" r="3" fill="#2F9285" />
-          <circle cx="176" cy="217" r="2.5" fill="#F0EADD" />
-          <circle cx="210" cy="207" r="2" fill="#C36B3F" />
-          <circle cx="247" cy="215" r="2.5" fill="#2F9285" />
-        </g>
+        {/* Detalhes internos tatuados entre 4.0s–4.6s. */}
+        <path
+          className="tattoo-detail tattoo-detail-title"
+          pathLength={100}
+          d="M30 31 H70"
+          stroke="#C36B3F"
+          strokeWidth={1.4}
+          strokeLinecap="round"
+        />
+        <path
+          className="tattoo-detail tattoo-detail-button"
+          pathLength={100}
+          d="M14 86 H86"
+          stroke="#2F9285"
+          strokeWidth={1.6}
+          strokeLinecap="round"
+        />
       </svg>
 
-      <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[#2F9285] sm:text-sm">
-        SessãoInk
-      </p>
-    </div>
+      {/* Camada da mão + máquina. Viaja ao redor do contorno via keyframes
+          (left/top em % do overlay). A agulha fica perto do canto superior
+          esquerdo do conteúdo, então partículas e vermelhidão acompanham. */}
+      <div className="tattoo-hand-layer">
+        <svg
+          className="tattoo-hand"
+          viewBox="0 0 240 240"
+          fill="none"
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient id="inkSkin" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#E8B88A" />
+              <stop offset="55%" stopColor="#D4A574" />
+              <stop offset="100%" stopColor="#C4956A" />
+            </linearGradient>
+            <linearGradient id="inkSkinDark" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#D4A574" />
+              <stop offset="100%" stopColor="#B07F52" />
+            </linearGradient>
+            <linearGradient id="inkMachine" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#2A363B" />
+              <stop offset="100%" stopColor="#10181C" />
+            </linearGradient>
+            <radialGradient id="inkRedness" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#E8866A" stopOpacity="0.55" />
+              <stop offset="100%" stopColor="#E8866A" stopOpacity="0" />
+            </radialGradient>
+            <filter
+              id="handShadow"
+              x="-30%"
+              y="-30%"
+              width="160%"
+              height="160%"
+            >
+              <feGaussianBlur stdDeviation="5" />
+            </filter>
+          </defs>
+
+          {/* Sombra suave projetada da mão. */}
+          <ellipse
+            cx="150"
+            cy="178"
+            rx="78"
+            ry="30"
+            fill="#050B12"
+            opacity="0.35"
+            filter="url(#handShadow)"
+          />
+
+          {/* ── MÁQUINA DE TATUAGEM (vibra) ─────────────────────────────── */}
+          <g className="tattoo-machine">
+            {/* Cabo de força saindo pela traseira. */}
+            <path
+              d="M150 120 C190 132 214 150 232 176"
+              stroke="#3A4A4E"
+              strokeWidth="6"
+              strokeLinecap="round"
+            />
+            {/* Corpo cilíndrico da máquina (estilo caneta). */}
+            <path
+              d="M150 118 L100 70 Q92 62 84 70 L74 80 Q66 88 74 96 L124 144 Z"
+              fill="url(#inkMachine)"
+              stroke="#46585C"
+              strokeWidth="2.5"
+            />
+            {/* Grip tape (teal da marca). */}
+            <path
+              d="M150 118 L120 88 L132 76 L162 106 Z"
+              fill="#2F9285"
+              opacity="0.92"
+            />
+            <path
+              d="M126 94 L138 82 M134 102 L146 90 M142 110 L154 98"
+              stroke="#0B171C"
+              strokeWidth="1.6"
+              opacity="0.35"
+            />
+            {/* Tip + agulha apontando para o canto. */}
+            <path
+              d="M84 70 L60 46"
+              stroke="#9AA7A4"
+              strokeWidth="7"
+              strokeLinecap="round"
+            />
+            <path
+              d="M60 46 L44 30"
+              stroke="#1A1A1A"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+            />
+            <circle cx="118" cy="92" r="9" fill="#2F9285" />
+            <circle cx="118" cy="92" r="3.4" fill="#F0EADD" />
+          </g>
+
+          {/* Halo de vermelhidão sob a ponta da agulha. */}
+          <circle
+            className="tattoo-redness"
+            cx="46"
+            cy="32"
+            r="20"
+            fill="url(#inkRedness)"
+          />
+
+          {/* Partículas de tinta saltando perto da agulha. */}
+          <g className="tattoo-sparks">
+            <circle cx="50" cy="40" r="2.4" fill="#0F1A1A" />
+            <circle cx="62" cy="34" r="1.8" fill="#2F9285" />
+            <circle cx="40" cy="50" r="2" fill="#C36B3F" />
+            <circle cx="56" cy="52" r="1.5" fill="#0F1A1A" />
+          </g>
+
+          {/* ── MÃO (vista do dorso, segurando a máquina) ───────────────── */}
+          <g className="tattoo-hand-art">
+            {/* Antebraço/pulso entrando da base. */}
+            <path
+              d="M168 232 C150 210 142 188 150 166 C156 150 176 144 196 152 C220 162 232 196 226 232 Z"
+              fill="url(#inkSkinDark)"
+            />
+            {/* Dorso da mão. */}
+            <path
+              d="M120 150 C112 132 118 110 138 102 C160 93 188 100 200 120 C210 137 206 162 188 174 C168 187 138 182 124 166 Z"
+              fill="url(#inkSkin)"
+            />
+            {/* Dedos enrolados sobre a máquina. */}
+            <g fill="url(#inkSkin)" stroke="#B07F52" strokeWidth="1.4">
+              <path d="M118 112 C108 108 100 112 99 122 C98 131 104 138 114 139 C124 140 131 134 131 124 C131 117 127 114 118 112 Z" />
+              <path d="M126 128 C116 125 108 130 108 140 C108 149 115 155 125 155 C134 155 140 149 139 140 C138 132 134 130 126 128 Z" />
+              <path d="M138 142 C129 140 122 145 123 154 C124 163 131 168 140 167 C149 166 154 159 152 151 C150 144 146 143 138 142 Z" />
+              <path d="M152 152 C144 151 138 156 139 164 C140 172 147 176 155 175 C163 174 167 167 165 160 C163 154 159 153 152 152 Z" />
+            </g>
+            {/* Polegar pressionando o grip. */}
+            <path
+              d="M122 104 C112 96 100 96 92 104 C85 111 86 122 95 128 C104 134 116 132 122 123 C126 117 127 109 122 104 Z"
+              fill="url(#inkSkinDark)"
+              stroke="#A8794E"
+              strokeWidth="1.4"
+            />
+            {/* Unhas/articulações sutis. */}
+            <g stroke="#B07F52" strokeWidth="1.2" opacity="0.5" fill="none">
+              <path d="M150 116 C158 124 162 136 160 148" />
+              <path d="M168 120 C176 130 178 142 174 154" />
+            </g>
+          </g>
+        </svg>
+      </div>
+    </>
   );
 }

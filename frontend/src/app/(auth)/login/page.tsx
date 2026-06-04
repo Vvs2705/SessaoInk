@@ -211,9 +211,10 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <DailyTattooLoginAnimation />
+          <div className="relative">
+            <DailyTattooLoginAnimation />
 
-          <div className="relative overflow-hidden rounded-[2rem] border border-[#243337] bg-[#0B171C]/90 p-6 shadow-2xl shadow-black/40 backdrop-blur-xl sm:p-8">
+            <div className="relative overflow-hidden rounded-[2rem] border border-[#243337] bg-[#0B171C]/90 p-6 shadow-2xl shadow-black/40 backdrop-blur-xl sm:p-8">
             <div className="mb-7 hidden justify-center lg:flex">
               <BrandLogo layout="wide" size="lg" scaling={false} />
             </div>
@@ -479,6 +480,7 @@ export default function LoginPage() {
             <p className="mt-6 text-center text-xs text-[#5F6F70]">
               Ambiente seguro — seus dados ficam protegidos no SessãoInk.
             </p>
+            </div>
           </div>
         </div>
       </section>

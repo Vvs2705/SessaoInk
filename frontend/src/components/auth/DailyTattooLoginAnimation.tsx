@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { TattooLoginIllustration } from "@/components/auth/TattooLoginIllustration";
 
 const LAST_SEEN_KEY = "sessaoink:login-animation:last-seen-date";
 const PENDING_UNTIL_KEY = "sessaoink:login-animation:pending-until";
-const ANIMATION_DURATION_MS = 5600;
+
+/** Duração exata da coreografia (5,2s). Sincronizada com globals.css. */
+const ANIMATION_DURATION_MS = 5200;
 
 function getLocalDateKey(date = new Date()) {
   const year = date.getFullYear();
@@ -48,6 +50,19 @@ function shouldRespectReducedMotion() {
   return window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
 }
 
+/** Dispositivos low-end recebem o resultado final estático (sem coreografia). */
+function isLowEndDevice() {
+  if (typeof navigator === "undefined") {
+    return false;
+  }
+
+  const cores = navigator.hardwareConcurrency ?? 4;
+  const memory =
+    (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 4;
+
+  return cores < 4 || memory < 4;
+}
+
 function isPreviewModeEnabled() {
   if (typeof window === "undefined") {
     return false;
@@ -63,17 +78,30 @@ function isPreviewModeEnabled() {
 
 export function DailyTattooLoginAnimation() {
   const [shouldRender, setShouldRender] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
+
+  const finishAnimation = useCallback((isPreview: boolean) => {
+    setShouldRender(false);
+
+    if (!isPreview && typeof window !== "undefined") {
+      safeStorageRemove(window.sessionStorage, PENDING_UNTIL_KEY);
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
 
-    const previewMode = isPreviewModeEnabled();
+    const preview = isPreviewModeEnabled();
+    setPreviewMode(preview);
+
     const today = getLocalDateKey();
     const now = Date.now();
 
-    if (shouldRespectReducedMotion() && !previewMode) {
+    // Reduced-motion ou dispositivo fraco: pula a coreografia e mostra o
+    // formulário final imediatamente (apenas registra que já foi visto hoje).
+    if ((shouldRespectReducedMotion() || isLowEndDevice()) && !preview) {
       safeStorageSet(window.localStorage, LAST_SEEN_KEY, today);
       return;
     }
@@ -86,7 +114,7 @@ export function DailyTattooLoginAnimation() {
     const pendingUntil = Number(pendingUntilRaw ?? "0");
     const lastSeenDate = safeStorageGet(window.localStorage, LAST_SEEN_KEY);
 
-    let mustShowAnimation = previewMode;
+    let mustShowAnimation = preview;
     let visibleForMs = ANIMATION_DURATION_MS;
 
     if (!mustShowAnimation && pendingUntil > now) {
@@ -115,17 +143,13 @@ export function DailyTattooLoginAnimation() {
     setShouldRender(true);
 
     const timeoutId = window.setTimeout(() => {
-      setShouldRender(false);
-
-      if (!previewMode) {
-        safeStorageRemove(window.sessionStorage, PENDING_UNTIL_KEY);
-      }
+      finishAnimation(preview);
     }, visibleForMs);
 
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, []);
+  }, [finishAnimation]);
 
   if (!shouldRender) {
     return null;
@@ -134,6 +158,16 @@ export function DailyTattooLoginAnimation() {
   return (
     <div className="tattoo-login-once" aria-hidden="true">
       <TattooLoginIllustration />
+
+      <button
+        type="button"
+        className="tattoo-skip-button"
+        aria-hidden="true"
+        tabIndex={-1}
+        onClick={() => finishAnimation(previewMode)}
+      >
+        Pular →
+      </button>
     </div>
   );
 }

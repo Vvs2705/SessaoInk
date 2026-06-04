@@ -122,9 +122,19 @@ textarea {
 }
 
 .tattoo-login-once {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(
+    circle at center,
+    rgba(11, 23, 28, 0.97),
+    rgba(5, 11, 18, 0.99)
+  );
+  pointer-events: none;
   opacity: 1;
   animation: tattooLoginLayerFadeOut 5.6s ease forwards;
-  contain: layout paint;
 }
 
 .tattoo-login-once .tattoo-line,

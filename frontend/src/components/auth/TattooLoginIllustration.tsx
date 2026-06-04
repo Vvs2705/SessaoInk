@@ -1,11 +1,11 @@
 export function TattooLoginIllustration() {
   return (
     <div
-      className="pointer-events-none absolute inset-0 overflow-hidden rounded-[2rem]"
+      className="pointer-events-none flex flex-col items-center gap-5 px-8 text-center"
       aria-hidden="true"
     >
       <svg
-        className="tattoo-login-svg absolute -right-12 -top-10 h-[360px] w-[360px] opacity-80 sm:h-[430px] sm:w-[430px]"
+        className="tattoo-login-svg h-[260px] w-[260px] drop-shadow-[0_12px_45px_rgba(47,146,133,0.3)] sm:h-[340px] sm:w-[340px]"
         viewBox="0 0 420 420"
         fill="none"
       >
@@ -106,6 +106,10 @@ export function TattooLoginIllustration() {
           <circle cx="247" cy="215" r="2.5" fill="#2F9285" />
         </g>
       </svg>
+
+      <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[#2F9285] sm:text-sm">
+        SessãoInk
+      </p>
     </div>
   );
 }

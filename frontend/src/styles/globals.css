@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "./tokens.css";
 
 @tailwind base;
@@ -92,6 +93,220 @@ textarea {
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Design System editorial — fontes serif, acento dourado e superfícies.
+   Aditivo: convive com tokens.css e a identidade teal/cobre existente.
+   ════════════════════════════════════════════════════════════════════ */
+@layer base {
+  /* Headings em fonte display editorial */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-sans);
+    font-weight: 500;
+  }
+
+  code,
+  kbd,
+  pre {
+    font-family: var(--font-mono);
+  }
+
+  /* Seleção de texto dourada */
+  ::selection {
+    background: var(--si-gold-dim);
+    color: var(--si-gold);
+  }
+}
+
+/* Scrollbar fina */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--text-subtle);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--smoke-text);
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+
+  .text-gold {
+    color: var(--si-gold);
+  }
+  .text-gold-gradient {
+    background: linear-gradient(135deg, #c9a96e 0%, #e8c98a 50%, #c9a96e 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .bg-surface {
+    background-color: var(--si-surface);
+  }
+  .bg-raised {
+    background-color: var(--si-raised);
+  }
+  .bg-overlay {
+    background-color: var(--si-overlay);
+  }
+
+  .divider-ink {
+    height: 1px;
+    border: none;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--mist-line) 20%,
+      var(--mist-line) 80%,
+      transparent
+    );
+  }
+
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--si-surface) 25%,
+      var(--si-raised) 50%,
+      var(--si-surface) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s infinite;
+  }
+}
+
+@layer components {
+  /* Card interativo com realce dourado no hover */
+  .card-ink {
+    background-color: var(--si-surface);
+    border: 1px solid var(--mist-line);
+    border-radius: var(--radius-lg);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .card-ink:hover {
+    border-color: var(--si-gold-border);
+    box-shadow: 0 0 0 1px var(--si-gold-border), 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+
+  /* Badge de status com dot */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    padding: 3px 9px;
+    border-radius: 4px;
+    border: 1px solid currentColor;
+  }
+  .status-badge::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+  .status-badge.active {
+    color: var(--teal-ink);
+    background: rgba(47, 146, 133, 0.1);
+  }
+  .status-badge.pending {
+    color: var(--si-gold);
+    background: var(--si-gold-dim);
+  }
+  .status-badge.danger {
+    color: var(--error-red);
+    background: rgba(227, 93, 91, 0.1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@layer utilities {
+  /* Barra lateral por categoria (em cards/listas) */
+  .bar-agenda {
+    border-left: 2px solid var(--si-teal);
+  }
+  .bar-finance {
+    border-left: 2px solid var(--si-gold);
+  }
+  .bar-doc {
+    border-left: 2px solid #8a7fc5;
+  }
+  .bar-client {
+    border-left: 2px solid #e07d6a;
+  }
+
+  /* Delays escalonados para listas animadas */
+  .delay-75 {
+    animation-delay: 75ms;
+  }
+  .delay-150 {
+    animation-delay: 150ms;
+  }
+  .delay-225 {
+    animation-delay: 225ms;
+  }
+  .delay-300 {
+    animation-delay: 300ms;
+  }
+}
+
+/* Textura de papel (grão) — aplique em qualquer container */
+.grain-bg {
+  position: relative;
+  isolation: isolate;
+}
+.grain-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.032;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+  border-radius: inherit;
+}
+
+/* Padrão decorativo de linework (tile) */
+.pattern-bg {
+  background-image: url("/icons/pattern-linework-tile.svg");
+  background-repeat: repeat;
+  background-size: 72px 72px;
 }
 
 /* ════════════════════════════════════════════════════════════════════

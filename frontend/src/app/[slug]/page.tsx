@@ -12,6 +12,7 @@ import { notFound } from "next/navigation";
 import { BrandLogo } from "@/components/BrandLogo";
 
 const API_URL = process.env.BACKEND_URL || "https://sessaoink-api.fly.dev";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://sessao-ink.vercel.app";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -66,12 +67,60 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const estudio = await getEstudio(slug);
   if (!estudio) {
-    return { title: "Estúdio não encontrado — SessãoInk" };
+    return { title: "Estúdio não encontrado", robots: { index: false, follow: false } };
   }
+  const local = [estudio.cidade, estudio.uf].filter(Boolean).join(" — ");
+  const description =
+    estudio.bio ??
+    `Veja o portfólio de ${estudio.nome}${local ? ` em ${local}` : ""} e solicite seu orçamento de tatuagem.`;
+  const ogImage = estudio.has_foto
+    ? `${APP_URL}/api/v1/public/${slug}/foto`
+    : estudio.has_logo
+    ? `${APP_URL}/api/v1/public/${slug}/logo`
+    : "/icon-512.png";
   return {
-    title: `${estudio.nome} — SessãoInk`,
-    description: estudio.bio ?? "Veja o portfólio e solicite um orçamento.",
+    title: estudio.nome,
+    description,
     robots: { index: true, follow: true },
+    alternates: { canonical: `/${slug}` },
+    openGraph: {
+      type: "profile",
+      title: estudio.nome,
+      description,
+      url: `/${slug}`,
+      images: [{ url: ogImage, alt: estudio.nome }],
+    },
+  };
+}
+
+function estudioJsonLd(estudio: EstudioPublico, slug: string) {
+  const image = estudio.has_foto
+    ? `${APP_URL}/api/v1/public/${slug}/foto`
+    : estudio.has_logo
+    ? `${APP_URL}/api/v1/public/${slug}/logo`
+    : undefined;
+  const handle = estudio.instagram?.replace(/^@/, "");
+  return {
+    "@context": "https://schema.org",
+    "@type": "TattooParlor",
+    name: estudio.nome,
+    url: `${APP_URL}/${slug}`,
+    ...(estudio.bio ? { description: estudio.bio } : {}),
+    ...(image ? { image } : {}),
+    ...(estudio.endereco_completo || estudio.cidade
+      ? {
+          address: {
+            "@type": "PostalAddress",
+            ...(estudio.endereco_completo
+              ? { streetAddress: estudio.endereco_completo }
+              : {}),
+            ...(estudio.cidade ? { addressLocality: estudio.cidade } : {}),
+            ...(estudio.uf ? { addressRegion: estudio.uf } : {}),
+            addressCountry: "BR",
+          },
+        }
+      : {}),
+    ...(handle ? { sameAs: [`https://instagram.com/${handle}`] } : {}),
   };
 }
 
@@ -112,6 +161,13 @@ export default async function PortalPublicoPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-[#050B12] text-[#F0EADD]">
+      {/* Dados estruturados (rich results — negócio local de tatuagem) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(estudioJsonLd(estudio, slug)),
+        }}
+      />
       {/* ── Hero ── */}
       <section className="relative px-6 pt-16 pb-12 max-w-2xl mx-auto text-center">
         {/* Logo do estúdio */}

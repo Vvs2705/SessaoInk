@@ -33,3 +33,20 @@ class TestAuditoria:
         assert r.status_code == 200
         # Pode haver bloqueio de rate-limit, mas ao menos a estrutura responde 200
         assert isinstance(r.json(), list)
+
+    async def test_financeiro_create_gera_auditoria(self, autenticado: AsyncClient):
+        # P1-03 — criar lançamento financeiro deve gerar evento financeiro.created
+        r = await autenticado.post(
+            "/api/v1/financeiro/",
+            json={"tipo": "ENTRADA", "valor": 150.0, "descricao": "Teste auditoria"},
+        )
+        assert r.status_code == 201, r.text
+
+        ev = await autenticado.get("/api/v1/auditoria/?acao=financeiro.created")
+        assert ev.status_code == 200
+        eventos = ev.json()
+        fin = next((e for e in eventos if e["acao"] == "financeiro.created"), None)
+        assert fin is not None
+        assert fin["entidade"] == "lancamento"
+        # valor auditado como número JSON (não Decimal cru) e sem dado sensível
+        assert "card" not in str(fin).lower()

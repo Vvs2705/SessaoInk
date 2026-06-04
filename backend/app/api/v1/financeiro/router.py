@@ -22,6 +22,7 @@ from app.models.financeiro import (
     TipoLancamento,
 )
 from app.models.usuario import TipoUsuario, Usuario
+from app.services.audit import log_event
 from app.services.tenant import (
     get_atendimento_do_estudio,
     get_lancamento_do_estudio,
@@ -541,6 +542,16 @@ async def criar_lancamento(
     session.add(lanc)
     await session.flush()
     await session.refresh(lanc)
+    await log_event(
+        session,
+        acao="financeiro.created",
+        estudio_id=usuario.estudio_id,
+        actor_usuario_id=usuario.id,
+        actor_tipo=usuario.tipo.value,
+        entidade="lancamento",
+        entidade_id=str(lanc.id),
+        dados={"tipo": lanc.tipo.value, "valor": float(lanc.valor), "status": lanc.status.value},
+    )
     return lanc
 
 
@@ -610,6 +621,16 @@ async def atualizar_lancamento(
 
     await session.flush()
     await session.refresh(lanc)
+    await log_event(
+        session,
+        acao="financeiro.updated",
+        estudio_id=usuario.estudio_id,
+        actor_usuario_id=usuario.id,
+        actor_tipo=usuario.tipo.value,
+        entidade="lancamento",
+        entidade_id=str(lanc.id),
+        dados={"campos": sorted(campos.keys()), "status": lanc.status.value},
+    )
     return lanc
 
 
@@ -625,7 +646,19 @@ async def deletar_lancamento(
         estudio_id=usuario.estudio_id,
         detail="Lançamento não encontrado",
     )
+    lanc_id = str(lanc.id)
+    lanc_meta = {"tipo": lanc.tipo.value, "valor": float(lanc.valor)}
     await session.delete(lanc)
+    await log_event(
+        session,
+        acao="financeiro.deleted",
+        estudio_id=usuario.estudio_id,
+        actor_usuario_id=usuario.id,
+        actor_tipo=usuario.tipo.value,
+        entidade="lancamento",
+        entidade_id=lanc_id,
+        dados=lanc_meta,
+    )
     return None
 
 
@@ -737,6 +770,21 @@ async def exportar_financeiro(
     query = query.order_by(Lancamento.criado_em.desc())
     result = await session.execute(query)
     lancamentos = result.scalars().all()
+
+    await log_event(
+        session,
+        acao="financeiro.exported",
+        estudio_id=usuario.estudio_id,
+        actor_usuario_id=usuario.id,
+        actor_tipo=usuario.tipo.value,
+        entidade="financeiro",
+        dados={
+            "total": len(lancamentos),
+            "tipo": tipo.value if tipo else None,
+            "status": status.value if status else None,
+        },
+        commit=True,
+    )
 
     output = io.StringIO()
     writer = csv.writer(output, delimiter=";", lineterminator="\n")

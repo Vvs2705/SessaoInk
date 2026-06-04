@@ -15,6 +15,7 @@ from app.core.database import get_session
 from app.core.security import hash_senha
 from app.models.convite import Convite, StatusConvite
 from app.models.usuario import TipoUsuario, Usuario
+from app.services.audit import log_event
 
 router = APIRouter(prefix="/convites", tags=["convites"])
 
@@ -114,6 +115,17 @@ async def criar_convite(
     session.add(convite)
     await session.flush()
 
+    await log_event(
+        session,
+        acao="usuario.invited",
+        estudio_id=usuario.estudio_id,
+        actor_usuario_id=usuario.id,
+        actor_tipo=usuario.tipo.value,
+        entidade="convite",
+        entidade_id=str(convite.id),
+        dados={"email": convite.email, "role": convite.role.value},
+    )
+
     # TODO: enviar email com link de convite contendo token_raw
     # O link seria: {FRONTEND_URL}/convite/aceitar/{token_raw}
 
@@ -158,6 +170,15 @@ async def revogar_convite(
         )
 
     convite.status = StatusConvite.REVOGADO
+    await log_event(
+        session,
+        acao="usuario.invite.revoked",
+        estudio_id=usuario.estudio_id,
+        actor_usuario_id=usuario.id,
+        actor_tipo=usuario.tipo.value,
+        entidade="convite",
+        entidade_id=str(convite.id),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -219,4 +240,14 @@ async def aceitar_convite(
     convite.aceito_em = agora
 
     await session.flush()
+    await log_event(
+        session,
+        acao="usuario.invite.accepted",
+        estudio_id=convite.estudio_id,
+        actor_usuario_id=novo_usuario.id,
+        actor_tipo=novo_usuario.tipo.value,
+        entidade="usuario",
+        entidade_id=str(novo_usuario.id),
+        dados={"role": novo_usuario.tipo.value, "via_convite": str(convite.id)},
+    )
     return novo_usuario

@@ -2,12 +2,19 @@
 
 import hashlib
 import hmac
+import time
 
 from app.core.pagamentos import (
     GatewayPagamento,
     validar_assinatura_webhook,
 )
 from app.core.planos import get_plano
+
+
+def _assinar(secret: str, data_id: str, req_id: str, ts: str) -> str:
+    manifest = f"id:{data_id};request-id:{req_id};ts:{ts};"
+    v1 = hmac.new(secret.encode(), manifest.encode(), hashlib.sha256).hexdigest()
+    return f"ts={ts},v1={v1}"
 
 
 class TestMontagemPayloads:
@@ -71,3 +78,44 @@ class TestWebhookSignature:
             data_id="1",
             secret="segredo",
         ) is False
+
+
+class TestWebhookAntiReplay:
+    """P0-07 — janela anti-replay opcional (opt-in via max_idade_segundos)."""
+
+    secret = "chave-webhook"
+    data_id = "98765"
+    req_id = "req-xyz"
+
+    def test_assinatura_fresca_dentro_da_janela(self):
+        ts = str(int(time.time()))
+        sig = _assinar(self.secret, self.data_id, self.req_id, ts)
+        assert validar_assinatura_webhook(
+            x_signature=sig, x_request_id=self.req_id, data_id=self.data_id,
+            secret=self.secret, max_idade_segundos=600,
+        ) is True
+
+    def test_assinatura_antiga_rejeitada_pela_janela(self):
+        ts = str(int(time.time()) - 3600)  # 1h atrás
+        sig = _assinar(self.secret, self.data_id, self.req_id, ts)
+        assert validar_assinatura_webhook(
+            x_signature=sig, x_request_id=self.req_id, data_id=self.data_id,
+            secret=self.secret, max_idade_segundos=600,
+        ) is False
+
+    def test_assinatura_antiga_aceita_sem_janela(self):
+        # Sem max_idade_segundos (default), o ts antigo é aceito (comportamento legado).
+        ts = str(int(time.time()) - 3600)
+        sig = _assinar(self.secret, self.data_id, self.req_id, ts)
+        assert validar_assinatura_webhook(
+            x_signature=sig, x_request_id=self.req_id, data_id=self.data_id,
+            secret=self.secret,
+        ) is True
+
+    def test_ts_em_milissegundos(self):
+        ts = str(int(time.time()) * 1000)  # MP às vezes manda ms
+        sig = _assinar(self.secret, self.data_id, self.req_id, ts)
+        assert validar_assinatura_webhook(
+            x_signature=sig, x_request_id=self.req_id, data_id=self.data_id,
+            secret=self.secret, max_idade_segundos=600,
+        ) is True

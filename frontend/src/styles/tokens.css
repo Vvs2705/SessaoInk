@@ -10,6 +10,26 @@
   --mist-line: #243337;
   --error-red: #E35D5B;
 
+  /* Acento dourado (design system editorial) */
+  --si-gold: #C9A96E;
+  --si-gold-dim: rgba(201, 169, 110, 0.12);
+  --si-gold-border: rgba(201, 169, 110, 0.28);
+  --gold: var(--si-gold);
+
+  /* Camadas de superfície (escuro em camadas) */
+  --si-bg: #0B171C;
+  --si-surface: #111E24;
+  --si-raised: #162028;
+  --si-overlay: #1C2A32;
+  --si-teal: #3D9E8C;
+
+  /* Texto e bordas refinados (design upgrade — convivem com os tokens base) */
+  --si-text: #F0EBE3;
+  --si-text-muted: #8A9BA8;
+  --si-text-subtle: #4A6070;
+  --si-border: rgba(240, 235, 227, 0.07);
+  --si-border-strong: rgba(240, 235, 227, 0.14);
+
   --bg: var(--ink-night);
   --surface: var(--deep-graphite);
   --text: var(--porcelain-ink);
@@ -65,7 +85,9 @@
   --space-8: 32px; --space-10: 40px; --space-12: 48px;
 
   /* Tipografia */
-  --font-sans: Inter, system-ui, -apple-system, sans-serif;
+  --font-sans: 'Outfit', system-ui, -apple-system, sans-serif;
+  --font-display: 'Cormorant', Georgia, serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
   --text-xs: 12px; --text-sm: 14px; --text-md: 16px;
   --text-lg: 18px; --text-xl: 22px; --text-2xl: 28px; --text-3xl: 36px;
 

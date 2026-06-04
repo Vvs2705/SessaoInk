@@ -22,6 +22,7 @@ from app.core.pagamentos import (
     gateway,
     validar_assinatura_webhook,
 )
+from app.core.pci import motivo_dados_cartao, redigir_sensivel
 from app.core.planos import get_plano
 from app.models.saas import Assinatura, PagamentoEvento
 from app.models.usuario import TipoUsuario, Usuario
@@ -74,6 +75,19 @@ async def criar_checkout(
 
     503 enquanto `PAGAMENTOS_GO_LIVE` estiver desligado (cobrança não habilitada).
     """
+    # P0-05 — o SessãoInk usa Checkout Pro: nenhum dado de cartão deve chegar aqui.
+    # Rejeita ANTES do gate de go-live (sempre 400, mesmo com cobrança desligada).
+    try:
+        raw_body = await request.json()
+    except Exception:
+        raw_body = {}
+    motivo = motivo_dados_cartao(raw_body)
+    if motivo:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Dados de cartão não são aceitos neste endpoint ({motivo}).",
+        )
+
     if not settings.PAGAMENTOS_GO_LIVE:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -166,7 +180,10 @@ async def webhook_mercadopago(
     recurso_id = str(data.get("id") or body.get("id") or request.query_params.get("data.id") or "")
 
     if not validar_assinatura_webhook(
-        x_signature=x_signature, x_request_id=x_request_id, data_id=recurso_id
+        x_signature=x_signature,
+        x_request_id=x_request_id,
+        data_id=recurso_id,
+        max_idade_segundos=600,  # P0-07 — janela anti-replay de 10 min
     ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Assinatura inválida."
@@ -176,11 +193,12 @@ async def webhook_mercadopago(
         return {"status": "ignorado"}
 
     # Idempotência: insere no inbox; se já existir (dedup), não reprocessa.
+    # P0-05 — redige segredos/dados de cartão antes de persistir o payload.
     evento = PagamentoEvento(
         gateway="mercadopago",
         evento_tipo=str(tipo),
         recurso_id=recurso_id,
-        dados=body,
+        dados=redigir_sensivel(body),
     )
     session.add(evento)
     try:

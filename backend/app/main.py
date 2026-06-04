@@ -19,6 +19,13 @@ configure_logging(settings.ENVIRONMENT)
 
 logger = logging.getLogger(__name__)
 
+def _sentry_before_send(event, hint):
+    """P0-05 — remove segredos/dados de cartão do evento antes de sair para o Sentry."""
+    from app.core.pci import redigir_sensivel
+
+    return redigir_sensivel(event)
+
+
 # Inicializar Sentry apenas se DSN configurado (produção)
 if settings.SENTRY_DSN:
     sentry_sdk.init(
@@ -30,6 +37,7 @@ if settings.SENTRY_DSN:
         traces_sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
         environment=settings.ENVIRONMENT,
         send_default_pii=False,  # LGPD — não enviar dados pessoais
+        before_send=_sentry_before_send,
     )
 from app.api.v1.admin.router import router as admin_router
 from app.api.v1.agenda.router import router as agenda_router

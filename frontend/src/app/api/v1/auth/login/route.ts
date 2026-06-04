@@ -16,6 +16,12 @@ export async function POST(request: NextRequest) {
   const fwdHeaders: Record<string, string> = { "Content-Type": "application/json" };
   if (clientIp) fwdHeaders["X-Forwarded-For"] = clientIp;
 
+  // P0-03 — prova de origem do proxy: sem este segredo o backend ignora o
+  // X-Forwarded-For acima (anti-spoofing do rate-limit de login). Inerte
+  // enquanto INTERNAL_PROXY_SECRET não estiver definido na Vercel.
+  const proxySecret = process.env.INTERNAL_PROXY_SECRET;
+  if (proxySecret) fwdHeaders["X-Internal-Proxy-Secret"] = proxySecret;
+
   let backendRes: Response;
   try {
     backendRes = await fetch(`${BACKEND}/api/v1/auth/login`, {

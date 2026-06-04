@@ -7,8 +7,8 @@ import { TattooLoginIllustration } from "@/components/auth/TattooLoginIllustrati
 const LAST_SEEN_KEY = "sessaoink:login-animation:last-seen-date";
 const PENDING_UNTIL_KEY = "sessaoink:login-animation:pending-until";
 
-/** Duração exata da coreografia (5,2s). Sincronizada com globals.css. */
-const ANIMATION_DURATION_MS = 5200;
+/** Duração exata da coreografia (2,6s). Sincronizada com globals.css. */
+const ANIMATION_DURATION_MS = 2600;
 
 function getLocalDateKey(date = new Date()) {
   const year = date.getFullYear();

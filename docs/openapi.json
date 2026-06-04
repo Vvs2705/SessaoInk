@@ -3433,6 +3433,32 @@
         }
       }
     },
+    "/api/v1/public/estudios": {
+      "get": {
+        "tags": [
+          "portal-público"
+        ],
+        "summary": "Listar Estudios Publicos",
+        "description": "Slugs dos estúdios com presença pública (≥1 item de portfólio PUBLICO).\n\nUsado pelo sitemap do frontend para indexar os portais. Só lista estúdios\nativos com conteúdo público — evita indexar páginas vazias (thin content) e\nestúdios que não publicaram nada.",
+        "operationId": "listar_estudios_publicos_api_v1_public_estudios_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EstudioSitemapItem"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Estudios Publicos Api V1 Public Estudios Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/public/{slug}": {
       "get": {
         "tags": [
@@ -8851,6 +8877,31 @@
           "slug"
         ],
         "title": "EstudioResponse"
+      },
+      "EstudioSitemapItem": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "atualizado_em": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atualizado Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slug"
+        ],
+        "title": "EstudioSitemapItem"
       },
       "FlashArtPublicaResponse": {
         "properties": {

@@ -22,7 +22,10 @@ class JSONFormatter(logging.Formatter):
         if cid:
             log_data["correlation_id"] = cid
         if hasattr(record, "extra"):
-            log_data.update(record.__dict__.get("extra", {}))
+            # P0-05 — redação de segredos/dados de cartão antes de emitir o log.
+            from app.core.pci import redigir_sensivel
+
+            log_data.update(redigir_sensivel(record.__dict__.get("extra", {})))
         if record.exc_info:
             log_data["exception"] = self.formatException(record.exc_info)
         return json.dumps(log_data, ensure_ascii=False)

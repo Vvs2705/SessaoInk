@@ -27,6 +27,25 @@ class TestConfigECheckout:
         )
         assert r.status_code == 401
 
+    async def test_checkout_rejeita_card_number(self, autenticado: AsyncClient):
+        # P0-05 — dado de cartão é rejeitado com 400 (antes mesmo do gate de go-live).
+        r = await autenticado.post(
+            "/api/v1/pagamentos/checkout",
+            json={
+                "plano_slug": "profissional",
+                "ciclo": "mensal",
+                "card_number": "4111111111111111",
+            },
+        )
+        assert r.status_code == 400, r.text
+
+    async def test_checkout_rejeita_cvv(self, autenticado: AsyncClient):
+        r = await autenticado.post(
+            "/api/v1/pagamentos/checkout",
+            json={"plano_slug": "profissional", "ciclo": "mensal", "cvv": "123"},
+        )
+        assert r.status_code == 400, r.text
+
 
 class TestWebhook:
     async def test_webhook_idempotente(self, client: AsyncClient):

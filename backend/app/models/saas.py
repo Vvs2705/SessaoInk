@@ -9,6 +9,7 @@ from sqlalchemy import (
     DateTime,
     Enum,
     ForeignKey,
+    Integer,
     String,
     UniqueConstraint,
     Uuid,
@@ -31,6 +32,31 @@ class StatusAssinatura(enum.StrEnum):
     INADIMPLENTE = "INADIMPLENTE"
     CANCELADA = "CANCELADA"
     SUSPENSA = "SUSPENSA"
+
+
+class StatusCobranca(enum.StrEnum):
+    """Ciclo de vida da cobrança local (criada antes de falar com o gateway)."""
+
+    CRIADA = "CRIADA"
+    ENVIADA_GATEWAY = "ENVIADA_GATEWAY"
+    PENDENTE = "PENDENTE"
+    PAGA = "PAGA"
+    EXPIRADA = "EXPIRADA"
+    CANCELADA = "CANCELADA"
+    FALHA = "FALHA"
+
+
+class StatusPagamento(enum.StrEnum):
+    """Status do pagamento conforme o gateway (Mercado Pago)."""
+
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    AUTHORIZED = "AUTHORIZED"
+    IN_PROCESS = "IN_PROCESS"
+    REJECTED = "REJECTED"
+    REFUNDED = "REFUNDED"
+    CHARGED_BACK = "CHARGED_BACK"
+    CANCELLED = "CANCELLED"
 
 
 class Plano(Base, UUIDMixin, TimestampMixin):
@@ -94,6 +120,68 @@ class PagamentoEvento(Base, UUIDMixin):
     status: Mapped[str | None] = mapped_column(String(40), nullable=True)
     processado: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     dados: Mapped[dict | None] = mapped_column("payload_json", JSON, nullable=True)
+    # P0-06 — vínculo opcional ao pagamento local reconciliado.
+    pagamento_id: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True), nullable=True)
+    x_request_id: Mapped[str | None] = mapped_column(String(120), nullable=True)
     criado_em: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+
+class Cobranca(Base, UUIDMixin, TimestampMixin):
+    """Cobrança local — criada ANTES de chamar o gateway (P0-06).
+
+    `external_reference` e `idempotency_key` usam o id local (nunca o estudio_id),
+    evitando vazar o tenant e colapsar checkouts distintos. A assinatura só é
+    ativada após reconciliação do pagamento contra o gateway.
+    """
+
+    __tablename__ = "cobrancas"
+
+    estudio_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("estudios.id", ondelete="RESTRICT"),
+        nullable=False, index=True
+    )
+    plano_slug: Mapped[str] = mapped_column(String(40), nullable=False)
+    ciclo: Mapped[str] = mapped_column(String(20), nullable=False)
+    valor_centavos: Mapped[int] = mapped_column(Integer, nullable=False)
+    moeda: Mapped[str] = mapped_column(String(3), nullable=False, default="BRL")
+    status: Mapped[StatusCobranca] = mapped_column(
+        Enum(StatusCobranca, name="status_cobranca"),
+        default=StatusCobranca.CRIADA, nullable=False
+    )
+    gateway: Mapped[str] = mapped_column(String(40), nullable=False, default="mercadopago")
+    gateway_preference_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    gateway_preapproval_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    external_reference: Mapped[str] = mapped_column(
+        String(64), nullable=False, unique=True, index=True
+    )
+    idempotency_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    init_point: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    expira_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_by_usuario_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), nullable=True
+    )
+
+
+class Pagamento(Base, UUIDMixin, TimestampMixin):
+    """Pagamento reconciliado a partir do gateway (P0-06). Sem dados de cartão."""
+
+    __tablename__ = "pagamentos"
+
+    estudio_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=False, index=True)
+    cobranca_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("cobrancas.id"), nullable=True, index=True
+    )
+    gateway: Mapped[str] = mapped_column(String(40), nullable=False, default="mercadopago")
+    gateway_payment_id: Mapped[str] = mapped_column(String(120), nullable=False, unique=True)
+    status: Mapped[StatusPagamento] = mapped_column(
+        Enum(StatusPagamento, name="status_pagamento"), nullable=False
+    )
+    payment_type: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    payment_method_id: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    valor_centavos: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    moeda: Mapped[str] = mapped_column(String(3), nullable=False, default="BRL")
+    pago_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    reconciliado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    payload_minimo_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)

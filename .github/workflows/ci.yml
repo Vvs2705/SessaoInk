@@ -115,11 +115,31 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: pip-audit (backend) — advisory
-        # Advisory por ora: vulnerabilidades transitivas do ecossistema Python
-        # exigem triagem de exploitabilidade antes de bloquear merge.
-        continue-on-error: true
+      - name: pip-audit (backend) — bloqueante
+        # P1-01: bloqueante. Estado verificado limpo (sem CVE conhecido no
+        # requirements.lock). Se um CVE novo aparecer, o merge trava até triagem
+        # (atualizar dep ou justificar com --ignore-vuln documentado).
         run: pip install pip-audit && pip-audit -r backend/requirements.lock
+      - name: OSV-Scanner (lockfiles) — bloqueante
+        # Cobre requirements.lock (Python) e package-lock.json (npm) via OSV.dev.
+        # Binário pinado para não quebrar por mudança de action de terceiros.
+        run: |
+          curl -sSfL "https://github.com/google/osv-scanner/releases/download/v1.9.2/osv-scanner_linux_amd64" -o osv-scanner
+          chmod +x osv-scanner
+          ./osv-scanner --lockfile=backend/requirements.lock --lockfile=frontend/package-lock.json
+
+  sast:
+    name: SAST (Semgrep)
+    runs-on: ubuntu-latest
+    # Advisory na 1ª fase: a varredura inicial de SAST costuma trazer muitos
+    # achados a triar. Promover a bloqueante depois de zerar/baselinar falsos-positivos.
+    continue-on-error: true
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v4
+      - name: Semgrep (regras FastAPI + Next.js/TS + segurança)
+        run: semgrep scan --config p/python --config p/react --config p/typescript --config p/security-audit --config p/secrets --error
 
   docker-sbom:
     name: Docker/SBOM Scan (advisory)

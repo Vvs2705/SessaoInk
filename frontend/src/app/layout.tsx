@@ -43,14 +43,30 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
+              // Em desenvolvimento os chunks do Next não são hasheados e mudam
+              // a cada compilação; um SW de cache (network-first) acaba servindo
+              // runtime/chunks inconsistentes e quebra a hidratação. Por isso o
+              // SW só é registrado em produção. Em dev, desregistra qualquer SW
+              // remanescente e limpa o cache para não envenenar a sessão.
               if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').then(function(reg) {
-                    console.log('ServiceWorker registrado com sucesso:', reg.scope);
-                  }).catch(function(err) {
-                    console.log('Falha ao registrar ServiceWorker:', err);
+                if (${process.env.NODE_ENV === "production"}) {
+                  window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                      console.log('ServiceWorker registrado com sucesso:', reg.scope);
+                    }).catch(function(err) {
+                      console.log('Falha ao registrar ServiceWorker:', err);
+                    });
                   });
-                });
+                } else {
+                  navigator.serviceWorker.getRegistrations().then(function(regs) {
+                    regs.forEach(function(reg) { reg.unregister(); });
+                  });
+                  if (self.caches && caches.keys) {
+                    caches.keys().then(function(keys) {
+                      keys.forEach(function(k) { caches.delete(k); });
+                    });
+                  }
+                }
               }
             `
           }}

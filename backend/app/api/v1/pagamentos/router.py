@@ -220,10 +220,20 @@ async def webhook_mercadopago(
                 if assinatura:
                     from app.models.saas import StatusAssinatura
 
+                    ja_ativa = assinatura.status == StatusAssinatura.ATIVA
                     assinatura.status = StatusAssinatura.ATIVA
                     assinatura.gateway = "mercadopago"
                     evento.assinatura_id = assinatura.id
                     evento.estudio_id = assinatura.estudio_id
+                    if not ja_ativa:
+                        await log_event(
+                            session,
+                            acao="assinatura.activated",
+                            estudio_id=assinatura.estudio_id,
+                            entidade="assinatura",
+                            entidade_id=str(assinatura.id),
+                            dados={"gateway": "mercadopago", "pagamento_id": recurso_id},
+                        )
             evento.processado = True
         except GatewayPagamentoError as exc:
             logger.warning("webhook_reconciliacao_falhou", extra={"extra": {"erro": str(exc)}})

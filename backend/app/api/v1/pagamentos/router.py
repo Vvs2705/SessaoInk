@@ -180,7 +180,10 @@ async def webhook_mercadopago(
     recurso_id = str(data.get("id") or body.get("id") or request.query_params.get("data.id") or "")
 
     if not validar_assinatura_webhook(
-        x_signature=x_signature, x_request_id=x_request_id, data_id=recurso_id
+        x_signature=x_signature,
+        x_request_id=x_request_id,
+        data_id=recurso_id,
+        max_idade_segundos=600,  # P0-07 — janela anti-replay de 10 min
     ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Assinatura inválida."

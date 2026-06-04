@@ -19,6 +19,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import logging
+import time
 from typing import Any
 
 import httpx
@@ -213,6 +214,7 @@ def validar_assinatura_webhook(
     x_request_id: str | None,
     data_id: str | None,
     secret: str | None = None,
+    max_idade_segundos: int | None = None,
 ) -> bool:
     """Valida a assinatura HMAC do webhook do Mercado Pago.
 
@@ -220,6 +222,10 @@ def validar_assinatura_webhook(
     `x-signature` traz `ts=<unix>,v1=<hmac sha256 hex>`.
     Se não houver secret configurado, retorna True (modo permissivo em ambientes
     sem segredo — o go-live exige o secret presente).
+
+    `max_idade_segundos` (P0-07 anti-replay): quando definido, rejeita assinaturas
+    cujo `ts` esteja fora da janela [agora - janela, agora + janela]. Opt-in para
+    não alterar chamadas existentes; o router liga com uma janela de minutos.
     """
     secret = secret if secret is not None else settings.MERCADO_PAGO_WEBHOOK_SECRET
     if not secret:
@@ -239,7 +245,22 @@ def validar_assinatura_webhook(
     esperado = hmac.new(
         secret.encode("utf-8"), manifest.encode("utf-8"), hashlib.sha256
     ).hexdigest()
-    return hmac.compare_digest(esperado, v1)
+    if not hmac.compare_digest(esperado, v1):
+        return False
+
+    # P0-07 — janela anti-replay: um webhook válido capturado não pode ser
+    # reenviado horas depois. Aceita ts em segundos ou milissegundos.
+    if max_idade_segundos is not None:
+        try:
+            ts_val = int(ts)
+        except ValueError:
+            return False
+        if ts_val > 10**12:  # heurística: timestamp em milissegundos
+            ts_val //= 1000
+        if abs(time.time() - ts_val) > max_idade_segundos:
+            return False
+
+    return True
 
 
 # Instância padrão reutilizável.

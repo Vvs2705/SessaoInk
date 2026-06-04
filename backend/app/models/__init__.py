@@ -34,9 +34,13 @@ from app.models.portfolio import (  # noqa: F401
 )
 from app.models.saas import (  # noqa: F401
     Assinatura,
+    Cobranca,
+    Pagamento,
     PagamentoEvento,
     Plano,
     StatusAssinatura,
+    StatusCobranca,
+    StatusPagamento,
     StatusPlano,
 )
 from app.models.usuario import Estudio, TipoUsuario, Usuario  # noqa: F401

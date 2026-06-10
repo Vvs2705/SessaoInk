@@ -34,9 +34,9 @@ export function AuthMarketingPanel() {
           SessãoInk
         </div>
 
-        <h1 className="text-4xl font-black leading-tight tracking-tight xl:text-5xl">
+        <p className="text-4xl font-black leading-tight tracking-tight xl:text-5xl">
           Gestão feita para tatuadores que querem viver da arte sem se perder na operação.
-        </h1>
+        </p>
 
         <p className="mt-5 max-w-lg text-base leading-7 text-[#87938F]">
           Agenda, clientes, atendimentos, financeiro, portfólio, flash arts e documentos em um só lugar.

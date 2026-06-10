@@ -37,7 +37,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const hasToken = Boolean(request.cookies.get("access_token"));
+  // Sessão ativa = access_token válido OU marcador de sessão (sk_session).
+  // O access_token expira em 15 min; o marcador (7 dias) evita que um reload/deep-link
+  // após a expiração jogue o usuário no /login — o client renova o token via /auth/refresh.
+  const hasToken =
+    Boolean(request.cookies.get("access_token")) ||
+    Boolean(request.cookies.get("sk_session"));
 
   // 2. Rotas de autenticação (/login, /registro, /senha)
   //    Se o usuário já está autenticado, redireciona para o dashboard.

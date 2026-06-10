@@ -49,6 +49,17 @@ export async function POST(request: NextRequest) {
         response.headers.append("set-cookie", c.trim())
       );
     }
+
+    // Marcador de sessão não-secreto (Path=/, 7 dias): permite ao middleware saber
+    // que há sessão ativa mesmo após o access_token (15 min) expirar, evitando
+    // logout ao recarregar/deep-link. O client renova o access_token via /auth/refresh.
+    response.cookies.set("sk_session", "1", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    });
   }
 
   return response;

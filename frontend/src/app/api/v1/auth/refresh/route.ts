@@ -40,6 +40,15 @@ export async function POST(request: NextRequest) {
         response.headers.append("set-cookie", c.trim())
       );
     }
+
+    // Renova o marcador de sessão (7 dias) a cada refresh bem-sucedido.
+    response.cookies.set("sk_session", "1", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    });
   }
 
   return response;

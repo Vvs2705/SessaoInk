@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { X, User, Phone, Instagram, Image as ImageIcon, DollarSign, Calendar, FileText, Check, Loader2 } from "lucide-react";
+import { X, User, Phone, Instagram, Image as ImageIcon, DollarSign, Calendar, Mail, Check, Loader2 } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +30,11 @@ interface ClienteAtendimento {
   email: string | null;
 }
 
+interface DataPreferida {
+  data: string;
+  periodo: string;
+}
+
 interface Atendimento {
   id: string;
   tipo: string;
@@ -43,8 +48,16 @@ interface Atendimento {
   tamanho_cm: string | null;
   notas_privadas: string | null;
   data_sessao: string | null;
+  datas_preferidas: DataPreferida[] | null;
+  horario_personalizado: string | null;
   cliente: ClienteAtendimento | null;
 }
+
+const PERIODO_LABEL: Record<string, string> = {
+  manha: "Manhã",
+  tarde: "Tarde",
+  noite: "Noite",
+};
 
 interface DetalhesAtendimentoModalProps {
   atendimento: Atendimento;
@@ -191,6 +204,38 @@ export default function DetalhesAtendimentoModal({ atendimento, onClose }: Detal
                   </p>
                 </div>
               )}
+
+              {((atendimento.datas_preferidas?.length ?? 0) > 0 ||
+                atendimento.horario_personalizado) && (
+                <div className="border-t border-[#243337] pt-2.5 mt-2">
+                  <span className="text-xs text-[#87938F] block mb-1.5">
+                    Disponibilidade sugerida pelo cliente
+                  </span>
+                  {(atendimento.datas_preferidas?.length ?? 0) > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-1.5">
+                      {atendimento.datas_preferidas!.map((p) => (
+                        <span
+                          key={p.data}
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-[#2F9285] bg-[#2F9285]/10 border border-[#2F9285]/25 rounded-full px-2.5 py-1"
+                        >
+                          <Calendar size={11} />
+                          {new Date(`${p.data}T12:00:00`).toLocaleDateString("pt-BR", {
+                            weekday: "short",
+                            day: "2-digit",
+                            month: "2-digit",
+                          })}{" "}
+                          · {PERIODO_LABEL[p.periodo] ?? p.periodo}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {atendimento.horario_personalizado && (
+                    <p className="text-xs text-[#C36B3F] leading-relaxed">
+                      Horário personalizado: {atendimento.horario_personalizado}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Informações do Cliente */}
@@ -226,6 +271,17 @@ export default function DetalhesAtendimentoModal({ atendimento, onClose }: Detal
                         className="text-[#2F9285] hover:underline"
                       >
                         {contato.instagram}
+                      </a>
+                    </div>
+                  )}
+                  {atendimento.cliente?.email && (
+                    <div className="flex items-center gap-2.5 text-sm text-[#F0EADD]">
+                      <Mail size={15} className="text-[#87938F]" />
+                      <a
+                        href={`mailto:${atendimento.cliente.email}`}
+                        className="text-[#2F9285] hover:underline"
+                      >
+                        {atendimento.cliente.email}
                       </a>
                     </div>
                   )}

@@ -86,6 +86,9 @@ class AtendimentoResponse(BaseModel):
     valor_sinal: float | None
     notas_privadas: str | None = None
     data_sessao: datetime | None
+    duracao_minutos: int | None = None
+    datas_preferidas: list[dict] | None = None
+    horario_personalizado: str | None = None
     ativo: bool
     cliente: ClienteAtendimentoResponse | None = None
     imagens: list[AtendimentoImagemResponse] = []

@@ -62,10 +62,16 @@ export default function LoginPage() {
     setApiError(null);
 
     try {
-      const res = (await api.post("/api/v1/auth/login", {
-        email: data.email,
-        senha: data.senha,
-      })) as LoginApiResponse;
+      // Timeout de 20s: se a API demorar demais, o usuário recebe um erro
+      // acionável em vez do botão preso em "Entrando…".
+      const res = (await api.post(
+        "/api/v1/auth/login",
+        {
+          email: data.email,
+          senha: data.senha,
+        },
+        { signal: AbortSignal.timeout(20000) },
+      )) as LoginApiResponse;
 
       if (res?.mfa_required) {
         setMfaRequired(true);
@@ -113,6 +119,13 @@ export default function LoginPage() {
         }
 
         setApiError(message);
+      } else if (
+        error instanceof DOMException &&
+        (error.name === "TimeoutError" || error.name === "AbortError")
+      ) {
+        setApiError(
+          "O servidor demorou para responder. Verifique sua conexão e tente novamente.",
+        );
       } else {
         setApiError("Erro de conexão. Verifique se o servidor está rodando.");
       }

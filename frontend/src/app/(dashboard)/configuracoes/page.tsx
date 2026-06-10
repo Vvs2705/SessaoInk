@@ -23,6 +23,9 @@ import {
   Upload,
   Image as ImageIcon,
   CreditCard,
+  Clock,
+  CalendarDays,
+  RefreshCw,
 } from "lucide-react";
 import { api, ApiError, withCsrfHeaders } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
@@ -41,6 +44,8 @@ interface Estudio {
   telefone: string | null;
   instagram: string | null;
   email_notificacao: string | null;
+  horario_funcionamento: Record<string, { abre: string; fecha: string }> | null;
+  agenda_ics_url: string | null;
   has_logo: boolean;
   has_foto: boolean;
 
@@ -125,6 +130,17 @@ const TIPO_LABEL: Record<string, string> = {
   RECEPCIONISTA: "Recepção",
 };
 
+// 0=segunda … 6=domingo (mesmo índice usado pelo backend)
+const DIAS_SEMANA = [
+  "Segunda",
+  "Terça",
+  "Quarta",
+  "Quinta",
+  "Sexta",
+  "Sábado",
+  "Domingo",
+];
+
 // ---------------------------------------------------------------------------
 // Componente principal
 // ---------------------------------------------------------------------------
@@ -180,6 +196,16 @@ export default function ConfiguracoesPage() {
   const [mfaDisablePending, setMfaDisablePending] = useState(false);
 
   const [mfaEmailActivating, setMfaEmailActivating] = useState(false);
+
+  // Horário de funcionamento (0=segunda … 6=domingo)
+  const [horarioFunc, setHorarioFunc] = useState<
+    Record<string, { abre: string; fecha: string }>
+  >({});
+  const [horarioEditado, setHorarioEditado] = useState(false);
+  const [horarioInicializado, setHorarioInicializado] = useState(false);
+
+  // Link iCalendar (Google Agenda)
+  const [icsCopiado, setIcsCopiado] = useState(false);
 
   // Estados de Assinatura / Checkout
   const [selectedPlanSlug, setSelectedPlanSlug] = useState<string>("profissional");
@@ -244,6 +270,68 @@ export default function ConfiguracoesPage() {
       setNovoSlug(estudio.slug);
     }
   }, [estudio?.slug]);
+
+  // Inicializa o editor de horário de funcionamento com os dados do estúdio
+  useEffect(() => {
+    if (estudio && !horarioInicializado) {
+      setHorarioFunc(estudio.horario_funcionamento ?? {});
+      setHorarioInicializado(true);
+    }
+  }, [estudio, horarioInicializado]);
+
+  const salvarHorario = useMutation({
+    mutationFn: () =>
+      api.patch<Estudio>("/api/v1/estudio/", {
+        horario_funcionamento:
+          Object.keys(horarioFunc).length > 0 ? horarioFunc : null,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["estudio"] });
+      setHorarioEditado(false);
+      showToast("sucesso", "Horário de funcionamento salvo!");
+    },
+    onError: (e: Error) =>
+      showToast("erro", e instanceof ApiError ? e.detail : "Erro ao salvar horário."),
+  });
+
+  const gerarLinkIcs = useMutation({
+    mutationFn: () => api.post<Estudio>("/api/v1/estudio/agenda-ics"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["estudio"] });
+      showToast("sucesso", "Link de agenda gerado! Adicione no seu Google Agenda.");
+    },
+    onError: () => showToast("erro", "Erro ao gerar o link da agenda."),
+  });
+
+  const revogarLinkIcs = useMutation({
+    mutationFn: () => api.delete<Estudio>("/api/v1/estudio/agenda-ics"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["estudio"] });
+      showToast("sucesso", "Link de agenda revogado.");
+    },
+    onError: () => showToast("erro", "Erro ao revogar o link da agenda."),
+  });
+
+  const toggleDiaAberto = (dia: string) => {
+    setHorarioEditado(true);
+    setHorarioFunc((prev) => {
+      const novo = { ...prev };
+      if (novo[dia]) {
+        delete novo[dia];
+      } else {
+        novo[dia] = { abre: "09:00", fecha: "19:00" };
+      }
+      return novo;
+    });
+  };
+
+  const setHoraDia = (dia: string, campo: "abre" | "fecha", valor: string) => {
+    setHorarioEditado(true);
+    setHorarioFunc((prev) => ({
+      ...prev,
+      [dia]: { ...(prev[dia] ?? { abre: "09:00", fecha: "19:00" }), [campo]: valor },
+    }));
+  };
 
   // Validação em tempo real do slug com debounce
   useEffect(() => {
@@ -1282,6 +1370,193 @@ export default function ConfiguracoesPage() {
                     <span className="text-[#2F9285] font-medium">✓ Serviço de email ativo.</span> Os emails são enviados automaticamente via Resend assim que um cliente preencher o formulário do portal. Basta salvar seu e-mail acima.
                   </p>
                 </div>
+              </div>
+
+              {/* Card de horário de funcionamento */}
+              <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Clock size={16} className="text-[#2F9285]" />
+                  <h2 className="text-base font-semibold text-[#F0EADD]">
+                    Horário de funcionamento
+                  </h2>
+                </div>
+                <p className="text-sm text-[#87938F]">
+                  Define quais dias o cliente pode sugerir no formulário de orçamento.
+                  Dias fechados aparecem desabilitados para ele — e pedidos fora do
+                  padrão chegam marcados como &quot;horário personalizado&quot;.
+                </p>
+
+                <div className="space-y-2">
+                  {DIAS_SEMANA.map((nome, i) => {
+                    const dia = String(i);
+                    const faixa = horarioFunc[dia];
+                    return (
+                      <div
+                        key={dia}
+                        className="flex flex-wrap items-center gap-3 p-2.5 bg-[#050B12] border border-[#243337] rounded-[10px]"
+                      >
+                        <label className="flex items-center gap-2.5 cursor-pointer min-w-[120px]">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(faixa)}
+                            onChange={() => toggleDiaAberto(dia)}
+                            disabled={!isAdmin}
+                          />
+                          <span
+                            className={cn(
+                              "text-sm font-medium",
+                              faixa ? "text-[#F0EADD]" : "text-[#87938F]"
+                            )}
+                          >
+                            {nome}
+                          </span>
+                        </label>
+                        {faixa ? (
+                          <div className="flex items-center gap-2 text-sm text-[#F0EADD]">
+                            <input
+                              type="time"
+                              value={faixa.abre}
+                              onChange={(e) => setHoraDia(dia, "abre", e.target.value)}
+                              disabled={!isAdmin}
+                              aria-label={`Abertura ${nome}`}
+                              className="bg-[#0B171C] border border-[#243337] rounded-[8px] px-2 py-1.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50"
+                            />
+                            <span className="text-[#87938F] text-xs">às</span>
+                            <input
+                              type="time"
+                              value={faixa.fecha}
+                              onChange={(e) => setHoraDia(dia, "fecha", e.target.value)}
+                              disabled={!isAdmin}
+                              aria-label={`Fechamento ${nome}`}
+                              className="bg-[#0B171C] border border-[#243337] rounded-[8px] px-2 py-1.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50"
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-xs text-[#87938F] italic">Fechado</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {isAdmin && (
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => salvarHorario.mutate()}
+                      disabled={!horarioEditado || salvarHorario.isPending}
+                      className={cn(
+                        "flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm font-medium transition-all",
+                        horarioEditado
+                          ? "bg-[#2F9285] text-[#050B12] hover:bg-[#2F9285]/90"
+                          : "bg-[#243337] text-[#87938F] cursor-not-allowed"
+                      )}
+                    >
+                      {salvarHorario.isPending ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Save size={14} />
+                      )}
+                      {salvarHorario.isPending ? "Salvando..." : "Salvar horário"}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Card de sincronização com Google Agenda (feed iCalendar) */}
+              <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6 space-y-4">
+                <div className="flex items-center gap-2">
+                  <CalendarDays size={16} className="text-[#2F9285]" />
+                  <h2 className="text-base font-semibold text-[#F0EADD]">
+                    Sincronizar agenda com o celular
+                  </h2>
+                </div>
+                <p className="text-sm text-[#87938F]">
+                  Gere um link privado da sua agenda e adicione no Google Agenda, Apple
+                  Calendar ou Outlook. Suas sessões aparecem automaticamente no
+                  calendário do celular, com notificações — sem precisar de conta Google
+                  vinculada.
+                </p>
+
+                {estudio?.agenda_ics_url ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={estudio.agenda_ics_url}
+                        aria-label="Link privado da agenda"
+                        className="flex-1 bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-xs text-[#87938F] font-mono focus:outline-none min-w-0"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(estudio.agenda_ics_url!);
+                          setIcsCopiado(true);
+                          setTimeout(() => setIcsCopiado(false), 2000);
+                        }}
+                        className="shrink-0 h-10 px-3 flex items-center gap-1.5 rounded-[10px] bg-[#2F9285] text-[#050B12] text-xs font-semibold hover:bg-[#3AA99A] transition-all"
+                      >
+                        {icsCopiado ? <CheckCircle size={14} /> : <Copy size={14} />}
+                        {icsCopiado ? "Copiado!" : "Copiar"}
+                      </button>
+                    </div>
+
+                    <div className="bg-[#2F9285]/5 border border-[#2F9285]/15 rounded-[12px] p-3">
+                      <p className="text-xs text-[#87938F] leading-relaxed">
+                        <span className="text-[#2F9285] font-medium">Como adicionar no Google Agenda:</span>{" "}
+                        abra calendar.google.com → no menu lateral, clique em &quot;+&quot; ao lado de
+                        &quot;Outras agendas&quot; → &quot;A partir do URL&quot; → cole o link acima.
+                        No celular, a agenda sincroniza sozinha depois disso.
+                      </p>
+                    </div>
+
+                    {isAdmin && (
+                      <div className="flex flex-wrap gap-2 justify-end">
+                        <button
+                          type="button"
+                          onClick={() => gerarLinkIcs.mutate()}
+                          disabled={gerarLinkIcs.isPending}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-medium border border-[#243337] text-[#87938F] hover:text-[#F0EADD] hover:bg-[#102128] transition-all"
+                        >
+                          <RefreshCw size={13} className={gerarLinkIcs.isPending ? "animate-spin" : ""} />
+                          Gerar novo link
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => revogarLinkIcs.mutate()}
+                          disabled={revogarLinkIcs.isPending}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-medium border border-[#E35D5B]/30 text-[#E35D5B] hover:bg-[#E35D5B]/10 transition-all"
+                        >
+                          <X size={13} />
+                          Revogar link
+                        </button>
+                      </div>
+                    )}
+                    <p className="text-[10px] text-[#87938F]">
+                      Atenção: este link dá acesso de leitura à sua agenda. Não compartilhe.
+                      Gerar um novo link invalida o anterior.
+                    </p>
+                  </>
+                ) : isAdmin ? (
+                  <button
+                    type="button"
+                    onClick={() => gerarLinkIcs.mutate()}
+                    disabled={gerarLinkIcs.isPending}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-[10px] bg-[#2F9285] text-[#050B12] text-sm font-semibold hover:bg-[#3AA99A] transition-all disabled:opacity-60"
+                  >
+                    {gerarLinkIcs.isPending ? (
+                      <Loader2 size={15} className="animate-spin" />
+                    ) : (
+                      <CalendarDays size={15} />
+                    )}
+                    Gerar link da agenda
+                  </button>
+                ) : (
+                  <div className="flex items-start gap-2 text-xs text-[#87938F]">
+                    <Lock size={14} className="text-[#C36B3F] shrink-0 mt-0.5" />
+                    <span>Peça a um administrador para gerar o link da agenda.</span>
+                  </div>
+                )}
               </div>
             </div>
           )}

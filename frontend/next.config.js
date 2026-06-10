@@ -7,7 +7,10 @@ const API_URL =
   (process.env.NODE_ENV === "production"
     ? "https://sessaoink-api.fly.dev"
     : "http://localhost:8001");
-const POSTHOG_HOST = "https://app.posthog.com";
+// Hosts do PostHog Cloud US: app/api legado + ingestão atual (us.i) + assets
+// (us-assets.i, que serve o bundle remoto do SDK via script-src).
+const POSTHOG_HOSTS =
+  "https://app.posthog.com https://us.i.posthog.com https://us-assets.i.posthog.com";
 
 // CSP do frontend. `script-src` inclui 'unsafe-inline' porque o Next.js App
 // Router injeta scripts inline de hidratação; sem isso a página fica em branco.
@@ -15,11 +18,11 @@ const POSTHOG_HOST = "https://app.posthog.com";
 // rotas — planejado como follow-up; ver docs/security.md.)
 const cspHeader = `
   default-src 'self';
-  script-src 'self' 'unsafe-inline';
+  script-src 'self' 'unsafe-inline' https://us-assets.i.posthog.com;
   style-src 'self' 'unsafe-inline';
   img-src 'self' blob: data:;
   font-src 'self';
-  connect-src 'self' ${API_URL} ${POSTHOG_HOST} https://*.ingest.sentry.io;
+  connect-src 'self' ${API_URL} ${POSTHOG_HOSTS} https://*.ingest.sentry.io;
   frame-ancestors 'none';
   base-uri 'self';
   form-action 'self';

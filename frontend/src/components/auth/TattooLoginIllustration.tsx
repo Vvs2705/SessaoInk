@@ -1,7 +1,7 @@
 /**
  * Animação de login — fineline.
  *
- * Uma arte fineline em ouro que se "tatua" sozinha: a linha surge traçada por
+ * Uma arte fineline em esmeralda que se "tatua" sozinha: a linha surge traçada por
  * uma ponta de agulha luminosa que a percorre, com um leve sangramento de tinta
  * por baixo (a tinta assentando) e grão sobre a cena. Sem mão/máquina cartoon —
  * a *ação* de tatuar é sugerida com sobriedade, no tom premium da marca.
@@ -18,9 +18,9 @@ export function TattooLoginIllustration() {
       <svg className="ink-svg" viewBox="0 0 218 120" fill="none" aria-hidden="true">
         <defs>
           <linearGradient id="inkGold" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#C9A96E" />
-            <stop offset="50%" stopColor="#E8C98A" />
-            <stop offset="100%" stopColor="#C9A96E" />
+            <stop offset="0%" stopColor="#2F9285" />
+            <stop offset="50%" stopColor="#4DC4B2" />
+            <stop offset="100%" stopColor="#2F9285" />
           </linearGradient>
           <filter id="inkBleedF" x="-20%" y="-60%" width="140%" height="220%">
             <feGaussianBlur stdDeviation="1.6" />
@@ -40,7 +40,7 @@ export function TattooLoginIllustration() {
             className="ink-bleed"
             pathLength={100}
             d={MOTIF}
-            stroke="#6b5326"
+            stroke="#1E5F59"
             strokeWidth={3.6}
             strokeLinecap="round"
             filter="url(#inkBleedF)"
@@ -60,7 +60,7 @@ export function TattooLoginIllustration() {
             className="ink-accent"
             pathLength={100}
             d="M100 72 C 92 55 103 47 116 52"
-            stroke="#C9A96E"
+            stroke="#2F9285"
             strokeWidth={1.5}
             strokeLinecap="round"
           />
@@ -68,14 +68,14 @@ export function TattooLoginIllustration() {
             className="ink-accent"
             pathLength={100}
             d="M156 70 C 165 53 154 45 141 50"
-            stroke="#C9A96E"
+            stroke="#2F9285"
             strokeWidth={1.5}
             strokeLinecap="round"
           />
         </g>
 
         {/* Ponta de agulha luminosa percorrendo o traço (sincronizada ao desenho). */}
-        <circle className="ink-needle" r={2.6} fill="#F6E8C4" filter="url(#inkGlowF)">
+        <circle className="ink-needle" r={2.6} fill="#CFF5EC" filter="url(#inkGlowF)">
           <animateMotion
             dur="1.7s"
             fill="freeze"

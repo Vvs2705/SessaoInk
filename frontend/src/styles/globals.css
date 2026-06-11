@@ -1,4 +1,4 @@
-/* Fontes (Outfit/Cormorant/JetBrains Mono) carregadas via next/font no
+/* Fontes (Outfit/Fraunces/JetBrains Mono) carregadas via next/font no
    app/layout.tsx — self-hosted, sem request ao Google e sem FOUT. */
 @import "./tokens.css";
 
@@ -14,6 +14,21 @@ body {
   padding: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Grão sutil global (DESIGN.md) — textura de pele/papel sobre o app inteiro.
+   Camada fixa, sem blend mode (barato na GPU), opacidade baixa o bastante
+   para ser sentida e não vista. pointer-events: none não rouba toques. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+  opacity: 0.022;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px 180px;
 }
 
 /* Base interactive elements custom styles for accessibility */
@@ -97,18 +112,18 @@ textarea {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   Design System editorial — fontes serif, acento dourado e superfícies.
-   Aditivo: convive com tokens.css e a identidade teal/cobre existente.
+   Design System autoral (DESIGN.md) — serif Fraunces nos títulos,
+   identidade teal/esmeralda, acento quente cobre e superfícies grafite.
    ════════════════════════════════════════════════════════════════════ */
 @layer base {
-  /* Headings em fonte display editorial */
+  /* Headings em fonte display autoral */
   h1,
   h2,
   h3 {
     font-family: var(--font-display);
-    font-weight: 400;
-    letter-spacing: -0.01em;
-    line-height: 1.2;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    line-height: 1.18;
   }
 
   h4,
@@ -159,7 +174,7 @@ textarea {
     color: var(--si-gold);
   }
   .text-gold-gradient {
-    background: linear-gradient(135deg, #c9a96e 0%, #e8c98a 50%, #c9a96e 100%);
+    background: linear-gradient(135deg, #2f9285 0%, #4dc4b2 50%, #2f9285 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -237,8 +252,8 @@ textarea {
     background: rgba(47, 146, 133, 0.1);
   }
   .status-badge.pending {
-    color: var(--si-gold);
-    background: var(--si-gold-dim);
+    color: var(--warning);
+    background: var(--si-warm-dim);
   }
   .status-badge.danger {
     color: var(--error-red);
@@ -261,7 +276,7 @@ textarea {
     border-left: 2px solid var(--si-teal);
   }
   .bar-finance {
-    border-left: 2px solid var(--si-gold);
+    border-left: 2px solid var(--si-warm);
   }
   .bar-doc {
     border-left: 2px solid #8a7fc5;
@@ -329,7 +344,7 @@ textarea {
   pointer-events: none;
   will-change: opacity;
   background:
-    radial-gradient(circle at 50% 42%, rgba(201, 169, 110, 0.07), transparent 62%),
+    radial-gradient(circle at 50% 42%, rgba(47, 146, 133, 0.09), transparent 62%),
     #0b171c;
   animation: inkLayerFade 2.6s ease forwards;
 }

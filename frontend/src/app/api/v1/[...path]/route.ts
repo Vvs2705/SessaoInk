@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { aplicarCookie, lerSetCookies } from "@/lib/proxy-cookies";
+
 const BACKEND = process.env.BACKEND_URL || "https://sessaoink-api.fly.dev";
 const PRODUCTION = process.env.NODE_ENV === "production";
 const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL || "https://sessao-ink.vercel.app";
@@ -123,14 +125,9 @@ async function proxy(
 
   // Set-Cookie do backend (ex.: rotação de access/refresh no /auth/refresh) precisa
   // chegar ao browser — sem isso a sessão renovada nunca é gravada e o token antigo,
-  // já invalidado no Redis, derruba o usuário. getSetCookie() pela mesma razão do
-  // proxy de login (spec exclui set-cookie do headers.get()).
-  const setCookies =
-    typeof backendRes.headers.getSetCookie === "function"
-      ? backendRes.headers.getSetCookie()
-      : (backendRes.headers.get("set-cookie") ?? "")
-          .split(/,(?=\s*\w+=)/)
-          .filter(Boolean);
+  // já invalidado no Redis, derruba o usuário. Regravado via cookies.set porque a
+  // serialização da Vercel descarta múltiplos "set-cookie" appendados.
+  const setCookies = lerSetCookies(backendRes);
 
   // Status sem corpo (204/205/304): a spec do Fetch PROÍBE corpo — passar um
   // ArrayBuffer (mesmo vazio) faz o construtor de Response lançar e o proxy
@@ -138,7 +135,7 @@ async function proxy(
   const NULL_BODY_STATUS = backendRes.status === 204 || backendRes.status === 205 || backendRes.status === 304;
   if (NULL_BODY_STATUS) {
     const empty = new NextResponse(null, { status: backendRes.status });
-    setCookies.forEach((c) => empty.headers.append("set-cookie", c.trim()));
+    setCookies.forEach((c) => aplicarCookie(empty, c));
     return empty;
   }
 
@@ -149,7 +146,7 @@ async function proxy(
     status: backendRes.status,
     headers: { "Content-Type": contentType },
   });
-  setCookies.forEach((c) => response.headers.append("set-cookie", c.trim()));
+  setCookies.forEach((c) => aplicarCookie(response, c));
   return response;
 }
 

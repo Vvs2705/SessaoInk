@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { aplicarCookie, lerSetCookies } from "@/lib/proxy-cookies";
+
 const BACKEND = process.env.BACKEND_URL || "https://sessaoink-api.fly.dev";
 
 export async function POST(request: NextRequest) {
@@ -41,17 +43,12 @@ export async function POST(request: NextRequest) {
 
   if (backendRes.ok) {
     // Encaminhar os cookies do FastAPI — sem atributo Domain, o browser os armazena
-    // para o domínio Vercel, tornando-os visíveis ao middleware Next.js.
-    // getSetCookie() é a única forma confiável de ler múltiplos Set-Cookie: a spec
-    // do Fetch exclui set-cookie do headers.get(), e runtimes novos do Node passaram
-    // a respeitar isso (o split por vírgula vira fallback para runtimes antigos).
-    const cookies =
-      typeof backendRes.headers.getSetCookie === "function"
-        ? backendRes.headers.getSetCookie()
-        : (backendRes.headers.get("set-cookie") ?? "")
-            .split(/,(?=\s*\w+=)/)
-            .filter(Boolean);
-    cookies.forEach((c) => response.headers.append("set-cookie", c.trim()));
+    // para o domínio Vercel, tornando-os visíveis ao middleware Next.js. A regravação
+    // via response.cookies.set é necessária porque a serialização da Vercel descarta
+    // múltiplos headers "set-cookie" appendados diretamente.
+    const cookies = lerSetCookies(backendRes);
+    console.log(`[login-proxy] set-cookie do backend: ${cookies.length} cookie(s)`);
+    cookies.forEach((c) => aplicarCookie(response, c));
 
     // Marcador de sessão não-secreto (Path=/, 7 dias): permite ao middleware saber
     // que há sessão ativa mesmo após o access_token (15 min) expirar, evitando

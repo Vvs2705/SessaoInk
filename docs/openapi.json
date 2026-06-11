@@ -3459,6 +3459,90 @@
         }
       }
     },
+    "/api/v1/public/agenda-ics/{token}": {
+      "get": {
+        "tags": [
+          "portal-público"
+        ],
+        "summary": "Feed Agenda Ics",
+        "description": "Feed iCalendar privado da agenda do estúdio (token não-adivinhável).\n\nO tatuador assina esta URL no Google Agenda / Apple Calendar / Outlook e\nrecebe as sessões (com notificação no celular) sem precisar de OAuth.\nDeclarado antes de `/{slug}` por clareza de roteamento.",
+        "operationId": "feed_agenda_ics_api_v1_public_agenda_ics__token__get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/{slug}/disponibilidade": {
+      "get": {
+        "tags": [
+          "portal-público"
+        ],
+        "summary": "Disponibilidade Publica",
+        "description": "Visão pública da ocupação da agenda — só contagem por dia, sem detalhes.\n\nUsada na etapa final do orçamento para o cliente sugerir datas dentro do\nhorário de funcionamento do estúdio.",
+        "operationId": "disponibilidade_publica_api_v1_public__slug__disponibilidade_get",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisponibilidadeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/public/{slug}": {
       "get": {
         "tags": [
@@ -4777,6 +4861,104 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstudioResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/estudio/agenda-ics": {
+      "post": {
+        "tags": [
+          "estudio"
+        ],
+        "summary": "Gerar Link Agenda Ics",
+        "description": "Gera (ou rotaciona) o link privado do feed iCalendar da agenda.\n\nRotacionar invalida o link anterior — quem tinha a URL antiga para de\nreceber as sessões.",
+        "operationId": "gerar_link_agenda_ics_api_v1_estudio_agenda_ics_post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstudioResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "estudio"
+        ],
+        "summary": "Revogar Link Agenda Ics",
+        "description": "Revoga o link do feed iCalendar (desativa a sincronização externa).",
+        "operationId": "revogar_link_agenda_ics_api_v1_estudio_agenda_ics_delete",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -6699,6 +6881,43 @@
             ],
             "title": "Data Sessao"
           },
+          "duracao_minutos": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duracao Minutos"
+          },
+          "datas_preferidas": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Datas Preferidas"
+          },
+          "horario_personalizado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horario Personalizado"
+          },
           "ativo": {
             "type": "boolean",
             "title": "Ativo"
@@ -7159,6 +7378,17 @@
             "type": "string",
             "title": "Whatsapp"
           },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
           "instagram": {
             "anyOf": [
               {
@@ -7224,6 +7454,28 @@
               }
             ],
             "title": "Observacoes"
+          },
+          "datas_preferidas": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Datas Preferidas"
+          },
+          "horario_personalizado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horario Personalizado"
           },
           "aceite_privacidade": {
             "type": "boolean",
@@ -8069,6 +8321,58 @@
         ],
         "title": "DashboardGraficos"
       },
+      "DisponibilidadeDia": {
+        "properties": {
+          "data": {
+            "type": "string",
+            "title": "Data"
+          },
+          "sessoes": {
+            "type": "integer",
+            "title": "Sessoes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "sessoes"
+        ],
+        "title": "DisponibilidadeDia"
+      },
+      "DisponibilidadeResponse": {
+        "properties": {
+          "horario_funcionamento": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horario Funcionamento"
+          },
+          "dias_ocupados": {
+            "items": {
+              "$ref": "#/components/schemas/DisponibilidadeDia"
+            },
+            "type": "array",
+            "title": "Dias Ocupados"
+          },
+          "janela_dias": {
+            "type": "integer",
+            "title": "Janela Dias"
+          }
+        },
+        "type": "object",
+        "required": [
+          "horario_funcionamento",
+          "dias_ocupados",
+          "janela_dias"
+        ],
+        "title": "DisponibilidadeResponse"
+      },
       "DocumentoCreate": {
         "properties": {
           "tipo": {
@@ -8412,6 +8716,18 @@
             ],
             "title": "Email Notificacao"
           },
+          "horario_funcionamento": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horario Funcionamento"
+          },
           "endereco_cep": {
             "anyOf": [
               {
@@ -8715,6 +9031,29 @@
               }
             ],
             "title": "Email Notificacao"
+          },
+          "horario_funcionamento": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horario Funcionamento"
+          },
+          "agenda_ics_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agenda Ics Url"
           },
           "has_logo": {
             "type": "boolean",

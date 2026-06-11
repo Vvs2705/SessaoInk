@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { api, withCsrfHeaders } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
 
@@ -354,41 +355,50 @@ export default function PortfolioPage() {
           )}
 
           {!isLoading && itemsFiltrados.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20 text-center bg-[#0B171C] border border-[#243337] rounded-[18px]">
-              <ImageIcon size={48} className="text-[#243337] mb-4" />
-              <h3 className="text-[#F0EADD] font-semibold mb-2">Nenhuma foto encontrada</h3>
-              <p className="text-sm text-[#87938F] max-w-sm mb-6">
-                {busca || filtroVisibilidade !== "TODOS"
-                  ? "Tente ajustar seus termos de busca ou filtros."
-                  : "Adicione fotos das suas tatuagens. Todas serão privadas até você publicar."}
-              </p>
-              {!busca && filtroVisibilidade === "TODOS" && (
-                <button
-                  onClick={() => inputRef.current?.click()}
-                  className="flex items-center gap-2 h-10 px-5 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm"
-                >
-                  <Upload size={16} />
-                  Fazer Upload
-                </button>
-              )}
+            <div className="bg-[#0B171C] border border-[#243337] rounded-[18px]">
+              <EmptyState
+                title={
+                  busca || filtroVisibilidade !== "TODOS"
+                    ? "Nenhuma foto encontrada"
+                    : "Seu portfólio começa aqui"
+                }
+                description={
+                  busca || filtroVisibilidade !== "TODOS"
+                    ? "Tente ajustar seus termos de busca ou filtros."
+                    : "Adicione fotos das suas tatuagens — tudo fica privado até você autorizar a publicação no portal."
+                }
+                action={
+                  !busca && filtroVisibilidade === "TODOS" ? (
+                    <button
+                      onClick={() => inputRef.current?.click()}
+                      className="flex items-center gap-2 h-11 px-5 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm transition-colors"
+                    >
+                      <Upload size={16} />
+                      Adicionar primeira foto
+                    </button>
+                  ) : undefined
+                }
+              />
             </div>
           )}
 
+          {/* Galeria masonry: colunas CSS preservam a proporção natural de cada
+              tatuagem (vertical/horizontal), em vez de cortar tudo em quadrado. */}
           {!isLoading && itemsFiltrados.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div className="columns-2 md:columns-3 lg:columns-4 gap-3 [column-fill:_balance]">
               {itemsFiltrados.map(item => (
                 <div
                   key={item.id}
-                  className="relative aspect-square bg-[#0B171C] border border-[#243337] rounded-[14px] overflow-hidden group hover:border-[#2F9285]/40 transition-all"
+                  className="relative mb-3 break-inside-avoid bg-[#0B171C] border border-[#243337] rounded-[14px] overflow-hidden group hover:border-[#2F9285]/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.45)] transition-all duration-300"
                 >
                   <img
                     src={`${API}/api/v1/portfolio/${item.id}/imagem`}
                     alt={item.titulo ?? "Foto portfólio"}
-                    className="w-full h-full object-cover"
+                    className="w-full h-auto object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
                     loading="lazy"
                   />
                   {/* Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#050B12]/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#050B12]/85 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
                     {item.titulo && <p className="text-xs font-semibold text-[#F0EADD] truncate">{item.titulo}</p>}
                     {item.estilo && <p className="text-[10px] text-[#87938F]">{item.estilo}</p>}
                   </div>
@@ -441,28 +451,29 @@ export default function PortfolioPage() {
           )}
 
           {!isLoadingArquivados && arquivadosFiltrados.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20 text-center bg-[#0B171C] border border-[#243337] rounded-[18px]">
-              <ImageIcon size={48} className="text-[#243337] mb-4" />
-              <h3 className="text-[#F0EADD] font-semibold mb-2">Nenhuma foto arquivada</h3>
-              <p className="text-sm text-[#87938F] max-w-sm">
-                {busca
-                  ? "Tente ajustar seus termos de busca."
-                  : "Fotos que você arquivar aparecerão aqui. Você poderá restaurá-las ou excluí-las permanentemente."}
-              </p>
+            <div className="bg-[#0B171C] border border-[#243337] rounded-[18px]">
+              <EmptyState
+                title="Nenhuma foto arquivada"
+                description={
+                  busca
+                    ? "Tente ajustar seus termos de busca."
+                    : "Fotos que você arquivar aparecerão aqui — restauráveis ou excluíveis permanentemente."
+                }
+              />
             </div>
           )}
 
           {!isLoadingArquivados && arquivadosFiltrados.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div className="columns-2 md:columns-3 lg:columns-4 gap-3 [column-fill:_balance]">
               {arquivadosFiltrados.map(item => (
                 <div
                   key={item.id}
-                  className="relative aspect-square bg-[#0B171C] border border-[#243337] rounded-[14px] overflow-hidden group hover:border-[#2F9285]/40 transition-all"
+                  className="relative mb-3 break-inside-avoid bg-[#0B171C] border border-[#243337] rounded-[14px] overflow-hidden group hover:border-[#2F9285]/40 transition-all"
                 >
                   <img
                     src={`${API}/api/v1/portfolio/${item.id}/imagem`}
                     alt={item.titulo ?? "Foto portfólio"}
-                    className="w-full h-full object-cover grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all"
+                    className="w-full h-auto object-cover grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all"
                     loading="lazy"
                   />
                   {/* Overlay */}

@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, UserCircle, Phone, Instagram, X, Mail, Calendar, FileText } from "lucide-react";
+import { Plus, Search, Phone, Instagram, X, Mail, Calendar, FileText } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface Cliente {
   id: string;
@@ -328,25 +329,26 @@ export default function ClientesPage() {
 
       {/* Empty */}
       {!isLoading && filtrado.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 text-center bg-[#0B171C] border border-[#243337] rounded-[18px]">
-          <UserCircle size={48} className="text-[#243337] mb-4" />
-          <h3 className="text-[#F0EADD] font-semibold mb-2">
-            {busca ? "Nenhum cliente encontrado" : "Nenhum cliente cadastrado"}
-          </h3>
-          <p className="text-sm text-[#87938F] max-w-xs mb-6">
-            {busca
-              ? "Tente outros termos."
-              : "Clientes são criados quando alguém envia um orçamento, ou adicione manualmente."}
-          </p>
-          {!busca && (
-            <button
-              onClick={abrirNovoCliente}
-              className="flex items-center gap-2 h-10 px-5 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm"
-            >
-              <Plus size={16} />
-              Adicionar Cliente
-            </button>
-          )}
+        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px]">
+          <EmptyState
+            title={busca ? "Nenhum cliente encontrado" : "Seu estúdio ainda não tem clientes"}
+            description={
+              busca
+                ? "Tente buscar por outro nome, telefone ou Instagram."
+                : "Cada orçamento do portal cria um pré-cadastro automaticamente — ou adicione seu primeiro cliente agora."
+            }
+            action={
+              !busca ? (
+                <button
+                  onClick={abrirNovoCliente}
+                  className="flex items-center gap-2 h-11 px-5 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm transition-colors"
+                >
+                  <Plus size={16} />
+                  Adicionar primeiro cliente
+                </button>
+              ) : undefined
+            }
+          />
         </div>
       )}
 

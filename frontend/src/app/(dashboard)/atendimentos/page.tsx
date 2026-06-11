@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ClipboardList, Plus, Search, X } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { cn, formatCurrency } from "@/lib/utils";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
   SOLICITADO:        { label: "Solicitado",      cls: "bg-[#5E9ED6]/15 text-[#5E9ED6] border-[#5E9ED6]/30" },
@@ -372,25 +373,26 @@ export default function AtendimentosPage() {
 
       {/* Empty */}
       {!isLoading && filtrado.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 text-center bg-[#0B171C] border border-[#243337] rounded-[18px]">
-          <ClipboardList size={48} className="text-[#243337] mb-4" />
-          <h3 className="text-[#F0EADD] font-semibold mb-2">
-            {busca ? "Nenhum resultado encontrado" : "Nenhum atendimento ainda"}
-          </h3>
-          <p className="text-sm text-[#87938F] max-w-xs mb-6">
-            {busca
-              ? "Tente outros termos de busca."
-              : "Aguarde solicitações do portal público ou crie manualmente."}
-          </p>
-          {!busca && (
-            <button
-              onClick={() => setModalAberto(true)}
-              className="flex items-center gap-2 h-10 px-5 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm"
-            >
-              <Plus size={16} />
-              Criar Atendimento
-            </button>
-          )}
+        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px]">
+          <EmptyState
+            title={busca ? "Nenhum resultado encontrado" : "Nenhum atendimento por aqui ainda"}
+            description={
+              busca
+                ? "Tente outros termos de busca."
+                : "Os pedidos do seu portal público chegam aqui automaticamente — ou crie um atendimento manualmente."
+            }
+            action={
+              !busca ? (
+                <button
+                  onClick={() => setModalAberto(true)}
+                  className="flex items-center gap-2 h-11 px-5 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm transition-colors"
+                >
+                  <Plus size={16} />
+                  Criar atendimento
+                </button>
+              ) : undefined
+            }
+          />
         </div>
       )}
 

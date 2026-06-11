@@ -77,7 +77,7 @@ export default function PortfolioPublicoPage() {
 
   return (
     <div className="min-h-screen bg-[#050B12] text-[#F0EADD] px-6 py-10">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <a
@@ -103,17 +103,20 @@ export default function PortfolioPublicoPage() {
             <p className="text-xs text-[#87938F]/60 mt-1">Volte em breve para acompanhar as novidades</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          /* Masonry: cada arte aparece na proporção original, como numa galeria —
+             colunas CSS, sem corte quadrado. */
+          <div className="columns-2 sm:columns-3 gap-4 [column-fill:_balance]">
             {portfolio.map((item) => (
               <div
                 key={item.id}
                 onClick={() => setActiveItem(item)}
-                className="group relative aspect-square rounded-[14px] overflow-hidden bg-[#0B171C] border border-[#243337] cursor-pointer"
+                className="group relative mb-4 break-inside-avoid rounded-[14px] overflow-hidden bg-[#0B171C] border border-[#243337] cursor-pointer hover:border-[#2F9285]/50 hover:shadow-[0_10px_36px_rgba(0,0,0,0.5)] transition-all duration-300"
               >
                 <img
                   src={`${API_URL}/api/v1/public/${slug}/portfolio/${item.id}/imagem`}
                   alt={item.titulo ?? "Trabalho de portfólio"}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  loading="lazy"
+                  className="w-full h-auto object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
                 />
                 
                 {/* Badge de Estilo se houver */}

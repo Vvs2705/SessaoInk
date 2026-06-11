@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Zap, Plus, Loader2, X, DollarSign, Maximize2, MapPin, Trash2, Tag, FileText } from "lucide-react";
 import { api, ApiError, withCsrfHeaders } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
 
@@ -196,19 +197,20 @@ export default function FlashArtsPage() {
 
       {/* Empty State */}
       {!isLoading && flashArts.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 text-center bg-[#0B171C] border border-[#243337] rounded-[18px]">
-          <Zap size={48} className="text-[#243337] mb-4 animate-pulse" />
-          <h3 className="text-[#F0EADD] font-semibold mb-2">Nenhuma flash art cadastrada</h3>
-          <p className="text-sm text-[#87938F] max-w-xs mb-6">
-            Cadastre suas flash arts disponíveis para que clientes possam reservar pelo portal público.
-          </p>
-          <button
-            onClick={handleOpenModal}
-            className="flex items-center gap-2 h-10 px-5 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm transition-all"
-          >
-            <Plus size={16} />
-            Cadastrar Flash Art
-          </button>
+        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px]">
+          <EmptyState
+            title="Sua vitrine de flash arts está vazia"
+            description="Publique suas artes disponíveis e deixe clientes reservarem direto pelo portal público — sua loja aberta 24h."
+            action={
+              <button
+                onClick={handleOpenModal}
+                className="flex items-center gap-2 h-11 px-5 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm transition-colors"
+              >
+                <Plus size={16} />
+                Cadastrar primeira flash art
+              </button>
+            }
+          />
         </div>
       )}
 

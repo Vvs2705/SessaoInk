@@ -102,8 +102,10 @@ function StatCard({
 }
 
 function DashboardSkeleton() {
+  // Sem p-6/max-w-7xl: o (dashboard)/layout.tsx já provê padding lateral,
+  // largura máxima e centralização. Repetir aqui dobrava o padding no mobile.
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 animate-pulse">
+    <div className="space-y-5 sm:space-y-6 animate-pulse">
       {/* Header Skeleton */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-2">
@@ -240,34 +242,36 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-5 sm:space-y-6 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-[#F0EADD] tracking-tight">Painel Inicial</h1>
-          <p className="text-sm text-[#87938F]">Desempenho operacional, faturamento e alertas do estúdio</p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-[#F0EADD] sm:text-3xl">Painel Inicial</h1>
+          <p className="mt-0.5 text-sm text-[#87938F]">Desempenho operacional, faturamento e alertas do estúdio</p>
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2 p-1.5 bg-[#0B171C] border border-[#243337] rounded-[14px]">
+        {/* Controles: ocupam a largura toda no mobile e encolhem sem estourar */}
+        <div className="flex w-full items-center gap-2 sm:w-auto sm:gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-1 rounded-[14px] border border-[#243337] bg-[#0B171C] p-1.5 sm:flex-none sm:gap-2">
             <input
               type="date"
               value={inicio}
               onChange={(e) => setInicio(e.target.value)}
-              className="bg-transparent text-xs text-[#F0EADD] outline-none px-2"
+              className="min-w-0 flex-1 bg-transparent px-1 text-xs text-[#F0EADD] outline-none sm:flex-none sm:px-2"
               title="Início"
             />
-            <span className="text-xs text-[#87938F]">até</span>
+            <span className="shrink-0 text-xs text-[#87938F]">até</span>
             <input
               type="date"
               value={fim}
               onChange={(e) => setFim(e.target.value)}
-              className="bg-transparent text-xs text-[#F0EADD] outline-none px-2"
+              className="min-w-0 flex-1 bg-transparent px-1 text-xs text-[#F0EADD] outline-none sm:flex-none sm:px-2"
               title="Fim"
             />
           </div>
           <button
             onClick={() => refetch()}
-            className="flex items-center justify-center w-10 h-10 rounded-[14px] border border-[#243337] bg-[#0B171C] hover:bg-[#102128] text-[#87938F] hover:text-[#F0EADD] transition-all"
+            aria-label="Atualizar dados"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border border-[#243337] bg-[#0B171C] text-[#87938F] transition-all hover:bg-[#102128] hover:text-[#F0EADD]"
           >
             <RefreshCw size={16} className={loadResumo ? "animate-spin" : ""} />
           </button>
@@ -349,15 +353,17 @@ export default function DashboardPage() {
 
       {/* Client Portal Link */}
       <div className="bg-[#0B171C] border border-[#2F9285]/20 hover:border-[#2F9285]/40 rounded-[18px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-[0_0_30px_rgba(47,146,133,0.05)] transition-all">
-        <div className="flex items-start gap-4">
+        <div className="flex min-w-0 items-start gap-4">
           <div className="p-3 bg-[#2F9285]/10 rounded-[12px] border border-[#2F9285]/20 shrink-0">
             <ExternalLink size={20} className="text-[#2F9285]" />
           </div>
-          <div>
+          {/* min-w-0 deixa o truncate do link funcionar dentro do flex (sem min-w-0
+              o filho assume largura intrínseca e empurra o layout no mobile) */}
+          <div className="min-w-0">
             <p className="text-sm font-bold text-[#F0EADD]">Portal do cliente</p>
             <p className="text-xs text-[#87938F] mt-0.5">Compartilhe este link em redes sociais ou Instagram para receber propostas de orçamentos diretas.</p>
             {portalUrl ? (
-              <p className="text-xs font-mono text-[#2F9285] mt-1 truncate max-w-md">{portalUrl}</p>
+              <p className="text-xs font-mono text-[#2F9285] mt-1 truncate">{portalUrl}</p>
             ) : (
               <div className="h-3 w-40 bg-[#102128] animate-pulse rounded mt-1" />
             )}
@@ -411,23 +417,32 @@ export default function DashboardPage() {
             {dashboard.graficos.fluxo_diario.length === 0 ? (
               <div className="h-48 flex items-center justify-center border border-dashed border-[#243337] rounded-[12px] text-xs text-[#87938F]">Sem lançamentos no período</div>
             ) : (
-              <div className="pt-4 h-48 flex items-end gap-1">
-                {dashboard.graficos.fluxo_diario.map((d, idx) => {
-                  const maxVal = Math.max(...dashboard.graficos.fluxo_diario.map(fd => Math.max(fd.entradas, fd.saidas)), 1);
-                  const entPct = (d.entradas / maxVal) * 100;
-                  const saiPct = (d.saidas / maxVal) * 100;
-                  return (
-                    <div key={idx} className="flex-1 flex flex-col items-center h-full justify-end group relative">
-                      <div className="w-full flex gap-0.5 justify-center items-end h-full">
-                        {/* Green color for entradas status constraint */}
-                        <div style={{ height: `${entPct}%` }} className="w-2 bg-[#54B88D] rounded-t-[2px] hover:bg-[#68cca0] transition-all" title={`Entrada: ${formatCurrency(d.entradas)}`} />
-                        {/* Red color for saídas status constraint */}
-                        <div style={{ height: `${saiPct}%` }} className="w-2 bg-[#E35D5B] rounded-t-[2px] hover:bg-[#c94d4b] transition-all" title={`Saída: ${formatCurrency(d.saidas)}`} />
+              /* Rolagem horizontal DENTRO do card: períodos longos (mês cheio)
+                 não estouram mais a viewport. Poucos dias preenchem a largura
+                 (flex grow); muitos dias rolam lateralmente sem scroll na página. */
+              <div className="overflow-x-auto pt-4 no-scrollbar">
+                <div className="flex h-48 min-w-full items-end gap-1">
+                  {dashboard.graficos.fluxo_diario.map((d, idx) => {
+                    const maxVal = Math.max(...dashboard.graficos.fluxo_diario.map(fd => Math.max(fd.entradas, fd.saidas)), 1);
+                    const entPct = (d.entradas / maxVal) * 100;
+                    const saiPct = (d.saidas / maxVal) * 100;
+                    return (
+                      <div
+                        key={idx}
+                        className="group relative flex h-full flex-col items-center justify-end"
+                        style={{ flex: "1 0 auto", minWidth: 18 }}
+                      >
+                        <div className="flex h-full w-full items-end justify-center gap-0.5">
+                          {/* Green color for entradas status constraint */}
+                          <div style={{ height: `${entPct}%` }} className="w-2 bg-[#54B88D] rounded-t-[2px] hover:bg-[#68cca0] transition-all" title={`Entrada: ${formatCurrency(d.entradas)}`} />
+                          {/* Red color for saídas status constraint */}
+                          <div style={{ height: `${saiPct}%` }} className="w-2 bg-[#E35D5B] rounded-t-[2px] hover:bg-[#c94d4b] transition-all" title={`Saída: ${formatCurrency(d.saidas)}`} />
+                        </div>
+                        <span className="mt-2 block origin-top-left -rotate-45 text-[10px] text-[#87938F]">{d.dia.split("-")[2]}</span>
                       </div>
-                      <span className="text-[8px] text-[#87938F] mt-2 block transform -rotate-45 origin-top-left translate-y-1">{d.dia.split("-")[2]}</span>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>

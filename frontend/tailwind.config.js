@@ -9,7 +9,7 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ["Outfit", "system-ui", "-apple-system", "sans-serif"],
-        display: ["Cormorant", "Georgia", "serif"],
+        display: ["Fraunces", "Georgia", "serif"],
         mono: ["JetBrains Mono", "Courier New", "monospace"],
       },
       colors: {

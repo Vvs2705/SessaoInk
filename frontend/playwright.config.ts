@@ -17,6 +17,29 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
+    // Dispositivos mobile reais (DPR/UA corretos) — pegam bugs que viewport
+    // puro não pega (ex.: barra de endereço, safe-area, touch).
+    {
+      name: "iphone-15",
+      use: { ...devices["iPhone 15"] },
+    },
+    {
+      name: "pixel-7",
+      use: { ...devices["Pixel 7"] },
+    },
+    // Viewports-alvo do projeto — small/medium/large phone.
+    {
+      name: "mobile-360",
+      use: { ...devices["Pixel 5"], viewport: { width: 360, height: 800 } },
+    },
+    {
+      name: "mobile-390",
+      use: { ...devices["iPhone 13"], viewport: { width: 390, height: 844 } },
+    },
+    {
+      name: "mobile-412",
+      use: { ...devices["Pixel 7"], viewport: { width: 412, height: 915 } },
+    },
   ],
   webServer: [
     {

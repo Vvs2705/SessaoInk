@@ -5,22 +5,39 @@ import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.auth.dependencies import require_role
+from app.core.config import settings
 from app.core.database import get_session
 from app.core.security import hash_senha
 from app.models.convite import Convite, StatusConvite
-from app.models.usuario import TipoUsuario, Usuario
+from app.models.usuario import Estudio, TipoUsuario, Usuario
 from app.services.audit import log_event
 
 router = APIRouter(prefix="/convites", tags=["convites"])
 
 # Convites expiram em 7 dias por padrão
 CONVITE_TTL_DIAS = 7
+
+# Papéis que podem ser concedidos por convite. ADMIN é deliberadamente excluído:
+# a promoção a administrador é uma ação sensível que não deve trafegar por um
+# link de e-mail (evita escalonamento de privilégio se um convite vazar).
+PAPEIS_CONVITAVEIS = {TipoUsuario.ARTISTA, TipoUsuario.RECEPCIONISTA}
+
+
+def _convite_url(token_raw: str) -> str:
+    return f"{settings.APP_URL}/convite/{token_raw}"
+
+
+def _expirou(expira_em: datetime, agora: datetime) -> bool:
+    """Compara expiração tolerando datetime naive (SQLite) vs aware (Postgres)."""
+    if expira_em.tzinfo is None:
+        expira_em = expira_em.replace(tzinfo=UTC)
+    return expira_em < agora
 
 
 # ---------------------------------------------------------------------------
@@ -32,6 +49,13 @@ class ConviteCreate(BaseModel):
     email: EmailStr
     role: TipoUsuario = TipoUsuario.ARTISTA
 
+    @field_validator("role")
+    @classmethod
+    def _papel_convitavel(cls, v: TipoUsuario) -> TipoUsuario:
+        if v not in PAPEIS_CONVITAVEIS:
+            raise ValueError("Papel inválido para convite (apenas Artista ou Recepção).")
+        return v
+
 
 class ConviteResponse(BaseModel):
     id: uuid.UUID
@@ -42,12 +66,23 @@ class ConviteResponse(BaseModel):
     expira_em: datetime
     aceito_em: datetime | None = None
     criado_em: datetime
+    # Preenchido apenas na criação (o token só existe em claro nesse instante).
+    # Permite ao ADMIN copiar/compartilhar o link mesmo sem e-mail configurado.
+    convite_url: str | None = None
     model_config = {"from_attributes": True}
 
 
+class ConvitePublicoResponse(BaseModel):
+    """Dados mínimos para a página pública de aceite (sem expor PII além do e-mail)."""
+    email: str
+    role: TipoUsuario
+    nome_estudio: str
+    expira_em: datetime
+
+
 class AceitarConviteRequest(BaseModel):
-    nome: str
-    senha: str
+    nome: str = Field(min_length=2, max_length=200)
+    senha: str = Field(min_length=8, max_length=200)
 
 
 class AceitarConviteResponse(BaseModel):
@@ -66,6 +101,7 @@ class AceitarConviteResponse(BaseModel):
 @router.post("/", response_model=ConviteResponse, status_code=status.HTTP_201_CREATED)
 async def criar_convite(
     dados: ConviteCreate,
+    background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(require_role(TipoUsuario.ADMIN)),
 ):
@@ -126,10 +162,26 @@ async def criar_convite(
         dados={"email": convite.email, "role": convite.role.value},
     )
 
-    # TODO: enviar email com link de convite contendo token_raw
-    # O link seria: {FRONTEND_URL}/convite/aceitar/{token_raw}
+    convite_url = _convite_url(token_raw)
 
-    return convite
+    # Envia o e-mail de convite (silencioso se Resend não estiver configurado —
+    # o ADMIN ainda compartilha o link manualmente pela UI).
+    from app.core.email import enviar_convite_equipe
+
+    estudio = await session.get(Estudio, usuario.estudio_id)
+    background_tasks.add_task(
+        enviar_convite_equipe,
+        email_destino=convite.email,
+        nome_estudio=estudio.nome if estudio else "seu estúdio",
+        nome_convidante=usuario.nome,
+        papel=convite.role.value,
+        convite_url=convite_url,
+    )
+
+    # Resposta inclui o link em claro (única vez que o token existe sem hash).
+    resp = ConviteResponse.model_validate(convite)
+    resp.convite_url = convite_url
+    return resp
 
 
 @router.get("/", response_model=list[ConviteResponse])
@@ -182,8 +234,40 @@ async def revogar_convite(
 
 
 # ---------------------------------------------------------------------------
-# Endpoint público — aceitar convite
+# Endpoints públicos — info + aceitar convite (sem sessão)
 # ---------------------------------------------------------------------------
+
+
+@router.get("/info/{token}", response_model=ConvitePublicoResponse)
+async def info_convite(
+    token: str,
+    session: AsyncSession = Depends(get_session),
+):
+    """Retorna dados mínimos do convite para a página pública de aceite.
+
+    Não cria nada; serve para a UI mostrar o estúdio/papel antes do cadastro.
+    """
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    convite = await session.scalar(
+        select(Convite).where(Convite.token_hash == token_hash)
+    )
+    if not convite:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Convite inválido ou não encontrado.")
+    if convite.status != StatusConvite.PENDENTE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Este convite não está mais disponível.",
+        )
+    if _expirou(convite.expira_em, datetime.now(UTC)):
+        raise HTTPException(status_code=status.HTTP_410_GONE, detail="Este convite expirou.")
+
+    estudio = await session.get(Estudio, convite.estudio_id)
+    return ConvitePublicoResponse(
+        email=convite.email,
+        role=convite.role,
+        nome_estudio=estudio.nome if estudio else "Estúdio",
+        expira_em=convite.expira_em,
+    )
 
 
 @router.post("/aceitar/{token}", response_model=AceitarConviteResponse, status_code=status.HTTP_201_CREATED)
@@ -210,7 +294,7 @@ async def aceitar_convite(
         )
 
     agora = datetime.now(UTC)
-    if convite.expira_em < agora:
+    if _expirou(convite.expira_em, agora):
         convite.status = StatusConvite.EXPIRADO
         raise HTTPException(status_code=status.HTTP_410_GONE, detail="Este convite expirou.")
 

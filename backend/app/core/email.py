@@ -228,6 +228,72 @@ async def enviar_lead_interesse_plano(
         logger.warning(f"Falha ao enviar lead via Resend: {exc}")
 
 
+async def enviar_convite_equipe(
+    email_destino: str,
+    nome_estudio: str,
+    nome_convidante: str,
+    papel: str,
+    convite_url: str,
+) -> bool:
+    """Envia o convite para um novo membro entrar no estúdio.
+
+    Sem RESEND configurado, registra no log e retorna False — o ADMIN ainda
+    consegue compartilhar o link manualmente (a UI mostra o link copiável).
+    """
+    if not _resend_configurado():
+        logger.info(
+            "convite_equipe_email_sem_resend",
+            extra={"extra": {"email": email_destino, "convite_url": convite_url}},
+        )
+        return False
+
+    papel_label = {"ARTISTA": "Artista", "RECEPCIONISTA": "Recepção"}.get(papel, papel)
+
+    html = f"""
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#050B12;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <div style="max-width:520px;margin:40px auto;background:#0B171C;border:1px solid #243337;border-radius:18px;overflow:hidden;">
+    <div style="background:#2F9285;padding:24px 32px;">
+      <p style="margin:0;font-size:11px;color:#050B12;font-weight:700;letter-spacing:2px;text-transform:uppercase;">SessãoInk</p>
+      <h1 style="margin:8px 0 0;font-size:20px;color:#050B12;font-weight:800;">Você foi convidado(a) para o estúdio 🎨</h1>
+    </div>
+    <div style="padding:28px 32px;">
+      <p style="margin:0 0 18px;font-size:14px;color:#87938F;line-height:1.6;">
+        <strong style="color:#F0EADD;">{nome_convidante}</strong> convidou você para fazer parte do estúdio
+        <strong style="color:#F0EADD;">{nome_estudio}</strong> no SessãoInk, com o papel de
+        <strong style="color:#2F9285;">{papel_label}</strong>.
+      </p>
+      <p style="margin:0 0 24px;font-size:14px;color:#87938F;line-height:1.6;">
+        Clique no botão abaixo para criar sua conta e acessar a plataforma. Este convite expira em 7 dias.
+      </p>
+      <a href="{convite_url}"
+         style="display:inline-block;background:#2F9285;color:#050B12;font-weight:700;font-size:14px;padding:13px 28px;border-radius:12px;text-decoration:none;">
+        Aceitar convite e criar conta →
+      </a>
+      <p style="margin:24px 0 0;font-size:12px;color:#87938F;line-height:1.5;">
+        Se você não esperava este convite, pode ignorar este e-mail com segurança.
+      </p>
+    </div>
+    <div style="padding:16px 32px;border-top:1px solid #1a2830;text-align:center;">
+      <p style="margin:0;font-size:11px;color:#87938F;">SessãoInk · Gestão para tatuadores</p>
+    </div>
+  </div>
+</body></html>
+"""
+    try:
+        await asyncio.to_thread(
+            _enviar_sync,
+            email_destino,
+            f"[SessãoInk] Convite para o estúdio {nome_estudio}",
+            html,
+        )
+        logger.info(f"Convite de equipe enviado para {email_destino}")
+        return True
+    except Exception as exc:
+        logger.warning(f"Falha ao enviar convite de equipe: {exc}")
+        return False
+
+
 async def enviar_email_reset_senha(
     email_destino: str,
     nome: str,

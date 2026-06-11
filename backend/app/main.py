@@ -105,6 +105,9 @@ _CSRF_EXEMPT_PREFIXES = (
     # Protegidos pelo token de desafio (vinculado ao usuário, TTL curto).
     "/api/v1/auth/mfa/verificar",
     "/api/v1/auth/mfa/email/solicitar",
+    # Aceite de convite: o convidado está deslogado (sem cookie csrf). Protegido
+    # pelo token de uso único + TTL (mesma lógica do resetar-senha).
+    "/api/v1/convites/aceitar",
     "/api/v1/pagamentos/webhook",  # webhook server-to-server (Mercado Pago), sem browser
     "/health",
 )

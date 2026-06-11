@@ -26,6 +26,7 @@ import {
   Clock,
   CalendarDays,
   RefreshCw,
+  Plus,
 } from "lucide-react";
 import { api, ApiError, withCsrfHeaders } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
@@ -80,6 +81,30 @@ interface MembroEquipe {
   email: string;
   tipo: "ADMIN" | "ARTISTA" | "RECEPCIONISTA";
 }
+
+interface Convite {
+  id: string;
+  email: string;
+  role: "ARTISTA" | "RECEPCIONISTA";
+  status: "PENDENTE" | "ACEITO" | "EXPIRADO" | "REVOGADO";
+  expira_em: string;
+  criado_em: string;
+  convite_url?: string | null;
+}
+
+const CONVITE_STATUS_BADGE: Record<string, string> = {
+  PENDENTE: "bg-[#D99A3D]/15 text-[#D99A3D]",
+  ACEITO: "bg-[#2F9285]/15 text-[#2F9285]",
+  EXPIRADO: "bg-[#87938F]/15 text-[#87938F]",
+  REVOGADO: "bg-[#E35D5B]/15 text-[#E35D5B]",
+};
+
+const CONVITE_STATUS_LABEL: Record<string, string> = {
+  PENDENTE: "Pendente",
+  ACEITO: "Aceito",
+  EXPIRADO: "Expirado",
+  REVOGADO: "Revogado",
+};
 
 type AbaAtiva = "perfil" | "portal" | "equipe" | "seguranca" | "assinatura";
 
@@ -206,6 +231,12 @@ export default function ConfiguracoesPage() {
 
   // Link iCalendar (Google Agenda)
   const [icsCopiado, setIcsCopiado] = useState(false);
+
+  // Convites de equipe
+  const [conviteEmail, setConviteEmail] = useState("");
+  const [conviteRole, setConviteRole] = useState<"ARTISTA" | "RECEPCIONISTA">("ARTISTA");
+  const [conviteCriado, setConviteCriado] = useState<Convite | null>(null);
+  const [linkConviteCopiado, setLinkConviteCopiado] = useState(false);
 
   // Estados de Assinatura / Checkout
   const [selectedPlanSlug, setSelectedPlanSlug] = useState<string>("profissional");
@@ -513,6 +544,36 @@ export default function ConfiguracoesPage() {
     queryKey: ["equipe"],
     queryFn: () => api.get<MembroEquipe[]>("/api/v1/estudio/equipe"),
     enabled: aba === "equipe",
+  });
+
+  // Convites (apenas ADMIN). Lista também aceitos/expirados para histórico.
+  const { data: convites } = useQuery<Convite[]>({
+    queryKey: ["convites"],
+    queryFn: () => api.get<Convite[]>("/api/v1/convites/"),
+    enabled: aba === "equipe" && isAdmin,
+  });
+
+  const criarConvite = useMutation({
+    mutationFn: (payload: { email: string; role: string }) =>
+      api.post<Convite>("/api/v1/convites/", payload),
+    onSuccess: (novo) => {
+      queryClient.invalidateQueries({ queryKey: ["convites"] });
+      setConviteEmail("");
+      setConviteCriado(novo);
+      showToast("sucesso", "Convite criado! Copie o link ou avise o e-mail.");
+    },
+    onError: (err) =>
+      showToast("erro", err instanceof ApiError ? err.detail : "Erro ao criar convite."),
+  });
+
+  const revogarConvite = useMutation({
+    mutationFn: (id: string) => api.delete(`/api/v1/convites/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["convites"] });
+      showToast("sucesso", "Convite revogado.");
+    },
+    onError: (err) =>
+      showToast("erro", err instanceof ApiError ? err.detail : "Erro ao revogar convite."),
   });
 
   // ---------------------------------------------------------------------------
@@ -1611,11 +1672,135 @@ export default function ConfiguracoesPage() {
                 </div>
               )}
 
-              <div className="mt-4 pt-4 border-t border-[#243337]">
-                <p className="text-xs text-[#87938F]">
-                  Para adicionar novos membros à equipe, entre em contato com o suporte. Funcionalidade de convite disponível na V1.1.
-                </p>
-              </div>
+              {/* Convidar novo membro (ADMIN) */}
+              {isAdmin ? (
+                <div className="mt-5 pt-5 border-t border-[#243337] space-y-4">
+                  <div>
+                    <h3 className="text-sm font-semibold text-[#F0EADD]">Convidar membro</h3>
+                    <p className="text-xs text-[#87938F] mt-0.5">
+                      Envie um convite por e-mail ou compartilhe o link gerado. O convite expira em 7 dias.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="email"
+                      value={conviteEmail}
+                      onChange={(e) => setConviteEmail(e.target.value)}
+                      placeholder="email@dapessoa.com"
+                      className="flex-1 h-11 bg-[#050B12] border border-[#243337] rounded-[12px] px-3.5 text-sm text-[#F0EADD] placeholder-[#87938F] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                    />
+                    <select
+                      value={conviteRole}
+                      onChange={(e) => setConviteRole(e.target.value as "ARTISTA" | "RECEPCIONISTA")}
+                      className="h-11 bg-[#050B12] border border-[#243337] rounded-[12px] px-3 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors cursor-pointer"
+                    >
+                      <option value="ARTISTA">Artista</option>
+                      <option value="RECEPCIONISTA">Recepção</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const email = conviteEmail.trim().toLowerCase();
+                        if (!email || !email.includes("@") || !email.includes(".")) {
+                          showToast("erro", "Informe um e-mail válido.");
+                          return;
+                        }
+                        criarConvite.mutate({ email, role: conviteRole });
+                      }}
+                      disabled={criarConvite.isPending}
+                      className="h-11 px-5 rounded-[12px] bg-[#2F9285] hover:bg-[#3AA99A] disabled:opacity-60 text-[#050B12] font-semibold text-sm flex items-center justify-center gap-2 transition-colors shrink-0"
+                    >
+                      {criarConvite.isPending ? (
+                        <Loader2 size={15} className="animate-spin" />
+                      ) : (
+                        <Plus size={15} />
+                      )}
+                      Convidar
+                    </button>
+                  </div>
+
+                  {/* Link recém-gerado — copiável */}
+                  {conviteCriado?.convite_url && (
+                    <div className="bg-[#2F9285]/5 border border-[#2F9285]/20 rounded-[12px] p-3 space-y-2">
+                      <p className="text-xs text-[#87938F]">
+                        Convite para <strong className="text-[#F0EADD]">{conviteCriado.email}</strong> criado.
+                        Compartilhe o link abaixo (também enviamos por e-mail):
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          readOnly
+                          value={conviteCriado.convite_url}
+                          aria-label="Link do convite"
+                          className="flex-1 bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2 text-xs text-[#87938F] font-mono focus:outline-none min-w-0"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(conviteCriado.convite_url!);
+                            setLinkConviteCopiado(true);
+                            setTimeout(() => setLinkConviteCopiado(false), 2000);
+                          }}
+                          className="shrink-0 h-9 px-3 flex items-center gap-1.5 rounded-[10px] bg-[#2F9285] text-[#050B12] text-xs font-semibold hover:bg-[#3AA99A] transition-colors"
+                        >
+                          {linkConviteCopiado ? <CheckCircle size={13} /> : <Copy size={13} />}
+                          {linkConviteCopiado ? "Copiado!" : "Copiar"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Lista de convites */}
+                  {(convites ?? []).length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-[#87938F] uppercase tracking-wider">Convites</p>
+                      {(convites ?? []).map((c) => (
+                        <div
+                          key={c.id}
+                          className="flex items-center gap-3 p-3 bg-[#050B12] border border-[#243337] rounded-[10px]"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-[#F0EADD] truncate">{c.email}</p>
+                            <p className="text-xs text-[#87938F]">
+                              {TIPO_LABEL[c.role]} ·{" "}
+                              {c.status === "PENDENTE"
+                                ? `expira ${new Date(c.expira_em).toLocaleDateString("pt-BR")}`
+                                : CONVITE_STATUS_LABEL[c.status]}
+                            </p>
+                          </div>
+                          <span
+                            className={cn(
+                              "text-xs px-2 py-0.5 rounded-[6px] font-medium shrink-0",
+                              CONVITE_STATUS_BADGE[c.status]
+                            )}
+                          >
+                            {CONVITE_STATUS_LABEL[c.status]}
+                          </span>
+                          {c.status === "PENDENTE" && (
+                            <button
+                              type="button"
+                              onClick={() => revogarConvite.mutate(c.id)}
+                              disabled={revogarConvite.isPending}
+                              title="Revogar convite"
+                              aria-label="Revogar convite"
+                              className="shrink-0 p-1.5 rounded-[8px] text-[#87938F] hover:text-[#E35D5B] hover:bg-[#E35D5B]/10 transition-colors"
+                            >
+                              <X size={15} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="mt-4 pt-4 border-t border-[#243337]">
+                  <p className="text-xs text-[#87938F]">
+                    Apenas administradores podem convidar novos membros para a equipe.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 

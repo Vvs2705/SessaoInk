@@ -40,6 +40,11 @@ const PUBLIC_EXACT = new Set([
   "/precos", // marketing pública
 ]);
 
+// Prefixos públicos por primeiro segmento (a rota inteira fica liberada).
+// /convite/{token} — página de aceite de convite, acessada por quem ainda
+// não tem conta. O token de uso único protege o endpoint real.
+const PUBLIC_PREFIX_SEGMENTS = new Set(["convite"]);
+
 // Páginas de autenticação — usuário JÁ logado é mandado ao dashboard.
 const AUTH_ROUTES = new Set([
   "/login",
@@ -97,7 +102,12 @@ export function middleware(request: NextRequest) {
 
   const segments = path.split("/").filter(Boolean);
 
-  // 3. Portal público por slug — sem sessão
+  // 3a. Prefixos públicos explícitos (ex.: /convite/{token})
+  if (segments.length > 0 && PUBLIC_PREFIX_SEGMENTS.has(segments[0])) {
+    return NextResponse.next();
+  }
+
+  // 3b. Portal público por slug — sem sessão
   if (path !== DASHBOARD_ROOT && isPortalPublico(segments)) {
     return NextResponse.next();
   }

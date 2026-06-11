@@ -92,7 +92,6 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     shortLabel: "Relatórios",
     icon: BarChart2,
     mobile: "more",
-    badge: "Em breve",
   },
   {
     href: "/configuracoes",

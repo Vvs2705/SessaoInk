@@ -13,6 +13,8 @@ const CSRF_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const CSRF_EXEMPT = [
   "/api/v1/public/",
   "/api/v1/auth/login",
+  // Aceite de convite: convidado deslogado, protegido por token de uso único.
+  "/api/v1/convites/aceitar",
 ];
 
 async function proxy(

@@ -3,7 +3,7 @@
 import enum
 import uuid
 
-from sqlalchemy import Boolean, Enum, ForeignKey, String, Uuid
+from sqlalchemy import JSON, Boolean, Enum, ForeignKey, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -33,6 +33,11 @@ class Estudio(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     foto_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     # Email para receber notificações de novos orçamentos pelo portal público
     email_notificacao: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    # Horário de funcionamento por dia da semana (0=segunda … 6=domingo).
+    # Formato: {"0": {"abre": "09:00", "fecha": "19:00"}, ...}; dia ausente = fechado.
+    horario_funcionamento: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    # Token do feed iCalendar da agenda (assinável no Google Agenda/Apple/Outlook).
+    agenda_ics_token: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
 
     endereco_cep: Mapped[str | None] = mapped_column(String(12), nullable=True)
     endereco_logradouro: Mapped[str | None] = mapped_column(String(180), nullable=True)

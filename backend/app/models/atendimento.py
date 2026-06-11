@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     DateTime,
     Enum,
@@ -113,6 +114,11 @@ class Atendimento(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
         nullable=False,
         default=False,
     )
+    # Preferências de data informadas pelo cliente no orçamento público.
+    # Formato: [{"data": "2026-06-15", "periodo": "tarde"}, ...] (máx. 3).
+    datas_preferidas: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    # Texto livre quando o cliente precisa de horário fora do funcionamento padrão.
+    horario_personalizado: Mapped[str | None] = mapped_column(String(300), nullable=True)
     lgpd_retencao_ate: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,

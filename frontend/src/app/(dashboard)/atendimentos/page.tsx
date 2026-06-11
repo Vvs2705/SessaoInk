@@ -49,6 +49,8 @@ interface Atendimento {
   tamanho_cm: string | null;
   notas_privadas: string | null;
   data_sessao: string | null;
+  datas_preferidas: { data: string; periodo: string }[] | null;
+  horario_personalizado: string | null;
   cliente: ClienteAtendimento | null;
 }
 

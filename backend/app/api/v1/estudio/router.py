@@ -1,5 +1,7 @@
 """Router de Estúdio — perfil, branding (logo/foto), slug e equipe."""
 
+import re
+import secrets
 import uuid
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
@@ -8,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.auth.dependencies import get_usuario_atual, require_role
+from app.core.config import settings
 from app.core.database import get_session
 from app.core.slug import SlugInvalidoError, slugify, validar_slug
 from app.core.storage import montar_key, remover_objeto, resposta_imagem
@@ -32,6 +35,8 @@ class EstudioResponse(BaseModel):
     telefone: str | None = None
     instagram: str | None = None
     email_notificacao: str | None = None
+    horario_funcionamento: dict | None = None
+    agenda_ics_url: str | None = None
     has_logo: bool = False
     has_foto: bool = False
 
@@ -66,6 +71,12 @@ class EstudioResponse(BaseModel):
             telefone=estudio.telefone,
             instagram=estudio.instagram,
             email_notificacao=estudio.email_notificacao,
+            horario_funcionamento=estudio.horario_funcionamento,
+            agenda_ics_url=(
+                f"{settings.APP_URL}/api/v1/public/agenda-ics/{estudio.agenda_ics_token}"
+                if estudio.agenda_ics_token
+                else None
+            ),
             has_logo=bool(estudio.logo_path),
             has_foto=bool(estudio.foto_path),
             endereco_cep=estudio.endereco_cep,
@@ -92,6 +103,7 @@ class EstudioAtualizarRequest(BaseModel):
     telefone: str | None = None
     instagram: str | None = None
     email_notificacao: str | None = None
+    horario_funcionamento: dict | None = None
 
     endereco_cep: str | None = None
     endereco_logradouro: str | None = None
@@ -131,6 +143,38 @@ async def _carregar_estudio(session: AsyncSession, estudio_id: uuid.UUID) -> Est
             status_code=status.HTTP_404_NOT_FOUND, detail="Estúdio não encontrado"
         )
     return estudio
+
+
+_RE_HORA = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
+
+
+def _validar_horario_funcionamento(valor: dict | None) -> dict | None:
+    """Valida {"0".."6": {"abre": "HH:MM", "fecha": "HH:MM"}}; dia ausente = fechado."""
+    if valor is None:
+        return None
+    if not isinstance(valor, dict) or len(valor) > 7:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY, "Horário de funcionamento inválido"
+        )
+    limpo: dict = {}
+    for dia, faixa in valor.items():
+        if str(dia) not in {"0", "1", "2", "3", "4", "5", "6"}:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY, "Dia da semana inválido"
+            )
+        if not isinstance(faixa, dict):
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY, "Horário de funcionamento inválido"
+            )
+        abre = str(faixa.get("abre", ""))
+        fecha = str(faixa.get("fecha", ""))
+        if not _RE_HORA.match(abre) or not _RE_HORA.match(fecha) or abre >= fecha:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                f"Horário inválido no dia {dia}: abertura deve ser antes do fechamento (HH:MM)",
+            )
+        limpo[str(dia)] = {"abre": abre, "fecha": fecha}
+    return limpo or None
 
 
 async def _slug_em_uso(session: AsyncSession, slug: str, exceto_id: uuid.UUID) -> bool:
@@ -182,9 +226,49 @@ async def atualizar_estudio(
     if "uf" in campos and campos["uf"]:
         campos["uf"] = campos["uf"].upper()[:2]
 
+    if "horario_funcionamento" in campos:
+        campos["horario_funcionamento"] = _validar_horario_funcionamento(
+            campos["horario_funcionamento"]
+        )
+
     for campo, valor in campos.items():
         setattr(estudio, campo, valor)
 
+    await session.commit()
+    await session.refresh(estudio)
+    return EstudioResponse.de_estudio(estudio)
+
+
+# ---------------------------------------------------------------------------
+# Feed iCalendar da agenda (Google Agenda / Apple / Outlook)
+# ---------------------------------------------------------------------------
+
+
+@router.post("/agenda-ics", response_model=EstudioResponse)
+async def gerar_link_agenda_ics(
+    session: AsyncSession = Depends(get_session),
+    usuario: Usuario = Depends(require_role(TipoUsuario.ADMIN)),
+):
+    """Gera (ou rotaciona) o link privado do feed iCalendar da agenda.
+
+    Rotacionar invalida o link anterior — quem tinha a URL antiga para de
+    receber as sessões.
+    """
+    estudio = await _carregar_estudio(session, usuario.estudio_id)
+    estudio.agenda_ics_token = secrets.token_urlsafe(32)
+    await session.commit()
+    await session.refresh(estudio)
+    return EstudioResponse.de_estudio(estudio)
+
+
+@router.delete("/agenda-ics", response_model=EstudioResponse)
+async def revogar_link_agenda_ics(
+    session: AsyncSession = Depends(get_session),
+    usuario: Usuario = Depends(require_role(TipoUsuario.ADMIN)),
+):
+    """Revoga o link do feed iCalendar (desativa a sincronização externa)."""
+    estudio = await _carregar_estudio(session, usuario.estudio_id)
+    estudio.agenda_ics_token = None
     await session.commit()
     await session.refresh(estudio)
     return EstudioResponse.de_estudio(estudio)

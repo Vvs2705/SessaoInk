@@ -37,13 +37,51 @@ interface OrcamentoResponse {
 interface FormState {
   nome: string;
   whatsapp: string;
+  email: string;
   instagram: string;
   descricao: string;
   estilo: string;
   parte_corpo: string;
   tamanho_cm: string;
+  horario_personalizado: string;
   aceite_privacidade: boolean;
   aceite_termos: boolean;
+}
+
+interface DisponibilidadeDia {
+  data: string;
+  sessoes: number;
+}
+
+interface DisponibilidadeResponse {
+  horario_funcionamento: Record<string, { abre: string; fecha: string }> | null;
+  dias_ocupados: DisponibilidadeDia[];
+  janela_dias: number;
+}
+
+interface DataPreferida {
+  data: string; // YYYY-MM-DD
+  periodo: "manha" | "tarde" | "noite";
+}
+
+const PERIODOS: { value: DataPreferida["periodo"]; label: string }[] = [
+  { value: "manha", label: "Manhã" },
+  { value: "tarde", label: "Tarde" },
+  { value: "noite", label: "Noite" },
+];
+
+const DIAS_SEMANA_CURTO = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"];
+
+/** Converte Date.getDay() (0=dom) para o índice do backend (0=seg…6=dom). */
+function diaBackend(d: Date): number {
+  return (d.getDay() + 6) % 7;
+}
+
+function isoLocal(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dia = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dia}`;
 }
 
 interface ImagemReferencia {
@@ -68,14 +106,65 @@ export default function OrcamentoPage() {
   const [form, setForm] = useState<FormState>({
     nome: "",
     whatsapp: "",
+    email: "",
     instagram: "",
     descricao: "",
     estilo: "",
     parte_corpo: "",
     tamanho_cm: "",
+    horario_personalizado: "",
     aceite_privacidade: false,
     aceite_termos: false,
   });
+
+  // Etapa de agenda: disponibilidade do estúdio + datas escolhidas pelo cliente
+  const [disponibilidade, setDisponibilidade] =
+    useState<DisponibilidadeResponse | null>(null);
+  const [datasPreferidas, setDatasPreferidas] = useState<DataPreferida[]>([]);
+  const [mostrarHorarioCustom, setMostrarHorarioCustom] = useState(false);
+
+  useEffect(() => {
+    if (!slug) return;
+    fetch(`${API_URL}/api/v1/public/${slug}/disponibilidade`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: DisponibilidadeResponse | null) => setDisponibilidade(data))
+      .catch(() => setDisponibilidade(null));
+  }, [slug]);
+
+  const sessoesPorDia = new Map(
+    (disponibilidade?.dias_ocupados ?? []).map((d) => [d.data, d.sessoes])
+  );
+
+  const horario = disponibilidade?.horario_funcionamento ?? null;
+
+  // Próximos 21 dias para o cliente sugerir preferências
+  const diasSugeriveis: Date[] = Array.from({ length: 21 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1 + i);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+
+  const diaAberto = (d: Date) =>
+    !horario || Boolean(horario[String(diaBackend(d))]);
+
+  const togglePreferencia = (dataIso: string, periodo: DataPreferida["periodo"]) => {
+    setErro(null);
+    setDatasPreferidas((prev) => {
+      const existente = prev.find((p) => p.data === dataIso);
+      if (existente?.periodo === periodo) {
+        return prev.filter((p) => p.data !== dataIso);
+      }
+      if (existente) {
+        return prev.map((p) => (p.data === dataIso ? { ...p, periodo } : p));
+      }
+      if (prev.length >= 3) {
+        setErro("Você pode sugerir no máximo 3 datas.");
+        return prev;
+      }
+      return [...prev, { data: dataIso, periodo }];
+    });
+  };
 
   // Flash art selecionada (cliente clicou numa flash no portal)
   const [flashId, setFlashId] = useState<string | null>(null);
@@ -164,8 +253,8 @@ export default function OrcamentoPage() {
   // Step Validation
   const canGoToStep2 = form.nome.trim().length >= 2 && form.whatsapp.trim().length >= 8;
   const canGoToStep3 = form.descricao.trim().length >= 10;
-  const canGoToStep4 = true; // Imagens are optional
   const canSubmit = form.aceite_privacidade && form.aceite_termos;
+  const TOTAL_STEPS = 5;
 
   const nextStep = () => {
     setErro(null);
@@ -218,6 +307,15 @@ export default function OrcamentoPage() {
       }
       if (form.tamanho_cm.trim()) {
         formData.append("tamanho_cm", form.tamanho_cm.trim());
+      }
+      if (form.email.trim()) {
+        formData.append("email", form.email.trim());
+      }
+      if (datasPreferidas.length > 0) {
+        formData.append("datas_preferidas", JSON.stringify(datasPreferidas));
+      }
+      if (form.horario_personalizado.trim()) {
+        formData.append("horario_personalizado", form.horario_personalizado.trim());
       }
       formData.append("aceite_privacidade", String(form.aceite_privacidade));
       formData.append("aceite_termos", String(form.aceite_termos));
@@ -327,7 +425,7 @@ export default function OrcamentoPage() {
 
         {/* Progress bar */}
         <div className="flex items-center gap-2 mb-8 bg-[#0B171C] border border-[#243337] p-3 rounded-[16px]">
-          {[1, 2, 3, 4].map((s) => (
+          {[1, 2, 3, 4, 5].map((s) => (
             <div key={s} className="flex-1 flex items-center gap-1.5">
               <div
                 className={cn(
@@ -393,6 +491,17 @@ export default function OrcamentoPage() {
                   onChange={(e) => set("whatsapp", e.target.value)}
                   placeholder="(11) 99999-9999"
                   required
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>E-mail <span className="text-[#87938F] font-normal">(opcional)</span></label>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => set("email", e.target.value)}
+                  placeholder="voce@email.com"
+                  autoComplete="email"
                   className={inputClass}
                 />
               </div>
@@ -504,8 +613,129 @@ export default function OrcamentoPage() {
             </div>
           )}
 
-          {/* PASSO 4: Envio & Privacidade */}
+          {/* PASSO 4: Datas de preferência */}
           {step === 4 && (
+            <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-sm font-semibold text-[#87938F] uppercase tracking-wider">Quando você pode?</h2>
+                <span className="text-xs text-[#87938F]">opcional · até 3 datas</span>
+              </div>
+              <p className="text-xs text-[#87938F] leading-relaxed">
+                Sugira datas e períodos em que você tem disponibilidade — isso agiliza
+                o agendamento com o estúdio. Dias fora do horário de funcionamento
+                aparecem desabilitados.
+              </p>
+
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                {diasSugeriveis.map((d) => {
+                  const iso = isoLocal(d);
+                  const aberto = diaAberto(d);
+                  const selecionada = datasPreferidas.find((p) => p.data === iso);
+                  const ocupacao = sessoesPorDia.get(iso) ?? 0;
+                  return (
+                    <div
+                      key={iso}
+                      className={cn(
+                        "rounded-[12px] border p-2 text-center transition-colors",
+                        !aberto
+                          ? "border-[#243337]/50 bg-[#050B12]/50 opacity-40"
+                          : selecionada
+                            ? "border-[#2F9285] bg-[#2F9285]/10"
+                            : "border-[#243337] bg-[#050B12]"
+                      )}
+                    >
+                      <p className="text-[10px] uppercase tracking-wider text-[#87938F]">
+                        {DIAS_SEMANA_CURTO[diaBackend(d)]}
+                      </p>
+                      <p className="text-sm font-bold text-[#F0EADD]">
+                        {d.getDate()}/{d.getMonth() + 1}
+                      </p>
+                      {ocupacao > 0 && aberto && (
+                        <p className="text-[9px] text-[#C36B3F] mt-0.5">
+                          {ocupacao} {ocupacao === 1 ? "sessão" : "sessões"}
+                        </p>
+                      )}
+                      {aberto ? (
+                        <div className="flex flex-col gap-1 mt-1.5">
+                          {PERIODOS.map((p) => (
+                            <button
+                              key={p.value}
+                              type="button"
+                              onClick={() => togglePreferencia(iso, p.value)}
+                              className={cn(
+                                "text-[10px] font-semibold rounded-[8px] py-1 min-h-[28px] transition-colors",
+                                selecionada?.periodo === p.value
+                                  ? "bg-[#2F9285] text-[#050B12]"
+                                  : "bg-[#0B171C] border border-[#243337] text-[#87938F] hover:text-[#F0EADD] hover:border-[#2F9285]/50"
+                              )}
+                            >
+                              {p.label}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[9px] text-[#87938F] mt-1.5">fechado</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {datasPreferidas.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {datasPreferidas.map((p) => {
+                    const [, m, dia] = p.data.split("-");
+                    const label = PERIODOS.find((x) => x.value === p.periodo)?.label;
+                    return (
+                      <span
+                        key={p.data}
+                        className="inline-flex items-center gap-1.5 text-xs text-[#2F9285] bg-[#2F9285]/10 border border-[#2F9285]/25 rounded-full px-3 py-1.5"
+                      >
+                        {dia}/{m} · {label}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setDatasPreferidas((prev) =>
+                              prev.filter((x) => x.data !== p.data)
+                            )
+                          }
+                          aria-label="Remover data"
+                          className="hover:text-[#F0EADD]"
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="border-t border-[#243337] pt-3">
+                <button
+                  type="button"
+                  onClick={() => setMostrarHorarioCustom((v) => !v)}
+                  className="text-xs font-semibold text-[#C36B3F] hover:text-[#D87E52] transition-colors min-h-[44px] text-left"
+                >
+                  {mostrarHorarioCustom
+                    ? "Esconder horário personalizado"
+                    : "Precisa de um horário fora do funcionamento padrão?"}
+                </button>
+                {mostrarHorarioCustom && (
+                  <textarea
+                    value={form.horario_personalizado}
+                    onChange={(e) => set("horario_personalizado", e.target.value)}
+                    placeholder="Ex: só consigo após as 20h, ou aos domingos de manhã..."
+                    rows={2}
+                    maxLength={300}
+                    className="mt-2 w-full px-3.5 py-2.5 rounded-[14px] bg-[#050B12] border border-[#243337] text-[#F0EADD] text-sm placeholder-[#87938F]/70 focus:outline-none focus:border-[#2F9285]/60 resize-none transition-colors"
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* PASSO 5: Envio & Privacidade */}
+          {step === 5 && (
             <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4">
               <h2 className="text-sm font-semibold text-[#87938F] uppercase tracking-wider">Termos & Envio</h2>
               <div className="flex items-start gap-2.5 p-3.5 rounded-[12px] bg-[#2F9285]/5 border border-[#2F9285]/15">
@@ -557,7 +787,7 @@ export default function OrcamentoPage() {
               </button>
             )}
             
-            {step < 4 ? (
+            {step < TOTAL_STEPS ? (
               <button
                 type="button"
                 onClick={nextStep}

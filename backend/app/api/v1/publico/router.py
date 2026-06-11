@@ -1,8 +1,9 @@
 """Router do Portal Público — sem autenticação."""
 
 import hashlib
+import json
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 from fastapi import (
     APIRouter,
@@ -15,7 +16,7 @@ from fastapi import (
     UploadFile,
 )
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -30,11 +31,13 @@ from app.models.atendimento import (
     StatusOperacional,
     TipoAtendimento,
 )
+from app.models.cliente import Cliente
 from app.models.consentimento import Consentimento
 from app.models.documento import AcaoLink, Documento, DocumentoLinkAcesso
 from app.models.portfolio import FlashArt, Portfolio, StatusFlash, VisibilidadePortfolio
-from app.models.usuario import Estudio
+from app.models.usuario import Estudio, TipoUsuario, Usuario
 from app.services.audit import log_event
+from app.services.lgpd import MARCADOR_PRE_CADASTRO
 
 
 def _hash_lgpd(value: str | None) -> str | None:
@@ -177,6 +180,154 @@ async def listar_estudios_publicos(
         .limit(5000)
     )
     return [EstudioSitemapItem(slug=s, atualizado_em=a) for s, a in rows.all()]
+
+
+@router.get("/agenda-ics/{token}")
+async def feed_agenda_ics(
+    token: str,
+    session: AsyncSession = Depends(get_session),
+):
+    """Feed iCalendar privado da agenda do estúdio (token não-adivinhável).
+
+    O tatuador assina esta URL no Google Agenda / Apple Calendar / Outlook e
+    recebe as sessões (com notificação no celular) sem precisar de OAuth.
+    Declarado antes de `/{slug}` por clareza de roteamento.
+    """
+    from fastapi.responses import Response
+
+    if len(token) < 32:
+        raise HTTPException(404, "Agenda não encontrada")
+
+    estudio = await session.scalar(
+        select(Estudio).where(Estudio.agenda_ics_token == token, Estudio.ativo)
+    )
+    if not estudio:
+        raise HTTPException(404, "Agenda não encontrada")
+
+    agora = datetime.now(UTC)
+    rows = await session.execute(
+        select(Atendimento)
+        .where(
+            Atendimento.estudio_id == estudio.id,
+            Atendimento.ativo,
+            Atendimento.data_sessao.isnot(None),
+            Atendimento.data_sessao >= agora - timedelta(days=30),
+            Atendimento.status_operacional.notin_([
+                StatusOperacional.CANCELADO_CLIENTE,
+                StatusOperacional.CANCELADO_ESTUDIO,
+            ]),
+        )
+        .order_by(Atendimento.data_sessao)
+        .limit(500)
+    )
+
+    def _escape(texto: str) -> str:
+        return (
+            texto.replace("\\", "\\\\")
+            .replace(";", "\\;")
+            .replace(",", "\\,")
+            .replace("\n", "\\n")
+        )
+
+    def _fmt(dt: datetime) -> str:
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=UTC)
+        return dt.astimezone(UTC).strftime("%Y%m%dT%H%M%SZ")
+
+    linhas = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//SessãoInk//Agenda//PT-BR",
+        "CALSCALE:GREGORIAN",
+        f"X-WR-CALNAME:{_escape(f'SessãoInk — {estudio.nome}')}",
+    ]
+    for s in rows.scalars().all():
+        inicio = s.data_sessao
+        if inicio is None:  # filtrado na query; guarda para o type checker
+            continue
+        fim = inicio + timedelta(minutes=s.duracao_minutos or 120)
+        titulo = f"{s.tipo.value.title()}"
+        if s.cliente and s.cliente.nome:
+            titulo += f" — {s.cliente.nome}"
+        detalhes = " | ".join(
+            p for p in [s.estilo, s.parte_corpo, s.descricao] if p
+        )
+        linhas += [
+            "BEGIN:VEVENT",
+            f"UID:{s.id}@sessao-ink",
+            f"DTSTAMP:{_fmt(agora)}",
+            f"DTSTART:{_fmt(inicio)}",
+            f"DTEND:{_fmt(fim)}",
+            f"SUMMARY:{_escape(titulo)}",
+            f"DESCRIPTION:{_escape(detalhes[:500])}" if detalhes else "DESCRIPTION:",
+            f"STATUS:{'CONFIRMED' if s.status_operacional == StatusOperacional.CONFIRMADO else 'TENTATIVE'}",
+            "END:VEVENT",
+        ]
+    linhas.append("END:VCALENDAR")
+
+    return Response(
+        content="\r\n".join(linhas) + "\r\n",
+        media_type="text/calendar; charset=utf-8",
+        headers={"Cache-Control": "private, max-age=300"},
+    )
+
+
+class DisponibilidadeDia(BaseModel):
+    data: str
+    sessoes: int
+
+
+class DisponibilidadeResponse(BaseModel):
+    horario_funcionamento: dict | None
+    dias_ocupados: list[DisponibilidadeDia]
+    janela_dias: int
+
+
+@router.get("/{slug}/disponibilidade", response_model=DisponibilidadeResponse)
+async def disponibilidade_publica(
+    slug: str,
+    session: AsyncSession = Depends(get_session),
+):
+    """Visão pública da ocupação da agenda — só contagem por dia, sem detalhes.
+
+    Usada na etapa final do orçamento para o cliente sugerir datas dentro do
+    horário de funcionamento do estúdio.
+    """
+    estudio = await session.scalar(
+        select(Estudio).where(Estudio.slug == slug, Estudio.ativo)
+    )
+    if not estudio:
+        raise HTTPException(404, "Estúdio não encontrado")
+
+    janela_dias = 60
+    agora = datetime.now(UTC)
+    fim = agora + timedelta(days=janela_dias)
+
+    rows = await session.execute(
+        select(Atendimento.data_sessao).where(
+            Atendimento.estudio_id == estudio.id,
+            Atendimento.ativo,
+            Atendimento.data_sessao.isnot(None),
+            Atendimento.data_sessao >= agora,
+            Atendimento.data_sessao <= fim,
+            Atendimento.status_operacional.notin_([
+                StatusOperacional.CANCELADO_CLIENTE,
+                StatusOperacional.CANCELADO_ESTUDIO,
+            ]),
+        )
+    )
+    contagem: dict[str, int] = {}
+    for (dt,) in rows.all():
+        chave = dt.date().isoformat()
+        contagem[chave] = contagem.get(chave, 0) + 1
+
+    return DisponibilidadeResponse(
+        horario_funcionamento=estudio.horario_funcionamento,
+        dias_ocupados=[
+            DisponibilidadeDia(data=d, sessoes=n) for d, n in sorted(contagem.items())
+        ],
+        janela_dias=janela_dias,
+    )
 
 
 @router.get("/{slug}", response_model=EstudioPublicoResponse)
@@ -398,18 +549,58 @@ async def imagem_flash_art_publica(
     return await resposta_imagem(key)
 
 
+_PERIODOS_VALIDOS = {"manha", "tarde", "noite"}
+
+
+def _parse_datas_preferidas(raw: str | None) -> list[dict] | None:
+    """Valida o JSON de preferências de data enviado pelo cliente (máx. 3).
+
+    Formato aceito: [{"data": "2026-06-15", "periodo": "tarde"}, ...].
+    """
+    if not raw:
+        return None
+    try:
+        itens = json.loads(raw)
+    except (ValueError, TypeError):
+        raise HTTPException(400, "Preferências de data inválidas")
+    if not isinstance(itens, list) or len(itens) > 3:
+        raise HTTPException(400, "Selecione no máximo 3 datas de preferência")
+
+    hoje = date.today()
+    limite = hoje + timedelta(days=180)
+    validadas: list[dict] = []
+    for item in itens:
+        if not isinstance(item, dict):
+            raise HTTPException(400, "Preferências de data inválidas")
+        try:
+            dia = date.fromisoformat(str(item.get("data", "")))
+        except ValueError:
+            raise HTTPException(400, "Data de preferência inválida")
+        if dia < hoje or dia > limite:
+            raise HTTPException(400, "Datas devem estar entre hoje e 6 meses à frente")
+        periodo = str(item.get("periodo", "")).lower()
+        if periodo not in _PERIODOS_VALIDOS:
+            raise HTTPException(400, "Período de preferência inválido")
+        validadas.append({"data": dia.isoformat(), "periodo": periodo})
+    return validadas or None
+
+
 @router.post("/{slug}/orcamento", response_model=OrcamentoResponse, status_code=201)
 async def solicitar_orcamento(
     slug: str,
     request: Request,
+    background_tasks: BackgroundTasks,
     nome: str = Form(...),
     whatsapp: str = Form(...),
+    email: str | None = Form(None),
     instagram: str | None = Form(None),
     descricao: str | None = Form(None),
     estilo: str | None = Form(None),
     parte_corpo: str | None = Form(None),
     tamanho_cm: str | None = Form(None),
     observacoes: str | None = Form(None),
+    datas_preferidas: str | None = Form(None),
+    horario_personalizado: str | None = Form(None),
     aceite_privacidade: bool = Form(...),
     aceite_termos: bool = Form(...),
     email_confirm: str | None = Form(None),
@@ -441,6 +632,13 @@ async def solicitar_orcamento(
         raise HTTPException(400, "Descrição muito longa (máx 2000 caracteres)")
     if observacoes and len(observacoes) > 1000:
         raise HTTPException(400, "Observações muito longas (máx 1000 caracteres)")
+    if email:
+        email = email.strip().lower()
+        if len(email) > 320 or "@" not in email or "." not in email.split("@")[-1]:
+            raise HTTPException(400, "E-mail inválido")
+    if horario_personalizado and len(horario_personalizado) > 300:
+        raise HTTPException(400, "Horário personalizado muito longo (máx 300 caracteres)")
+    preferencias = _parse_datas_preferidas(datas_preferidas)
 
     # 3. Registrar solicitação no Redis
     await registrar_solicitacao_orcamento(ip)
@@ -456,15 +654,58 @@ async def solicitar_orcamento(
     notas = f"Contato: {nome} | WhatsApp: {whatsapp}"
     if instagram:
         notas += f" | Instagram: {instagram}"
+    if email:
+        notas += f" | Email: {email}"
     if observacoes:
         notas += f"\nObservações: {observacoes}"
 
     now = datetime.now(UTC)
     retencao_ate = now + timedelta(days=settings.LGPD_ORCAMENTO_RETENCAO_DIAS)
 
+    # Pré-cadastro do cliente: reutiliza cadastro existente (mesmo telefone ou
+    # e-mail no estúdio) ou cria um novo com os dados do formulário. O cliente
+    # consentiu com a Política de Privacidade neste mesmo fluxo (LGPD).
+    telefone_normalizado = whatsapp.strip()[:20]
+    filtros_match = [Cliente.telefone == telefone_normalizado]
+    if email:
+        filtros_match.append(Cliente.email == email)
+
+    cliente_existente = (
+        await session.execute(
+            select(Cliente)
+            .where(
+                Cliente.estudio_id == estudio.id,
+                Cliente.ativo,
+                or_(*filtros_match),
+            )
+            .order_by(Cliente.criado_em)
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+    if cliente_existente:
+        cliente = cliente_existente
+        # Completa dados que o estúdio ainda não tinha (nunca sobrescreve).
+        if email and not cliente.email:
+            cliente.email = email
+        if instagram and not cliente.instagram:
+            cliente.instagram = instagram.strip()[:100]
+    else:
+        cliente = Cliente(
+            estudio_id=estudio.id,
+            nome=nome.strip()[:200],
+            telefone=telefone_normalizado,
+            instagram=instagram.strip()[:100] if instagram else None,
+            email=email,
+            observacoes=MARCADOR_PRE_CADASTRO,
+        )
+        session.add(cliente)
+        await session.flush()
+
     # Criar atendimento automaticamente
     atendimento = Atendimento(
         estudio_id=estudio.id,
+        cliente_id=cliente.id,
         status_operacional=StatusOperacional.SOLICITADO,
         tipo=TipoAtendimento.TATUAGEM,
         descricao=descricao,
@@ -473,6 +714,10 @@ async def solicitar_orcamento(
         tamanho_cm=tamanho_cm,
         notas_privadas=notas,
         orcamento_publico=True,
+        datas_preferidas=preferencias,
+        horario_personalizado=(
+            horario_personalizado.strip() if horario_personalizado else None
+        ),
         lgpd_retencao_ate=retencao_ate,
     )
     session.add(atendimento)
@@ -530,13 +775,31 @@ async def solicitar_orcamento(
 
     protocolo = f"SI{str(atendimento.id).split('-')[0].upper()}"
 
-    # Enviar email de notificação para o estúdio (silencioso se SMTP não configurado)
-    if estudio.email_notificacao:
-        import asyncio
+    # Enviar email de notificação para o estúdio. Fallback: se o estúdio não
+    # configurou email_notificacao, notifica o e-mail do primeiro ADMIN — o
+    # orçamento nunca fica sem aviso. BackgroundTasks garante a execução após
+    # a resposta (asyncio.create_task podia ser cancelado/coletado antes de rodar).
+    email_destino = estudio.email_notificacao
+    if not email_destino:
+        email_destino = (
+            await session.execute(
+                select(Usuario.email)
+                .where(
+                    Usuario.estudio_id == estudio.id,
+                    Usuario.ativo,
+                    Usuario.tipo == TipoUsuario.ADMIN,
+                )
+                .order_by(Usuario.criado_em)
+                .limit(1)
+            )
+        ).scalar_one_or_none()
 
+    if email_destino:
         from app.core.email import enviar_notificacao_orcamento
-        asyncio.create_task(enviar_notificacao_orcamento(
-            email_destino=estudio.email_notificacao,
+
+        background_tasks.add_task(
+            enviar_notificacao_orcamento,
+            email_destino=email_destino,
             nome_estudio=estudio.nome,
             slug=slug,
             protocolo=protocolo,
@@ -545,7 +808,7 @@ async def solicitar_orcamento(
             descricao=descricao,
             estilo=estilo,
             parte_corpo=parte_corpo,
-        ))
+        )
 
     return OrcamentoResponse(
         protocolo=protocolo,

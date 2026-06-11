@@ -4,11 +4,12 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.storage import montar_key, remover_objeto
 from app.models.atendimento import Atendimento, StatusOperacional
+from app.models.cliente import Cliente
 
 _STATUS_NAO_CONVERTIDOS = (
     StatusOperacional.SOLICITADO,
@@ -17,6 +18,11 @@ _STATUS_NAO_CONVERTIDOS = (
     StatusOperacional.CANCELADO_ESTUDIO,
     StatusOperacional.NAO_COMPARECEU,
 )
+
+# Marcador gravado em Cliente.observacoes pelo pré-cadastro do orçamento público.
+# Permite distinguir cadastros automáticos (sujeitos à retenção do orçamento)
+# de clientes cadastrados manualmente pelo estúdio.
+MARCADOR_PRE_CADASTRO = "Pré-cadastro automático via orçamento do portal público."
 
 
 @dataclass(frozen=True)
@@ -54,11 +60,13 @@ async def anonimizar_orcamentos_publicos_expirados(
     """Anonimiza orcamentos publicos nao convertidos com retencao vencida."""
     referencia = agora or datetime.now(UTC)
 
+    # Nota: o pré-cadastro automático vincula cliente_id na criação do orçamento,
+    # então "convertido" é determinado pelo status operacional (estúdio confirmou/
+    # atendeu), não pela presença de cliente_id.
     query = (
         select(Atendimento)
         .where(
             Atendimento.orcamento_publico.is_(True),
-            Atendimento.cliente_id.is_(None),
             Atendimento.lgpd_retencao_ate.is_not(None),
             Atendimento.lgpd_retencao_ate <= referencia,
             Atendimento.lgpd_anonimizado_em.is_(None),
@@ -90,6 +98,30 @@ async def anonimizar_orcamentos_publicos_expirados(
         atendimento.estilo = None
         atendimento.tamanho_cm = None
         atendimento.notas_privadas = "[anonimizado LGPD]"
+        atendimento.datas_preferidas = None
+        atendimento.horario_personalizado = None
+
+        # Cliente pré-cadastrado automaticamente e sem nenhum outro atendimento:
+        # anonimizar junto — o dado pessoal só existia por causa deste orçamento.
+        if atendimento.cliente_id is not None:
+            cliente = await session.get(Cliente, atendimento.cliente_id)
+            if (
+                cliente is not None
+                and cliente.observacoes == MARCADOR_PRE_CADASTRO
+            ):
+                outros = await session.scalar(
+                    select(func.count(Atendimento.id)).where(
+                        Atendimento.cliente_id == cliente.id,
+                        Atendimento.id != atendimento.id,
+                    )
+                )
+                if not outros:
+                    cliente.nome = "[anonimizado LGPD]"
+                    cliente.telefone = None
+                    cliente.instagram = None
+                    cliente.email = None
+                    cliente.observacoes = None
+                    cliente.ativo = False
 
         for imagem in atendimento.imagens:
             caminho_original = imagem.imagem_path

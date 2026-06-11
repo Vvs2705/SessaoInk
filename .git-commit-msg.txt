@@ -1,0 +1,22 @@
+fix(auth): cookies de sessao perdidos no proxy Vercel (401 em loop)
+
+Producao quebrou apos o redeploy: o login parecia funcionar (middleware
+aceitava) mas TODA chamada de API dava 401 e o app entrava em loop
+infinito de redirect, com a tela presa nos skeletons.
+
+Causa raiz: headers.get('set-cookie') passou a retornar null no runtime
+da Vercel (a spec do Fetch exclui set-cookie do get(); runtimes novos do
+undici respeitam isso). O proxy de login encaminhava ZERO cookies do
+backend - so o marcador sk_session era gravado, o que mantinha o
+middleware aceitando a "sessao" enquanto o backend rejeitava tudo.
+
+Correcoes:
+- login proxy: usa headers.getSetCookie() (com fallback ao split antigo)
+- proxy generico: encaminha o cookie refresh_token ao backend (sem isso
+  todo refresh respondia 401 "Refresh token nao encontrado") e repassa os
+  Set-Cookie de resposta ao browser (rotacao access/refresh do /auth/refresh
+  nunca chegava ao cliente)
+- api client: em refresh falho, chama /auth/logout (limpa sk_session)
+  antes de redirecionar ao /login - mata o loop middleware<->dashboard
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>

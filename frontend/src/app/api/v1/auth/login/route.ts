@@ -42,13 +42,16 @@ export async function POST(request: NextRequest) {
   if (backendRes.ok) {
     // Encaminhar os cookies do FastAPI — sem atributo Domain, o browser os armazena
     // para o domínio Vercel, tornando-os visíveis ao middleware Next.js.
-    const raw = backendRes.headers.get("set-cookie");
-    if (raw) {
-      // Pode haver múltiplos cookies separados por vírgula (ex: access + refresh)
-      raw.split(/,(?=\s*\w+=)/).forEach((c) =>
-        response.headers.append("set-cookie", c.trim())
-      );
-    }
+    // getSetCookie() é a única forma confiável de ler múltiplos Set-Cookie: a spec
+    // do Fetch exclui set-cookie do headers.get(), e runtimes novos do Node passaram
+    // a respeitar isso (o split por vírgula vira fallback para runtimes antigos).
+    const cookies =
+      typeof backendRes.headers.getSetCookie === "function"
+        ? backendRes.headers.getSetCookie()
+        : (backendRes.headers.get("set-cookie") ?? "")
+            .split(/,(?=\s*\w+=)/)
+            .filter(Boolean);
+    cookies.forEach((c) => response.headers.append("set-cookie", c.trim()));
 
     // Marcador de sessão não-secreto (Path=/, 7 dias): permite ao middleware saber
     // que há sessão ativa mesmo após o access_token (15 min) expirar, evitando

@@ -87,6 +87,16 @@ async function fetchWithAuth<T>(fetchFn: () => Promise<Response>): Promise<T> {
   const refreshed = await tryRefresh();
   if (!refreshed) {
     if (typeof window !== "undefined") {
+      // Limpa os cookies de sessão (inclusive o marcador sk_session) ANTES de ir
+      // ao /login — senão o middleware vê o marcador, devolve para o dashboard e
+      // o app entra em loop infinito de 401/redirect.
+      try {
+        await fetch(`${API_URL}/api/v1/auth/logout`, {
+          method: "POST",
+          credentials: "include",
+          ...withCsrfHeaders({ method: "POST" }),
+        });
+      } catch {}
       window.location.href = "/login";
     }
     throw new ApiError(401, "Sessão expirada. Faça login novamente.");

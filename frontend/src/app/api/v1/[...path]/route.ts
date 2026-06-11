@@ -45,6 +45,10 @@ async function proxy(
 
   const accessToken = request.cookies.get("access_token")?.value;
   const csrfToken = request.cookies.get("csrf_token")?.value;
+  // refresh_token tem Path=/api/v1/auth/refresh — o browser só o envia nessa rota,
+  // e o backend precisa dele para renovar a sessão. Sem este repasse, todo refresh
+  // responde 401 "Refresh token não encontrado".
+  const refreshToken = request.cookies.get("refresh_token")?.value;
   const incomingContentType = request.headers.get("content-type") ?? "";
   const isMultipart =
     incomingContentType.includes("multipart/form-data") ||
@@ -54,6 +58,7 @@ async function proxy(
   const cookieHeader = [
     accessToken ? `access_token=${accessToken}` : "",
     csrfToken ? `csrf_token=${csrfToken}` : "",
+    refreshToken ? `refresh_token=${refreshToken}` : "",
   ]
     .filter(Boolean)
     .join("; ");
@@ -116,21 +121,36 @@ async function proxy(
     return NextResponse.json({ detail: "Erro de conexão com o servidor" }, { status: 503 });
   }
 
+  // Set-Cookie do backend (ex.: rotação de access/refresh no /auth/refresh) precisa
+  // chegar ao browser — sem isso a sessão renovada nunca é gravada e o token antigo,
+  // já invalidado no Redis, derruba o usuário. getSetCookie() pela mesma razão do
+  // proxy de login (spec exclui set-cookie do headers.get()).
+  const setCookies =
+    typeof backendRes.headers.getSetCookie === "function"
+      ? backendRes.headers.getSetCookie()
+      : (backendRes.headers.get("set-cookie") ?? "")
+          .split(/,(?=\s*\w+=)/)
+          .filter(Boolean);
+
   // Status sem corpo (204/205/304): a spec do Fetch PROÍBE corpo — passar um
   // ArrayBuffer (mesmo vazio) faz o construtor de Response lançar e o proxy
   // retornar 500. Endpoints como DELETE (arquivar) e logout retornam 204.
   const NULL_BODY_STATUS = backendRes.status === 204 || backendRes.status === 205 || backendRes.status === 304;
   if (NULL_BODY_STATUS) {
-    return new NextResponse(null, { status: backendRes.status });
+    const empty = new NextResponse(null, { status: backendRes.status });
+    setCookies.forEach((c) => empty.headers.append("set-cookie", c.trim()));
+    return empty;
   }
 
   const contentType = backendRes.headers.get("content-type") ?? "application/json";
   const resBody = await backendRes.arrayBuffer();
 
-  return new NextResponse(resBody, {
+  const response = new NextResponse(resBody, {
     status: backendRes.status,
     headers: { "Content-Type": contentType },
   });
+  setCookies.forEach((c) => response.headers.append("set-cookie", c.trim()));
+  return response;
 }
 
 export { proxy as GET, proxy as POST, proxy as PATCH, proxy as PUT, proxy as DELETE };

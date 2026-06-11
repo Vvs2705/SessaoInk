@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, Cormorant, JetBrains_Mono } from "next/font/google";
+import { Outfit, Fraunces, JetBrains_Mono } from "next/font/google";
 import "../styles/globals.css";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { PostHogProvider } from "@/providers/PostHogProvider";
@@ -12,7 +12,9 @@ const outfit = Outfit({
   variable: "--font-sans",
   display: "swap",
 });
-const cormorant = Cormorant({
+// Fraunces: serif autoral da direção visual (DESIGN.md) — dá o toque premium
+// que combina com tatuagem, aplicada nos títulos do app via --font-display.
+const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-display",
   weight: ["400", "500", "600"],
@@ -70,7 +72,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${outfit.variable} ${cormorant.variable} ${jetbrainsMono.variable} h-full`}
+      className={`${outfit.variable} ${fraunces.variable} ${jetbrainsMono.variable} h-full`}
     >
       <head>
         <link rel="manifest" href="/manifest.json" />

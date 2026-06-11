@@ -26,8 +26,8 @@ interface EmptyStateProps {
  * Estado vazio padrão do SessãoInk — usado nas telas sem registros
  * (sem clientes, sem agendamentos, sem lançamentos etc.).
  *
- * Visual: gota de tinta em linework com pulso dourado sutil, título em fonte
- * display (Cormorant) e descrição em texto suave. Tokens do design system.
+ * Visual: gota de tinta em linework com pulso esmeralda sutil, título em fonte
+ * display (Fraunces) e descrição em texto suave. Tokens do design system.
  */
 export function EmptyState({
   title,

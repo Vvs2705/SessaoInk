@@ -1,5 +1,11 @@
 :root {
-  /* Brand Assets base design tokens */
+  /* ══════════════════════════════════════════════════════════════════
+     Paleta própria SessãoInk (direção DESIGN.md): teal/esmeralda como
+     identidade + tons de tinta/grafite + acento quente para flash arts.
+     Valores hex abaixo são fallback; navegadores modernos recebem a
+     versão OKLCH (bloco @supports no fim do arquivo) — percepção de cor
+     uniforme, a marca registrada de uma paleta autoral.
+     ══════════════════════════════════════════════════════════════════ */
   --ink-night: #050B12;
   --deep-graphite: #0B171C;
   --porcelain-ink: #F0EADD;
@@ -10,10 +16,17 @@
   --mist-line: #243337;
   --error-red: #E35D5B;
 
-  /* Acento dourado (design system editorial) */
-  --si-gold: #C9A96E;
-  --si-gold-dim: rgba(201, 169, 110, 0.12);
-  --si-gold-border: rgba(201, 169, 110, 0.28);
+  /* Acento de identidade (esmeralda) — substitui o antigo dourado.
+     Os nomes --si-gold* são mantidos como alias para não quebrar classes. */
+  --si-accent: #3AA99A;
+  --si-accent-dim: rgba(58, 169, 154, 0.12);
+  --si-accent-border: rgba(58, 169, 154, 0.32);
+  /* Acento quente (tinta cobre) — reservado para flash arts e avisos. */
+  --si-warm: #C9803F;
+  --si-warm-dim: rgba(201, 128, 63, 0.12);
+  --si-gold: var(--si-accent);
+  --si-gold-dim: var(--si-accent-dim);
+  --si-gold-border: var(--si-accent-border);
   --gold: var(--si-gold);
 
   /* Camadas de superfície (escuro em camadas) */
@@ -86,7 +99,7 @@
 
   /* Tipografia */
   --font-sans: 'Outfit', system-ui, -apple-system, sans-serif;
-  --font-display: 'Cormorant', Georgia, serif;
+  --font-display: 'Fraunces', Georgia, serif;
   --font-mono: 'JetBrains Mono', 'Courier New', monospace;
   --text-xs: 12px; --text-sm: 14px; --text-md: 16px;
   --text-lg: 18px; --text-xl: 22px; --text-2xl: 28px; --text-3xl: 36px;
@@ -101,4 +114,51 @@
   --shadow-card: 0 18px 50px rgba(0,0,0,.35);
   --shadow-popover: 0 24px 70px rgba(0,0,0,.48);
   --shadow-focus: 0 0 0 3px rgba(47,146,133,.35);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Paleta OKLCH (navegadores modernos). Mesmos papéis, espaço de cor
+   perceptual: luminância consistente entre teal, grafite e o quente —
+   o que faz a paleta parecer "afinada" em vez de hexes soltos.
+   Hue ~178 = esmeralda da marca · ~230 = tinta/grafite · ~55 = cobre.
+   ════════════════════════════════════════════════════════════════════ */
+@supports (color: oklch(0% 0 0)) {
+  :root {
+    /* Tinta / grafite (fundo e superfícies) */
+    --ink-night: oklch(14% 0.018 240);
+    --deep-graphite: oklch(18.5% 0.02 225);
+    --si-bg: oklch(18.5% 0.02 225);
+    --si-surface: oklch(22% 0.02 220);
+    --si-raised: oklch(25% 0.02 220);
+    --si-overlay: oklch(28% 0.02 218);
+    --mist-line: oklch(29% 0.022 220);
+    --surface-raised: oklch(23% 0.022 222);
+    --surface-soft: oklch(21% 0.02 224);
+
+    /* Identidade teal/esmeralda */
+    --teal-ink: oklch(60% 0.085 178);
+    --primary-hover: oklch(66% 0.09 176);
+    --primary-pressed: oklch(51% 0.075 180);
+    --deep-teal: oklch(43% 0.06 180);
+    --si-teal: oklch(64% 0.085 175);
+    --si-accent: oklch(67% 0.095 174);
+    --si-accent-dim: oklch(67% 0.095 174 / 0.12);
+    --si-accent-border: oklch(67% 0.095 174 / 0.32);
+
+    /* Texto porcelana */
+    --porcelain-ink: oklch(93.5% 0.013 85);
+    --smoke-text: oklch(80% 0.012 180);
+    --text-subtle: oklch(63% 0.012 170);
+
+    /* Acento quente (flash arts / avisos) */
+    --copper-needle: oklch(61% 0.115 50);
+    --si-warm: oklch(66% 0.115 60);
+    --si-warm-dim: oklch(66% 0.115 60 / 0.12);
+    --warning: oklch(74% 0.115 75);
+
+    /* Estados */
+    --error-red: oklch(64% 0.155 25);
+    --success: oklch(72% 0.105 165);
+    --info: oklch(68% 0.095 245);
+  }
 }

@@ -69,7 +69,7 @@ module.exports = {
       boxShadow: {
         card: "var(--shadow-card)",
         popover: "var(--shadow-popover)",
-        gold: "0 0 0 1px var(--si-gold-border), 0 4px 20px rgba(201,169,110,0.18)",
+        gold: "0 0 0 1px var(--si-gold-border), 0 4px 20px rgba(58,169,154,0.18)",
         "gold-sm": "0 0 0 1px var(--si-gold-border)",
         ink: "0 2px 8px rgba(0,0,0,0.4), 0 0 0 1px var(--si-border)",
         "ink-md": "0 4px 16px rgba(0,0,0,0.45), 0 0 0 1px var(--si-border)",
@@ -100,8 +100,8 @@ module.exports = {
           to: { opacity: "1", transform: "translateX(0)" },
         },
         "pulse-gold": {
-          "0%, 100%": { boxShadow: "0 0 0 0 rgba(201,169,110,0)" },
-          "50%": { boxShadow: "0 0 0 4px rgba(201,169,110,0.15)" },
+          "0%, 100%": { boxShadow: "0 0 0 0 rgba(58,169,154,0)" },
+          "50%": { boxShadow: "0 0 0 4px rgba(58,169,154,0.16)" },
         },
         shimmer: {
           "0%": { backgroundPosition: "200% 0" },

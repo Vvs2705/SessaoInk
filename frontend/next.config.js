@@ -16,9 +16,19 @@ const POSTHOG_HOSTS =
 // Router injeta scripts inline de hidratação; sem isso a página fica em branco.
 // (Endurecer para nonce/strict-dynamic exige renderização dinâmica em todas as
 // rotas — planejado como follow-up; ver docs/security.md.)
+//
+// `'unsafe-eval'` SÓ em desenvolvimento: o `next dev` (webpack/HMR/source maps)
+// avalia bundles via eval. Sem isso a CSP bloqueia o próprio JS do app no dev e
+// a página não hidrata (o formulário cai em submit nativo). O build de produção
+// NÃO usa eval, então o header de produção permanece estrito.
+const isDev = process.env.NODE_ENV !== "production";
+const scriptSrc = isDev
+  ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://us-assets.i.posthog.com"
+  : "script-src 'self' 'unsafe-inline' https://us-assets.i.posthog.com";
+
 const cspHeader = `
   default-src 'self';
-  script-src 'self' 'unsafe-inline' https://us-assets.i.posthog.com;
+  ${scriptSrc};
   style-src 'self' 'unsafe-inline';
   img-src 'self' blob: data:;
   font-src 'self';

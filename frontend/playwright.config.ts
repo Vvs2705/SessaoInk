@@ -7,6 +7,11 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: "line",
+  // Generoso: o dev server do Next compila cada rota no 1º acesso (login +
+  // proxy + dashboard), o que sozinho pode passar dos 30s padrão. Build de
+  // produção é instantâneo — isto é só para o `npm run dev` do E2E local.
+  timeout: 120000,
+  expect: { timeout: 15000 },
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
@@ -46,7 +51,12 @@ export default defineConfig({
       command: "npm run dev",
       url: "http://localhost:3000",
       env: {
-        NEXT_PUBLIC_API_URL: "http://localhost:8001",
+        // Modo proxy (production-like): sem NEXT_PUBLIC_API_URL, o client usa
+        // rotas relativas /api/v1 que o Next encaminha para BACKEND_URL. Assim
+        // os cookies de sessão vivem no domínio :3000 (visíveis ao middleware) —
+        // exatamente como em produção. Modo direto deixaria o cookie em :8001 e
+        // o middleware do :3000 expulsaria o usuário de volta ao /login.
+        BACKEND_URL: "http://localhost:8001",
       },
       reuseExistingServer: true,
       timeout: 120000,
@@ -56,6 +66,12 @@ export default defineConfig({
       url: "http://localhost:8001/health",
       env: {
         DATABASE_URL: "sqlite+aiosqlite:///./dev.db",
+        // Vars exigidas pelo config do backend. ENVIRONMENT=development ativa o
+        // fallback gracioso para MockRedis (não precisa de Redis rodando) e
+        // desliga os guardrails de produção (CSRF strict, cookie Secure).
+        SECRET_KEY: "dev-e2e-secret-key-min-32-characters-long",
+        REDIS_URL: "redis://localhost:6379",
+        ENVIRONMENT: "development",
       },
       reuseExistingServer: true,
       timeout: 120000,

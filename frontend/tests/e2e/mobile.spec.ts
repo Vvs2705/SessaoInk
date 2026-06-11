@@ -13,10 +13,13 @@ async function login(page: Page) {
   await page.fill("#email", "admin@sessaoink.dev");
   await page.fill("#senha", "admin123");
   await page.click("button[type='submit']");
-  await page.waitForURL("http://localhost:3000/", { timeout: 10000 });
+  // Timeouts generosos: em dev o Next compila cada rota no primeiro acesso
+  // (login → proxy → dashboard), o que pode passar de 10s no cold start.
+  // waitForURL por predicado de pathname (independe de host/porta/baseURL).
+  await page.waitForURL((url) => url.pathname === "/", { timeout: 45000 });
   // Espera o dashboard sair do skeleton (h1 real visível).
   await expect(page.locator("h1:has-text('Painel Inicial')")).toBeVisible({
-    timeout: 10000,
+    timeout: 30000,
   });
 }
 

@@ -44,7 +44,10 @@ test.describe("SessãoInk E2E Smoke Tests", () => {
     // PASSO 3 (Opcional - carregar imagem)
     await page.click("button:has-text('Avançar')");
 
-    // PASSO 4 (Termos de privacidade)
+    // PASSO 4 (Opcional - "Quando você pode?" / datas de preferência)
+    await page.click("button:has-text('Avançar')");
+
+    // PASSO 5 (Termos de privacidade)
     // Clica nos dois checkboxes
     const checkboxes = page.locator("input[type='checkbox']");
     await checkboxes.nth(0).check();

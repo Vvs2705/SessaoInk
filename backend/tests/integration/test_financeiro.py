@@ -52,6 +52,35 @@ class TestFinanceiroAndDashboard:
         res_delete = await autenticado.delete(f"/api/v1/financeiro/{lanc_id}")
         assert res_delete.status_code == 204
 
+    async def test_patch_recalcula_valor_liquido(self, autenticado: AsyncClient):
+        """Regressão: PATCH em valor/valor_taxa recomputa valor_liquido sem
+        misturar Decimal (vindo do banco) com float (Decimal - float -> TypeError)."""
+        res_create = await autenticado.post("/api/v1/financeiro/", json={
+            "tipo": "ENTRADA",
+            "descricao": "Recalc líquido",
+            "valor": 500.00,
+            "status": "PENDENTE",
+            "valor_bruto": 500.00,
+            "valor_taxa": 10.00,
+            "valor_liquido": 490.00,
+        })
+        assert res_create.status_code == 201
+        lanc_id = res_create.json()["id"]
+
+        # PATCH só na taxa: bruto vem do banco (Decimal), taxa do payload.
+        res_taxa = await autenticado.patch(
+            f"/api/v1/financeiro/{lanc_id}", json={"valor_taxa": 25.00}
+        )
+        assert res_taxa.status_code == 200
+        assert res_taxa.json()["valor_liquido"] == 475.00
+
+        # PATCH só no bruto: bruto do payload, taxa persistida no banco (Decimal).
+        res_bruto = await autenticado.patch(
+            f"/api/v1/financeiro/{lanc_id}", json={"valor_bruto": 600.00}
+        )
+        assert res_bruto.status_code == 200
+        assert res_bruto.json()["valor_liquido"] == 575.00
+
     async def test_sub_endpoints_filtrados(self, autenticado: AsyncClient):
         # Criar uma entrada e uma saída
         await autenticado.post("/api/v1/financeiro/", json={

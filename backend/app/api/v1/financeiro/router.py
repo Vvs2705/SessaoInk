@@ -4,6 +4,7 @@ import csv
 import io
 import uuid
 from datetime import UTC, date, datetime
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
@@ -615,8 +616,9 @@ async def atualizar_lancamento(
         setattr(lanc, campo, valor)
 
     if "valor" in campos or "valor_taxa" in campos or "valor_bruto" in campos:
-        bruto = lanc.valor_bruto if lanc.valor_bruto is not None else lanc.valor
-        taxa = lanc.valor_taxa if lanc.valor_taxa is not None else 0.0
+        origem_bruto = lanc.valor_bruto if lanc.valor_bruto is not None else lanc.valor
+        bruto = Decimal(str(origem_bruto))
+        taxa = Decimal(str(lanc.valor_taxa)) if lanc.valor_taxa is not None else Decimal("0")
         lanc.valor_liquido = bruto - taxa
 
     await session.flush()

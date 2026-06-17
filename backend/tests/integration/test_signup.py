@@ -11,7 +11,7 @@ def _dados(**over):
         "nome_estudio": f"Estúdio {sufixo}",
         "nome": "Dono do Estúdio",
         "email": f"dono_{sufixo}@exemplo.com",
-        "senha": "senhaforte123",
+        "senha": "SenhaForte123!",
     }
     base.update(over)
     return base
@@ -56,6 +56,19 @@ class TestCadastro:
     async def test_senha_curta_422(self, client: AsyncClient):
         r = await client.post("/api/v1/auth/registrar", json=_dados(senha="123"))
         assert r.status_code == 422
+
+    async def test_senha_sem_complexidade_422(self, client: AsyncClient):
+        # Longa (13 chars) mas sem maiúscula nem caractere especial → rejeitada.
+        r = await client.post(
+            "/api/v1/auth/registrar", json=_dados(senha="senhaforte123")
+        )
+        assert r.status_code == 422
+
+    async def test_senha_forte_aceita(self, client: AsyncClient):
+        r = await client.post(
+            "/api/v1/auth/registrar", json=_dados(senha="SenhaF0rte!")
+        )
+        assert r.status_code == 201, r.text
 
     async def test_slug_unico_para_nomes_iguais(self, client: AsyncClient):
         # Dois cadastros com o MESMO nome de estúdio (e-mails diferentes).

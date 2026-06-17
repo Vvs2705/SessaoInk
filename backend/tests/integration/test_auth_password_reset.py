@@ -40,7 +40,7 @@ class TestAuthPasswordReset:
                 )
 
         # 3. Executa o reset de senha com a nova senha
-        nova_senha = "novasenhaforte123"
+        nova_senha = "NovaSenhaForte123!"
         r_reset = await client.post(
             "/api/v1/auth/resetar-senha",
             json={"token": token, "senha_nova": nova_senha},
@@ -72,7 +72,7 @@ class TestAuthPasswordReset:
     async def test_resetar_senha_token_invalido_retorna_400(self, client: AsyncClient):
         r = await client.post(
             "/api/v1/auth/resetar-senha",
-            json={"token": "token_inexistente_com_comprimento_suficiente", "senha_nova": "novasenhaforte123"},
+            json={"token": "token_inexistente_com_comprimento_suficiente", "senha_nova": "NovaSenhaForte123!"},
         )
         assert r.status_code == 400
         assert "inválido ou expirado" in r.json()["detail"]

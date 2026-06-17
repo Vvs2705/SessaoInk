@@ -6,15 +6,36 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, Check, X as XIcon } from "lucide-react";
 import { api, ApiError } from "@/lib/api/client";
 import { BrandLogo } from "@/components/BrandLogo";
+
+// Regras de senha — espelham exatamente o backend (app/core/password_policy.py).
+const REGRAS_SENHA = [
+  { id: "len", label: "8+ caracteres", test: (s: string) => s.length >= 8 },
+  { id: "lower", label: "letra minúscula", test: (s: string) => /[a-z]/.test(s) },
+  { id: "upper", label: "letra maiúscula", test: (s: string) => /[A-Z]/.test(s) },
+  { id: "num", label: "número", test: (s: string) => /\d/.test(s) },
+  {
+    id: "special",
+    label: "caractere especial",
+    test: (s: string) => /[!@#$%^&*()\-_=+[\]{};:,.<>?/|\\"'`~]/.test(s),
+  },
+];
+
+const senhaForte = (s: string) => REGRAS_SENHA.every((r) => r.test(s));
 
 const cadastroSchema = z.object({
   nome_estudio: z.string().min(2, "Informe o nome do estúdio").max(200),
   nome: z.string().min(2, "Informe seu nome").max(200),
   email: z.string().email("E-mail inválido"),
-  senha: z.string().min(8, "A senha deve ter pelo menos 8 caracteres").max(200),
+  senha: z
+    .string()
+    .max(200)
+    .refine(senhaForte, {
+      message:
+        "A senha precisa de 8+ caracteres com maiúscula, minúscula, número e caractere especial.",
+    }),
   // Honeypot anti-bot: deve permanecer vazio
   website: z.string().optional(),
 });
@@ -32,8 +53,11 @@ export default function CadastroPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
-  } = useForm<CadastroForm>({ resolver: zodResolver(cadastroSchema) });
+  } = useForm<CadastroForm>({ resolver: zodResolver(cadastroSchema), mode: "onChange" });
+
+  const senhaAtual = watch("senha") ?? "";
 
   const onSubmit = async (data: CadastroForm) => {
     setApiError(null);
@@ -109,14 +133,33 @@ export default function CadastroPage() {
               </label>
               <div className="relative">
                 <input id="senha" type={showPass ? "text" : "password"} autoComplete="new-password"
-                  placeholder="Mínimo 8 caracteres" className={`${inputCls} pr-11`} {...register("senha")} />
+                  placeholder="Crie uma senha forte" className={`${inputCls} pr-11`} {...register("senha")} />
                 <button type="button" onClick={() => setShowPass((v) => !v)}
                   aria-label={showPass ? "Ocultar senha" : "Mostrar senha"}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-[#87938F] hover:text-[#F0EADD]">
                   {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              {errors.senha && <p className="mt-1 text-xs text-[#E35D5B]">{errors.senha.message}</p>}
+              {/* Checklist ao vivo dos requisitos (some quando todos cumpridos) */}
+              {senhaAtual.length > 0 && !senhaForte(senhaAtual) && (
+                <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                  {REGRAS_SENHA.map((r) => {
+                    const ok = r.test(senhaAtual);
+                    return (
+                      <li
+                        key={r.id}
+                        className={`flex items-center gap-1 text-[11px] ${ok ? "text-[#2F9285]" : "text-[#87938F]"}`}
+                      >
+                        {ok ? <Check size={12} /> : <XIcon size={12} />}
+                        {r.label}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              {errors.senha && senhaAtual.length === 0 && (
+                <p className="mt-1 text-xs text-[#E35D5B]">{errors.senha.message}</p>
+              )}
             </div>
 
             {/* Honeypot: oculto para humanos, preenchido só por bots */}

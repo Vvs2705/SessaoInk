@@ -2,7 +2,9 @@
 
 import uuid
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
+
+from app.core.password_policy import validar_senha_forte
 
 
 class LoginRequest(BaseModel):
@@ -18,6 +20,8 @@ class RegistroRequest(BaseModel):
     email: EmailStr
     senha: str = Field(min_length=8, max_length=200)
     website: str | None = None  # honeypot anti-bot (deve vir vazio)
+
+    _val_senha = field_validator("senha")(validar_senha_forte)
 
 
 class TokenResponse(BaseModel):
@@ -88,3 +92,5 @@ class EsqueciSenhaRequest(BaseModel):
 class ResetarSenhaRequest(BaseModel):
     token: str = Field(min_length=20, max_length=300)
     senha_nova: str = Field(min_length=8, max_length=200)
+
+    _val_senha = field_validator("senha_nova")(validar_senha_forte)

@@ -28,6 +28,7 @@ from app.core import mfa as mfa_core
 from app.core.config import settings
 from app.core.database import get_session
 from app.core.email import enviar_codigo_mfa, enviar_email_reset_senha
+from app.core.password_policy import validar_senha_forte
 from app.core.redis import (
     MFA_OTP_MAX_ENVIOS,
     incrementar_tentativa_login,
@@ -477,11 +478,13 @@ async def alterar_senha(
             detail="Senha atual incorreta",
         )
 
-    if len(dados.senha_nova) < 8:
+    try:
+        validar_senha_forte(dados.senha_nova)
+    except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="A nova senha deve ter pelo menos 8 caracteres",
-        )
+            detail=str(exc),
+        ) from exc
 
     usuario.senha_hash = hash_senha(dados.senha_nova)
     await session.commit()

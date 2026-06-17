@@ -86,7 +86,7 @@ async def test_info_e_aceite_publico_cria_usuario(autenticado: AsyncClient, clie
     # Aceite cria o usuário no estúdio.
     aceite = await client.post(
         f"/api/v1/convites/aceitar/{token}",
-        json={"nome": "Pessoa Convidada", "senha": "senhaforte123"},
+        json={"nome": "Pessoa Convidada", "senha": "SenhaForte123!"},
     )
     assert aceite.status_code == 201, aceite.text
     novo = aceite.json()
@@ -102,7 +102,7 @@ async def test_info_e_aceite_publico_cria_usuario(autenticado: AsyncClient, clie
     # Token de uso único: segundo aceite falha.
     segundo = await client.post(
         f"/api/v1/convites/aceitar/{token}",
-        json={"nome": "Outro", "senha": "senhaforte123"},
+        json={"nome": "Outro", "senha": "SenhaForte123!"},
     )
     assert segundo.status_code == 400
 

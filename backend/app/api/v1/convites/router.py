@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.auth.dependencies import require_role
 from app.core.config import settings
 from app.core.database import get_session
+from app.core.password_policy import validar_senha_forte
 from app.core.security import hash_senha
 from app.models.convite import Convite, StatusConvite
 from app.models.usuario import Estudio, TipoUsuario, Usuario
@@ -83,6 +84,8 @@ class ConvitePublicoResponse(BaseModel):
 class AceitarConviteRequest(BaseModel):
     nome: str = Field(min_length=2, max_length=200)
     senha: str = Field(min_length=8, max_length=200)
+
+    _val_senha = field_validator("senha")(validar_senha_forte)
 
 
 class AceitarConviteResponse(BaseModel):

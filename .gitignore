@@ -3,6 +3,11 @@
 .env.*
 !.env.example
 
+# Auditoria de segurança: aponta localização de credencial ainda viva.
+# Mantido fora do repo enquanto ele for PÚBLICO. Remover esta linha e commitar
+# o documento DEPOIS de rotacionar a credencial (ou ao tornar o repo privado).
+SECURITY_AUDIT_LGPD_PCI.md
+
 # Storage local (nunca commitar arquivos de upload)
 storage/
 backend/storage/

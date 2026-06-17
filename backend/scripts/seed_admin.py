@@ -13,7 +13,16 @@ from app.core.security import hash_senha
 from app.models.usuario import Estudio, TipoUsuario, Usuario
 
 
+def _guard_nao_producao():
+    """Recusa rodar seed de desenvolvimento em produção (evita criar admin
+    de teste / senha fraca em ambiente real)."""
+    if settings.ENVIRONMENT == "production":
+        print("ERRO: seed de desenvolvimento bloqueado em ENVIRONMENT=production.")
+        sys.exit(1)
+
+
 async def seed():
+    _guard_nao_producao()
     engine = create_async_engine(settings.DATABASE_URL, echo=False)
     session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 

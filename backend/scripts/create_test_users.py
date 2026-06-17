@@ -1,4 +1,6 @@
 import asyncio
+import os
+import sys
 
 from sqlalchemy import select
 
@@ -6,8 +8,19 @@ from app.core.database import async_session
 from app.core.security import hash_senha
 from app.models.usuario import Estudio, TipoUsuario, Usuario
 
+# A senha NÃO é hardcoded: vem da variável de ambiente SEED_ADMIN_PASSWORD.
+# Nunca versionar credencial em código (ainda mais com o repositório público).
+SENHA_ADMIN = os.environ.get("SEED_ADMIN_PASSWORD")
+
 
 async def main():
+    if not SENHA_ADMIN:
+        print(
+            "ERRO: defina SEED_ADMIN_PASSWORD no ambiente antes de rodar.\n"
+            "Ex.: SEED_ADMIN_PASSWORD='...' python scripts/create_test_users.py"
+        )
+        sys.exit(1)
+
     async with async_session() as session:
         # 1. Verifica se já existe um estúdio de teste, senão cria
         res_estudio = await session.execute(select(Estudio).filter(Estudio.slug == "sessaoink"))
@@ -30,8 +43,7 @@ async def main():
 
         # 2. Criar os dois usuários
         emails = ["vsouz009@gmail.com", "emijhow.12@gmail.com"]
-        senha_plana = "Pq267@gtr417#"
-        senha_hash_val = hash_senha(senha_plana)
+        senha_hash_val = hash_senha(SENHA_ADMIN)
 
         for email in emails:
             res_user = await session.execute(select(Usuario).filter(Usuario.email == email))

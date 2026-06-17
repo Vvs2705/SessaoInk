@@ -44,20 +44,41 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   async headers() {
-    return [
+    // Pré-lançamento: enquanto SITE_PRE_LAUNCH != "false", o site inteiro fica
+    // `noindex, nofollow` (não aparece em buscas — só quem tem o link/é testador
+    // acessa). No go-live, definir SITE_PRE_LAUNCH=false na Vercel para liberar
+    // a indexação do portal/marketing. (Controle de ACESSO em si — allowlist/
+    // Password Protection — é configurado no painel da Vercel; ver SECURITY_AUDIT.)
+    const preLaunch = process.env.SITE_PRE_LAUNCH !== "false";
+
+    const securityHeaders = [
       {
-        source: "/:path*",
-        headers: [
-          {
-            key: "Content-Security-Policy",
-            value: cspHeader.replace(/\s{2,}/g, " ").trim(),
-          },
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-        ],
+        key: "Content-Security-Policy",
+        value: cspHeader.replace(/\s{2,}/g, " ").trim(),
+      },
+      { key: "X-Frame-Options", value: "DENY" },
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      // HSTS (2 anos, subdomínios, preload): força HTTPS e previne downgrade/MITM.
+      {
+        key: "Strict-Transport-Security",
+        value: "max-age=63072000; includeSubDomains; preload",
+      },
+      // Desliga APIs de browser que o app não usa (reduz superfície de abuso).
+      {
+        key: "Permissions-Policy",
+        value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
       },
     ];
+
+    if (preLaunch) {
+      securityHeaders.push({
+        key: "X-Robots-Tag",
+        value: "noindex, nofollow",
+      });
+    }
+
+    return [{ source: "/:path*", headers: securityHeaders }];
   },
 };
 

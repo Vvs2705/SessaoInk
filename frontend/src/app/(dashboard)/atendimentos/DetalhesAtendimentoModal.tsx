@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { X, User, Phone, Instagram, Image as ImageIcon, DollarSign, Calendar, Mail, Check, Loader2 } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
+import { CurrencyInput } from "@/components/ui/CurrencyInput";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
@@ -362,12 +363,9 @@ export default function DetalhesAtendimentoModal({ atendimento, onClose }: Detal
                   </label>
                   <div className="relative">
                     <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#87938F]" />
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
+                    <CurrencyInput
                       value={valorTotal}
-                      onChange={(e) => setValorTotal(e.target.value)}
+                      onValueChange={setValorTotal}
                       placeholder="0,00"
                       className="w-full h-10 pl-8 pr-3 rounded-[12px] bg-[#050B12] border border-[#243337] text-[#F0EADD] text-sm placeholder-[#87938F] focus:border-[#2F9285]/60 outline-none transition-colors"
                     />
@@ -380,12 +378,9 @@ export default function DetalhesAtendimentoModal({ atendimento, onClose }: Detal
                   </label>
                   <div className="relative">
                     <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#87938F]" />
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
+                    <CurrencyInput
                       value={valorSinal}
-                      onChange={(e) => setValorSinal(e.target.value)}
+                      onValueChange={setValorSinal}
                       placeholder="0,00"
                       className="w-full h-10 pl-8 pr-3 rounded-[12px] bg-[#050B12] border border-[#243337] text-[#F0EADD] text-sm placeholder-[#87938F] focus:border-[#2F9285]/60 outline-none transition-colors"
                     />

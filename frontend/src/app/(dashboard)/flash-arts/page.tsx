@@ -6,6 +6,7 @@ import { Zap, Plus, Loader2, X, DollarSign, Maximize2, MapPin, Trash2, Tag, File
 import { api, ApiError, withCsrfHeaders } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/empty-state";
+import { CurrencyInput } from "@/components/ui/CurrencyInput";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
 
@@ -380,12 +381,10 @@ export default function FlashArtsPage() {
                 {/* Input: Preço */}
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[#87938F] flex items-center gap-1"><DollarSign size={12} /> Preço (R$)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="Ex: 450.00"
+                  <CurrencyInput
+                    placeholder="Ex: 450,00"
                     value={preco}
-                    onChange={(e) => setPreco(e.target.value)}
+                    onValueChange={setPreco}
                     className="w-full h-10 px-3 rounded-[10px] bg-[#050B12] border border-[#243337] text-sm text-[#F0EADD] focus:border-[#2F9285]/60 outline-none transition-all"
                   />
                 </div>

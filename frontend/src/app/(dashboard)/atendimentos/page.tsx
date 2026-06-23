@@ -7,6 +7,7 @@ import { ClipboardList, Plus, Search, X } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { cn, formatCurrency } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/empty-state";
+import { CurrencyInput } from "@/components/ui/CurrencyInput";
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
   SOLICITADO:        { label: "Solicitado",      cls: "bg-[#5E9ED6]/15 text-[#5E9ED6] border-[#5E9ED6]/30" },
@@ -210,24 +211,18 @@ function NovoAtendimentoModal({ onClose }: { onClose: () => void }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Valor Total (R$)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
+                <CurrencyInput
                   value={form.valor_total}
-                  onChange={setField("valor_total")}
+                  onValueChange={(v) => setForm((prev) => ({ ...prev, valor_total: v }))}
                   placeholder="0,00"
                   className={inputCls}
                 />
               </div>
               <div>
                 <label className={labelCls}>Valor Sinal (R$)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
+                <CurrencyInput
                   value={form.valor_sinal}
-                  onChange={setField("valor_sinal")}
+                  onValueChange={(v) => setForm((prev) => ({ ...prev, valor_sinal: v }))}
                   placeholder="0,00"
                   className={inputCls}
                 />

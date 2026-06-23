@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { cn, formatCurrency } from "@/lib/utils";
+import { CurrencyInput } from "@/components/ui/CurrencyInput";
 
 interface LancamentoItem {
   id: string;
@@ -467,7 +468,7 @@ export default function FinanceiroPage() {
   };
 
   const handleExportCSV = () => {
-    let url = "/api/v1/financeiro/exportar";
+    const url = "/api/v1/financeiro/exportar";
     const params = new URLSearchParams();
     if (busca) params.append("busca", busca);
     if (filtroCategoria) params.append("categoria", filtroCategoria);
@@ -1090,25 +1091,21 @@ export default function FinanceiroPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[#87938F]">Valor Bruto *</label>
-                  <input
-                    type="number"
-                    step="0.01"
+                  <CurrencyInput
                     required
-                    placeholder="0.00"
+                    placeholder="0,00"
                     value={valor}
-                    onChange={(e) => setValor(e.target.value)}
+                    onValueChange={setValor}
                     className="w-full h-10 px-3 rounded-[10px] bg-[#050B12] border border-[#243337] text-sm text-[#F0EADD] focus:border-[#2F9285] outline-none"
                   />
                 </div>
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[#87938F]">Taxa Gateway (R$)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
+                  <CurrencyInput
+                    placeholder="0,00"
                     value={valorTaxa}
-                    onChange={(e) => setValorTaxa(e.target.value)}
+                    onValueChange={setValorTaxa}
                     className="w-full h-10 px-3 rounded-[10px] bg-[#050B12] border border-[#243337] text-sm text-[#F0EADD] focus:border-[#2F9285] outline-none"
                   />
                 </div>
@@ -1326,13 +1323,11 @@ export default function FinanceiroPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[#87938F]">Valor do Serviço *</label>
-                  <input
-                    type="number"
-                    step="0.01"
+                  <CurrencyInput
                     required
-                    placeholder="0.00"
+                    placeholder="0,00"
                     value={comValor}
-                    onChange={(e) => setComValor(e.target.value)}
+                    onValueChange={setComValor}
                     className="w-full h-10 px-3 rounded-[10px] bg-[#050B12] border border-[#243337] text-sm text-[#F0EADD] outline-none focus:border-[#2F9285]"
                   />
                 </div>

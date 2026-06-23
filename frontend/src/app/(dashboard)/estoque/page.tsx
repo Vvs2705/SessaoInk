@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { cn, formatCurrency, formatQuantity, getQuantityStep } from "@/lib/utils";
+import { CurrencyInput } from "@/components/ui/CurrencyInput";
 
 interface EstoqueItem {
   id: string;
@@ -466,10 +467,9 @@ export default function EstoquePage() {
               {/* Preço de custo */}
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-[#87938F]">Preço de Custo (R$) — opcional</label>
-                <input
-                  type="number" step="0.01" min="0"
-                  placeholder="Ex: 35.90"
-                  value={precoCusto} onChange={(e) => setPrecoCusto(e.target.value)}
+                <CurrencyInput
+                  placeholder="Ex: 35,90"
+                  value={precoCusto} onValueChange={setPrecoCusto}
                   className="w-full h-10 px-3 rounded-[10px] bg-[#050B12] border border-[#243337] text-sm text-[#F0EADD] focus:border-[#2F9285]/60 outline-none transition-all"
                 />
               </div>

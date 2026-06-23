@@ -468,7 +468,7 @@ export default function FinanceiroPage() {
   };
 
   const handleExportCSV = () => {
-    let url = "/api/v1/financeiro/exportar";
+    const url = "/api/v1/financeiro/exportar";
     const params = new URLSearchParams();
     if (busca) params.append("busca", busca);
     if (filtroCategoria) params.append("categoria", filtroCategoria);

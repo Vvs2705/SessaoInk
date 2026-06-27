@@ -223,6 +223,11 @@ class GatewayPagamento:
         """Consulta o status de um pagamento (usado pelo webhook)."""
         return await self._get(f"/v1/payments/{pagamento_id}")
 
+    async def obter_preapproval(self, preapproval_id: str) -> dict[str, Any]:
+        """Consulta o status de uma assinatura recorrente (preapproval) — usado
+        pelo webhook para reconciliar o ciclo mensal."""
+        return await self._get(f"/preapproval/{preapproval_id}")
+
 
 def validar_assinatura_webhook(
     *,

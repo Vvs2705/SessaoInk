@@ -108,12 +108,6 @@ const CONVITE_STATUS_LABEL: Record<string, string> = {
 
 type AbaAtiva = "perfil" | "portal" | "equipe" | "seguranca" | "assinatura";
 
-// F2: a recorrência MENSAL (preapproval do Mercado Pago) ainda NÃO é
-// reconciliada no webhook do backend — há risco de cobrar e não ativar a
-// assinatura. Enquanto isso, ocultamos esse ciclo da UI (sem removê-lo do
-// backend) e ofertamos apenas os ciclos avulsos (trimestral/semestral/anual).
-const CICLO_OCULTO = "mensal";
-
 // ---------------------------------------------------------------------------
 // Sub-componentes
 // ---------------------------------------------------------------------------
@@ -246,8 +240,7 @@ export default function ConfiguracoesPage() {
 
   // Estados de Assinatura / Checkout
   const [selectedPlanSlug, setSelectedPlanSlug] = useState<string>("profissional");
-  // F2: começa em "trimestral" porque o ciclo MENSAL está oculto (ver CICLO_OCULTO).
-  const [selectedCycle, setSelectedCycle] = useState<string>("trimestral");
+  const [selectedCycle, setSelectedCycle] = useState<string>("mensal");
   const [checkoutPending, setCheckoutPending] = useState(false);
 
   const showToast = (tipo: "sucesso" | "erro", mensagem: string) => {
@@ -322,14 +315,13 @@ export default function ConfiguracoesPage() {
 
   const selectedPlan = planosData?.planos?.find((p: any) => p.slug === selectedPlanSlug);
 
-  // F2: ciclos ofertados ao usuário, sem a recorrência mensal (CICLO_OCULTO).
-  const ciclosVisiveis: any[] = (selectedPlan?.tabela_precos ?? []).filter(
-    (preco: any) => preco.ciclo !== CICLO_OCULTO,
-  );
+  // Todos os ciclos do plano (mensal, trimestral, semestral, anual) com seus
+  // descontos. A recorrência mensal (preapproval) é reconciliada no webhook do
+  // backend, então pode ser ofertada normalmente.
+  const ciclosVisiveis: any[] = selectedPlan?.tabela_precos ?? [];
 
-  // F2: garante que o ciclo selecionado é sempre um ciclo visível e válido do
-  // plano atual. Se o mensal (oculto) ou um ciclo inexistente ficar selecionado,
-  // cai para o primeiro ciclo avulso disponível.
+  // Garante que o ciclo selecionado é sempre um ciclo válido do plano atual; se
+  // ficar um ciclo inexistente selecionado, cai para o primeiro disponível.
   useEffect(() => {
     if (ciclosVisiveis.length === 0) return;
     const valido = ciclosVisiveis.some((p: any) => p.ciclo === selectedCycle);
@@ -2203,12 +2195,9 @@ export default function ConfiguracoesPage() {
                               type="button"
                               onClick={() => {
                                 setSelectedPlanSlug(plano.slug);
-                                // F2: só consideramos ciclos visíveis (sem o mensal oculto);
-                                // se o ciclo atual não existir no novo plano, cai para o
-                                // primeiro ciclo avulso disponível.
-                                const ciclosDoPlano = (plano.tabela_precos ?? []).filter(
-                                  (t: any) => t.ciclo !== CICLO_OCULTO,
-                                );
+                                // Se o ciclo atual não existir no novo plano,
+                                // cai para o primeiro ciclo disponível.
+                                const ciclosDoPlano = plano.tabela_precos ?? [];
                                 const hasCycle = ciclosDoPlano.some((t: any) => t.ciclo === selectedCycle);
                                 if (!hasCycle && ciclosDoPlano.length > 0) {
                                   setSelectedCycle(ciclosDoPlano[0].ciclo);
@@ -2264,8 +2253,7 @@ export default function ConfiguracoesPage() {
                         2. Escolha o Ciclo de Faturamento
                       </label>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {/* F2: apenas ciclos visíveis — o mensal (recorrência ainda não
-                            reconciliada no backend) é filtrado em ciclosVisiveis. */}
+                        {/* Todos os ciclos do plano: mensal, trimestral, semestral e anual. */}
                         {ciclosVisiveis.map((preco: any) => {
                           const isSelected = selectedCycle === preco.ciclo;
                           return (

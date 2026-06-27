@@ -51,7 +51,8 @@ class GatewayPagamentoError(RuntimeError):
 # bloco (e o argumento `email` de `valor_venda_centavos`) ao concluir o teste.
 _PRECO_TESTE_EMAIL = "sousavmaker@gmail.com"
 _PRECO_TESTE_PLANO = "essencial"
-_PRECO_TESTE_CICLO = "mensal"
+# mensal (recorrente, cartão/saldo) e trimestral (avulso/Checkout Pro, mostra Pix).
+_PRECO_TESTE_CICLOS = ("mensal", "trimestral")
 _PRECO_TESTE_REAIS = 2.0
 
 
@@ -64,7 +65,7 @@ def preco_teste_override_reais(
         email
         and email.strip().lower() == _PRECO_TESTE_EMAIL
         and plano_slug == _PRECO_TESTE_PLANO
-        and ciclo == _PRECO_TESTE_CICLO
+        and ciclo in _PRECO_TESTE_CICLOS
     ):
         return _PRECO_TESTE_REAIS
     return None
@@ -171,7 +172,8 @@ class GatewayPagamento:
             raise GatewayPagamentoError(f"Ciclo inválido para o plano: {ciclo}")
 
         max_parcelas = int(linha["cartao_max_parcelas"] or 1)
-        valor = float(linha["pix_total"])  # valor de venda (Pix com desconto)
+        override = preco_teste_override_reais(email_pagador, plano.get("slug"), ciclo)
+        valor = override if override is not None else float(linha["pix_total"])
         app_url = settings.APP_URL.rstrip("/")
 
         return {

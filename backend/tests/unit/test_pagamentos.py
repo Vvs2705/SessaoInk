@@ -6,8 +6,8 @@ import time
 
 from app.core.pagamentos import (
     GatewayPagamento,
-    valor_venda_centavos,
     validar_assinatura_webhook,
+    valor_venda_centavos,
 )
 from app.core.planos import get_plano
 

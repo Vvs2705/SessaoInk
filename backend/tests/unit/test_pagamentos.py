@@ -6,6 +6,7 @@ import time
 
 from app.core.pagamentos import (
     GatewayPagamento,
+    valor_venda_centavos,
     validar_assinatura_webhook,
 )
 from app.core.planos import get_plano
@@ -49,6 +50,35 @@ class TestMontagemPayloads:
         gw = GatewayPagamento()
         gw._token = ""
         assert gw.configurado() is False
+
+
+class TestPrecoTesteOverride:
+    """Override de teste de pagamento: só sousavmaker@gmail.com paga R$2 no
+    Essencial mensal; todo o resto segue o catálogo. (Remover após o teste.)"""
+
+    EMAIL = "sousavmaker@gmail.com"
+
+    def test_email_de_teste_paga_2_reais_no_essencial_mensal(self):
+        plano = get_plano("essencial")
+        assert valor_venda_centavos(plano, "mensal", email=self.EMAIL) == 200
+        # case-insensitive + espaços
+        assert valor_venda_centavos(plano, "mensal", email="  SousaVMaker@Gmail.com ") == 200
+        # o preapproval cobrado no MP usa o MESMO valor (consistência cobrança↔MP)
+        payload = GatewayPagamento().montar_preapproval(
+            plano=plano, email_pagador=self.EMAIL, referencia="ref-teste"
+        )
+        assert payload["auto_recurring"]["transaction_amount"] == 2.0
+
+    def test_outro_email_paga_preco_normal(self):
+        plano = get_plano("essencial")
+        assert valor_venda_centavos(plano, "mensal", email="outro@x.com") == 5000
+        assert valor_venda_centavos(plano, "mensal") == 5000
+
+    def test_override_nao_vaza_para_outro_plano_ou_ciclo(self):
+        # mesmo email, outro plano → preço normal (Profissional mensal = R$135)
+        assert valor_venda_centavos(get_plano("profissional"), "mensal", email=self.EMAIL) == 13500
+        # mesmo email/plano, outro ciclo (não mensal) → preço normal
+        assert valor_venda_centavos(get_plano("essencial"), "trimestral", email=self.EMAIL) != 200
 
 
 class TestWebhookSignature:

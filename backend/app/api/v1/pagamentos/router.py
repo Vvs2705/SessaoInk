@@ -167,7 +167,7 @@ async def criar_checkout(
         estudio_id=usuario.estudio_id,
         plano_slug=dados.plano_slug,
         ciclo=dados.ciclo,
-        valor_centavos=valor_venda_centavos(plano, dados.ciclo),
+        valor_centavos=valor_venda_centavos(plano, dados.ciclo, email=email),
         status=StatusCobranca.CRIADA,
         external_reference=str(cob_id),
         idempotency_key=str(cob_id),

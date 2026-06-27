@@ -3023,6 +3023,54 @@
         }
       }
     },
+    "/api/v1/pagamentos/reconciliar": {
+      "post": {
+        "tags": [
+          "pagamentos"
+        ],
+        "summary": "Reconciliar Pendentes",
+        "description": "Rede de segurança: consulta o Mercado Pago e reconcilia cobranças pendentes\ndo estúdio (caso o webhook de pagamento se perca). Chamado pelo frontend ao\nvoltar do checkout. Idempotente e seguro de chamar várias vezes.",
+        "operationId": "reconciliar_pendentes_api_v1_pagamentos_reconciliar_post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/pagamentos/webhook": {
       "post": {
         "tags": [

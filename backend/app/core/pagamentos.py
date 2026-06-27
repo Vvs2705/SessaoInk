@@ -41,6 +41,36 @@ class GatewayPagamentoError(RuntimeError):
     """Erro de comunicação/negócio com o gateway."""
 
 
+# ---------------------------------------------------------------------------
+# OVERRIDE DE TESTE DE PAGAMENTO — REMOVER APÓS O TESTE  # noqa
+# ---------------------------------------------------------------------------
+# Apenas o email abaixo paga um valor reduzido no Essencial MENSAL, para validar
+# o recebimento real ponta a ponta (cobrança → MP → webhook → ativação). Qualquer
+# outro email/plano/ciclo segue o preço normal do catálogo. Aplicado server-side
+# de forma consistente na cobrança local e no preapproval do MP. Remover este
+# bloco (e o argumento `email` de `valor_venda_centavos`) ao concluir o teste.
+_PRECO_TESTE_EMAIL = "sousavmaker@gmail.com"
+_PRECO_TESTE_PLANO = "essencial"
+# mensal (recorrente, cartão/saldo) e trimestral (avulso/Checkout Pro, mostra Pix).
+_PRECO_TESTE_CICLOS = ("mensal", "trimestral")
+_PRECO_TESTE_REAIS = 2.0
+
+
+def preco_teste_override_reais(
+    email: str | None, plano_slug: str | None, ciclo: str
+) -> float | None:
+    """Valor (em reais) do teste de pagamento quando (email, plano, ciclo) batem
+    com o caso de teste; senão None. Email comparado sem espaços e case-insensitive."""
+    if (
+        email
+        and email.strip().lower() == _PRECO_TESTE_EMAIL
+        and plano_slug == _PRECO_TESTE_PLANO
+        and ciclo in _PRECO_TESTE_CICLOS
+    ):
+        return _PRECO_TESTE_REAIS
+    return None
+
+
 def _ciclo_info(chave: str) -> dict[str, Any] | None:
     return next((c for c in CICLOS if c["chave"] == chave), None)
 
@@ -49,12 +79,18 @@ def _linha_preco(plano: dict[str, Any], ciclo: str) -> dict[str, Any] | None:
     return next((t for t in tabela_precos(plano) if t["ciclo"] == ciclo), None)
 
 
-def valor_venda_centavos(plano: dict[str, Any], ciclo: str) -> int:
+def valor_venda_centavos(plano: dict[str, Any], ciclo: str, email: str | None = None) -> int:
     """Valor de venda (em centavos) calculado SEMPRE no servidor (P0-06).
 
     Mensal = preço mensal; demais ciclos = `pix_total` (preço de venda com
     desconto do ciclo). Nunca confiar em valor vindo do cliente.
+
+    `email` é usado apenas pelo override de teste de pagamento (preço reduzido
+    para um email específico); ignorado para os demais.
     """
+    override = preco_teste_override_reais(email, plano.get("slug"), ciclo)
+    if override is not None:
+        return int(round(override * 100))
     if ciclo == "mensal":
         reais = float(plano["preco_mensal"])
     else:
@@ -136,7 +172,8 @@ class GatewayPagamento:
             raise GatewayPagamentoError(f"Ciclo inválido para o plano: {ciclo}")
 
         max_parcelas = int(linha["cartao_max_parcelas"] or 1)
-        valor = float(linha["pix_total"])  # valor de venda (Pix com desconto)
+        override = preco_teste_override_reais(email_pagador, plano.get("slug"), ciclo)
+        valor = override if override is not None else float(linha["pix_total"])
         app_url = settings.APP_URL.rstrip("/")
 
         return {
@@ -168,7 +205,8 @@ class GatewayPagamento:
         self, *, plano: dict[str, Any], email_pagador: str, referencia: str
     ) -> dict[str, Any]:
         """Assinatura recorrente mensal (preapproval) cobrada no cartão."""
-        valor = float(plano["preco_mensal"])
+        override = preco_teste_override_reais(email_pagador, plano.get("slug"), "mensal")
+        valor = override if override is not None else float(plano["preco_mensal"])
         app_url = settings.APP_URL.rstrip("/")
         return {
             "reason": f"SessãoInk {plano['nome']} (mensal)",
@@ -227,6 +265,11 @@ class GatewayPagamento:
         """Consulta o status de uma assinatura recorrente (preapproval) — usado
         pelo webhook para reconciliar o ciclo mensal."""
         return await self._get(f"/preapproval/{preapproval_id}")
+
+    async def buscar_pagamentos_por_referencia(self, external_reference: str) -> dict[str, Any]:
+        """Busca pagamentos por external_reference — usado pela reconciliação ATIVA
+        (rede de segurança quando um webhook de `payment` se perde)."""
+        return await self._get(f"/v1/payments/search?external_reference={external_reference}")
 
 
 def validar_assinatura_webhook(

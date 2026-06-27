@@ -22,6 +22,7 @@ from app.core.pagamentos import (
     GatewayNaoConfiguradoError,
     GatewayPagamentoError,
     gateway,
+    preco_teste_override_reais,
     validar_assinatura_webhook,
     valor_venda_centavos,
 )
@@ -133,7 +134,11 @@ async def criar_checkout(
 
     # P0-06 — reuso anti duplo-clique: se já há uma cobrança pendente válida
     # (mesmo plano/ciclo) com checkout gerado, reaproveita em vez de duplicar.
-    cobranca = await session.scalar(
+    # TESTE: com o override de preço ativo, NUNCA reusar — uma cobrança stale a
+    # preço cheio bloquearia o valor de teste (R$2). Força criar uma nova.
+    # (Remover junto do override.)
+    _override_teste = preco_teste_override_reais(email, dados.plano_slug, dados.ciclo) is not None
+    cobranca = None if _override_teste else await session.scalar(
         select(Cobranca)
         .where(
             Cobranca.estudio_id == usuario.estudio_id,
@@ -167,7 +172,7 @@ async def criar_checkout(
         estudio_id=usuario.estudio_id,
         plano_slug=dados.plano_slug,
         ciclo=dados.ciclo,
-        valor_centavos=valor_venda_centavos(plano, dados.ciclo),
+        valor_centavos=valor_venda_centavos(plano, dados.ciclo, email=email),
         status=StatusCobranca.CRIADA,
         external_reference=str(cob_id),
         idempotency_key=str(cob_id),
@@ -241,6 +246,120 @@ async def status_assinatura(
     """Status da assinatura do estúdio (plano, trial, dias restantes) para o frontend."""
     assinatura = await get_assinatura(session, usuario.estudio_id)
     return resumo_assinatura(assinatura)
+
+
+async def _reconciliar_cobranca_via_mp(session: AsyncSession, cobranca: Cobranca) -> str:
+    """Reconciliação ATIVA (sem depender de webhook): consulta o Mercado Pago pelo
+    pagamento/assinatura da cobrança e ativa se aprovado. Idempotente — rede de
+    segurança para o caso de um webhook se perder. Mesma regra anti-fraude do
+    webhook: casa pela cobrança local e valida o valor."""
+    if not gateway.configurado():
+        return "gateway_off"
+
+    assinatura = await session.scalar(
+        select(Assinatura).where(Assinatura.estudio_id == cobranca.estudio_id)
+    )
+
+    async def _ativar() -> None:
+        cobranca.status = StatusCobranca.PAGA
+        if assinatura:
+            ja_ativa = assinatura.status == StatusAssinatura.ATIVA
+            assinatura.status = StatusAssinatura.ATIVA
+            assinatura.gateway = "mercadopago"
+            if not ja_ativa:
+                await log_event(
+                    session,
+                    acao="assinatura.activated",
+                    estudio_id=assinatura.estudio_id,
+                    entidade="assinatura",
+                    entidade_id=str(assinatura.id),
+                    dados={
+                        "gateway": "mercadopago",
+                        "cobranca": str(cobranca.id),
+                        "via": "reconcile_ativo",
+                    },
+                )
+
+    # Mensal → assinatura recorrente (preapproval)
+    if cobranca.ciclo == "mensal" and cobranca.gateway_preapproval_id:
+        pre = await gateway.obter_preapproval(cobranca.gateway_preapproval_id)
+        pre_status = (pre.get("status") or "").lower()
+        valor = int(round(float((pre.get("auto_recurring") or {}).get("transaction_amount") or 0) * 100))
+        if pre_status != "authorized":
+            return f"preapproval_{pre_status or 'sem_status'}"
+        if valor and valor != cobranca.valor_centavos:
+            return "valor_divergente"
+        await _ativar()
+        return "ativada"
+
+    # Avulso → pagamento único; busca o pagamento aprovado pela external_reference
+    data = await gateway.buscar_pagamentos_por_referencia(cobranca.external_reference or "")
+    resultados = data.get("results") or []
+    aprovado = next((r for r in resultados if (r.get("status") or "").lower() == "approved"), None)
+    if not aprovado:
+        return "sem_pagamento_aprovado"
+    valor = int(round(float(aprovado.get("transaction_amount") or 0) * 100))
+    if valor != cobranca.valor_centavos:
+        return "valor_divergente"
+    pid = str(aprovado.get("id"))
+    pagamento = await session.scalar(select(Pagamento).where(Pagamento.gateway_payment_id == pid))
+    if pagamento is None:
+        pagamento = Pagamento(
+            estudio_id=cobranca.estudio_id,
+            cobranca_id=cobranca.id,
+            gateway="mercadopago",
+            gateway_payment_id=pid,
+            status=_map_status_pagamento("approved"),
+            payment_type=aprovado.get("payment_type_id"),
+            payment_method_id=aprovado.get("payment_method_id"),
+            valor_centavos=valor,
+            payload_minimo_json={
+                "status": "approved",
+                "external_reference": cobranca.external_reference,
+                "transaction_amount": aprovado.get("transaction_amount"),
+            },
+        )
+        session.add(pagamento)
+        await session.flush()
+    pagamento.reconciliado_em = datetime.now(UTC)
+    pagamento.pago_em = datetime.now(UTC)
+    await _ativar()
+    return "ativada"
+
+
+@router.post("/reconciliar")
+async def reconciliar_pendentes(
+    session: AsyncSession = Depends(get_session),
+    usuario: Usuario = Depends(require_role(TipoUsuario.ADMIN)),
+):
+    """Rede de segurança: consulta o Mercado Pago e reconcilia cobranças pendentes
+    do estúdio (caso o webhook de pagamento se perca). Chamado pelo frontend ao
+    voltar do checkout. Idempotente e seguro de chamar várias vezes."""
+    cobrancas = (
+        await session.scalars(
+            select(Cobranca)
+            .where(
+                Cobranca.estudio_id == usuario.estudio_id,
+                Cobranca.status.in_(
+                    [StatusCobranca.CRIADA, StatusCobranca.ENVIADA_GATEWAY, StatusCobranca.PENDENTE]
+                ),
+            )
+            .order_by(Cobranca.criado_em.desc())
+            .limit(5)
+        )
+    ).all()
+
+    ativada = False
+    for cob in cobrancas:
+        try:
+            if await _reconciliar_cobranca_via_mp(session, cob) == "ativada":
+                ativada = True
+        except GatewayPagamentoError as exc:
+            logger.warning("reconciliacao_ativa_falhou", extra={"extra": {"erro": str(exc)}})
+
+    await session.commit()
+    assinatura = await get_assinatura(session, usuario.estudio_id)
+    return {"ativada": ativada, "assinatura": resumo_assinatura(assinatura)}
 
 
 @router.post("/webhook", status_code=200)
@@ -411,7 +530,9 @@ async def webhook_mercadopago(
     # anti-fraude do pagamento avulso: casa pela cobrança local (external_reference),
     # valida o valor mensal e nunca confia no corpo do webhook. Falha de cobrança
     # recorrente faz o MP pausar/cancelar o preapproval, o que suspende o acesso.
-    elif tipo == "preapproval" and gateway.configurado():
+    elif tipo in ("preapproval", "subscription_preapproval") and gateway.configurado():
+        # O Mercado Pago envia o tipo como "subscription_preapproval" (sistema novo
+        # de Webhooks) ou "preapproval" (IPN legado) — tratamos ambos.
         try:
             pre = await gateway.obter_preapproval(recurso_id)
             pre_status = (pre.get("status") or "").lower()

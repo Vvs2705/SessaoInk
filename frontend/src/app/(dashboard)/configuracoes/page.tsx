@@ -248,13 +248,39 @@ export default function ConfiguracoesPage() {
     setTimeout(() => setToast(null), 4000);
   };
 
+  // Rede de segurança: consulta ativamente o Mercado Pago e reconcilia cobranças
+  // pendentes do estúdio (caso o webhook de pagamento se perca). Idempotente.
+  const reconciliarMutation = useMutation({
+    mutationFn: () => api.post<{ ativada: boolean }>("/api/v1/pagamentos/reconciliar"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["assinatura-resumo"] });
+    },
+  });
+
+  const verificarPagamento = async (manual: boolean) => {
+    try {
+      const res = await reconciliarMutation.mutateAsync();
+      if (res?.ativada) {
+        showToast("sucesso", "Assinatura ativada com sucesso! 🎉");
+      } else if (manual) {
+        showToast(
+          "sucesso",
+          "Ainda sem pagamento aprovado. Se você acabou de pagar, aguarde alguns segundos e clique novamente.",
+        );
+      }
+    } catch {
+      if (manual) showToast("erro", "Não foi possível verificar o pagamento agora.");
+    }
+  };
+
   // Efeito para capturar parâmetros de retorno de pagamento
   useEffect(() => {
     const pagamento = searchParams.get("pagamento");
     const assinatura = searchParams.get("assinatura");
+    const voltouDoCheckout = pagamento === "sucesso" || pagamento === "pendente" || assinatura === "ok";
 
     if (pagamento === "sucesso" || assinatura === "ok") {
-      showToast("sucesso", "Pagamento aprovado! Sua assinatura foi atualizada com sucesso.");
+      showToast("sucesso", "Pagamento recebido! Confirmando a ativação…");
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (pagamento === "pendente") {
       showToast("sucesso", "Pagamento pendente. A ativação ocorrerá assim que confirmado.");
@@ -263,6 +289,15 @@ export default function ConfiguracoesPage() {
       showToast("erro", "O pagamento não foi processado. Tente novamente.");
       window.history.replaceState({}, document.title, window.location.pathname);
     }
+
+    // Reconciliação ativa ao voltar do checkout (com uma 2ª tentativa, pois o
+    // pagamento pode levar alguns segundos para constar no gateway).
+    if (voltouDoCheckout) {
+      verificarPagamento(false);
+      const t = setTimeout(() => verificarPagamento(false), 5000);
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   // ---------------------------------------------------------------------------
@@ -2164,6 +2199,21 @@ export default function ConfiguracoesPage() {
                                 </>
                               )}
                             </div>
+                            {!ativa && (
+                              <button
+                                type="button"
+                                onClick={() => verificarPagamento(true)}
+                                disabled={reconciliarMutation.isPending}
+                                title="Já paguei — verificar no Mercado Pago"
+                                className="shrink-0 self-center h-9 px-3 rounded-[10px] border border-[#2F9285]/40 text-[#2F9285] text-xs font-semibold hover:bg-[#2F9285]/10 disabled:opacity-50 inline-flex items-center gap-1.5"
+                              >
+                                {reconciliarMutation.isPending ? (
+                                  <><Loader2 size={13} className="animate-spin" /> Verificando…</>
+                                ) : (
+                                  <><RefreshCw size={13} /> Já paguei</>
+                                )}
+                              </button>
+                            )}
                           </div>
                         );
                       })()

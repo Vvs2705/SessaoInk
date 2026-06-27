@@ -252,6 +252,55 @@ class TestP006CobrancaLocal:
             ass = await s.scalar(select(Assinatura).where(Assinatura.estudio_id == est_id))
             assert ass.status == StatusAssinatura.ATIVA
 
+    async def test_reconciliar_ativa_assinatura_quando_webhook_se_perde(
+        self, autenticado, monkeypatch
+    ):
+        """Rede de segurança: o endpoint /reconciliar consulta o MP e ativa a
+        assinatura de uma cobrança avulsa paga, mesmo sem o webhook ter chegado."""
+        from app.api.v1.pagamentos import router as pr
+
+        monkeypatch.setattr(pr.settings, "PAGAMENTOS_GO_LIVE", True)
+        ref = {}
+
+        async def fake_unica(*, plano_slug, ciclo, email_pagador, referencia):
+            ref["v"] = referencia
+            return {"tipo": "cobranca_unica", "id": "pref-rec", "init_point": "https://mp/rec"}
+
+        monkeypatch.setattr(pr.gateway, "criar_cobranca_unica", fake_unica)
+
+        est_id = await _estudio_demo_id()
+        async with async_session() as s:
+            if not await s.scalar(select(Assinatura).where(Assinatura.estudio_id == est_id)):
+                s.add(Assinatura(estudio_id=est_id, status=StatusAssinatura.TRIAL))
+                await s.commit()
+
+        await autenticado.post(
+            "/api/v1/pagamentos/checkout",
+            json={"plano_slug": "profissional", "ciclo": "trimestral"},
+        )
+        cob_ref = ref["v"]
+        async with async_session() as s:
+            esperado = (
+                await s.scalar(select(Cobranca).where(Cobranca.external_reference == cob_ref))
+            ).valor_centavos
+
+        monkeypatch.setattr(pr.gateway, "configurado", lambda: True)
+
+        async def fake_search(external_reference):
+            return {"results": [{"status": "approved", "transaction_amount": esperado / 100,
+                                 "id": "pay-rec-1", "payment_type_id": "pix"}]}
+
+        monkeypatch.setattr(pr.gateway, "buscar_pagamentos_por_referencia", fake_search)
+
+        r = await autenticado.post("/api/v1/pagamentos/reconciliar")
+        assert r.status_code == 200
+        assert r.json()["ativada"] is True
+        async with async_session() as s:
+            cob = await s.scalar(select(Cobranca).where(Cobranca.external_reference == cob_ref))
+            assert cob.status == StatusCobranca.PAGA
+            ass = await s.scalar(select(Assinatura).where(Assinatura.estudio_id == est_id))
+            assert ass.status == StatusAssinatura.ATIVA
+
     async def test_webhook_valor_divergente_nao_ativa(
         self, autenticado, client, monkeypatch
     ):

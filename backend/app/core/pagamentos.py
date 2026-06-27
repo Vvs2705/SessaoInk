@@ -266,6 +266,11 @@ class GatewayPagamento:
         pelo webhook para reconciliar o ciclo mensal."""
         return await self._get(f"/preapproval/{preapproval_id}")
 
+    async def buscar_pagamentos_por_referencia(self, external_reference: str) -> dict[str, Any]:
+        """Busca pagamentos por external_reference — usado pela reconciliação ATIVA
+        (rede de segurança quando um webhook de `payment` se perde)."""
+        return await self._get(f"/v1/payments/search?external_reference={external_reference}")
+
 
 def validar_assinatura_webhook(
     *,

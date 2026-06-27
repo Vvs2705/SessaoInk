@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -49,6 +49,19 @@ export default function LoginPage() {
   const [emailEnviado, setEmailEnviado] = useState(false);
   const [mfaSubmitting, setMfaSubmitting] = useState(false);
   const [mfaError, setMfaError] = useState<string | null>(null);
+
+  // a11y/CRO: foco vai para o campo de código sempre que ele passa a ser
+  // visível (entrada no passo MFA, troca de método ou e-mail recém-enviado),
+  // poupando o usuário de buscar o input manualmente.
+  const mfaCodigoInputRef = useRef<HTMLInputElement>(null);
+  const mfaInputVisivel =
+    selectedMetodo === "totp" || (selectedMetodo === "email" && emailEnviado);
+
+  useEffect(() => {
+    if (mfaRequired && mfaInputVisivel) {
+      mfaCodigoInputRef.current?.focus();
+    }
+  }, [mfaRequired, mfaInputVisivel]);
 
   const {
     register,
@@ -184,6 +197,9 @@ export default function LoginPage() {
       });
 
       setEmailEnviado(true);
+      // Reenvio: o input já está visível, então o efeito de foco não re-dispara.
+      // Movemos o foco manualmente para o usuário digitar o novo código de imediato.
+      mfaCodigoInputRef.current?.focus();
     } catch (error) {
       if (error instanceof ApiError) {
         if (error.status === 429) {
@@ -291,7 +307,9 @@ export default function LoginPage() {
                     </label>
                     <input
                       id="mfa-totp"
+                      ref={mfaCodigoInputRef}
                       inputMode="numeric"
+                      autoComplete="one-time-code"
                       maxLength={6}
                       value={mfaCodigo}
                       onChange={(event) =>
@@ -315,6 +333,7 @@ export default function LoginPage() {
                           type="button"
                           onClick={handleSolicitarEmailOtp}
                           disabled={mfaSubmitting}
+                          aria-busy={mfaSubmitting}
                           className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#2F9285] px-4 text-sm font-bold text-[#050B12] transition hover:bg-[#3AA99A] disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {mfaSubmitting && (
@@ -333,7 +352,9 @@ export default function LoginPage() {
                         </label>
                         <input
                           id="mfa-email"
+                          ref={mfaCodigoInputRef}
                           inputMode="numeric"
+                          autoComplete="one-time-code"
                           maxLength={6}
                           value={mfaCodigo}
                           onChange={(event) =>
@@ -347,6 +368,7 @@ export default function LoginPage() {
                           type="button"
                           onClick={handleSolicitarEmailOtp}
                           disabled={mfaSubmitting}
+                          aria-busy={mfaSubmitting}
                           className="mt-3 text-xs font-semibold text-[#2F9285] hover:text-[#3AA99A] disabled:opacity-60"
                         >
                           Reenviar código por e-mail
@@ -357,7 +379,11 @@ export default function LoginPage() {
                 )}
 
                 {mfaError && (
-                  <p className="rounded-2xl border border-[#E35D5B]/30 bg-[#E35D5B]/10 p-3 text-sm text-[#E35D5B]">
+                  <p
+                    role="alert"
+                    aria-live="polite"
+                    className="rounded-2xl border border-[#E35D5B]/30 bg-[#E35D5B]/10 p-3 text-sm text-[#E35D5B]"
+                  >
                     {mfaError}
                   </p>
                 )}
@@ -366,6 +392,7 @@ export default function LoginPage() {
                   <button
                     type="submit"
                     disabled={mfaSubmitting}
+                    aria-busy={mfaSubmitting}
                     className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#2F9285] px-4 font-bold text-[#050B12] transition hover:bg-[#3AA99A] disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {mfaSubmitting ? (
@@ -464,6 +491,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
+                  aria-busy={isSubmitting}
                   className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#2F9285] px-4 font-bold text-[#050B12] transition hover:bg-[#3AA99A] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSubmitting ? (

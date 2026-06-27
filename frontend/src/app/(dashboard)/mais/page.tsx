@@ -3,10 +3,14 @@
 import Link from "next/link";
 import { ChevronRight, LogOut } from "lucide-react";
 
-import { MOBILE_MORE_ITEMS } from "@/components/layout/navigation";
+import { MOBILE_MORE_ITEMS, filterNavByRole } from "@/components/layout/navigation";
 import { withCsrfHeaders } from "@/lib/api/client";
+import { useRole } from "@/lib/auth/useRole";
 
 export default function MaisPage() {
+  const { tipo } = useRole();
+  const moreItems = filterNavByRole(MOBILE_MORE_ITEMS, tipo);
+
   const handleLogout = async () => {
     try {
       await fetch(
@@ -33,7 +37,7 @@ export default function MaisPage() {
       </div>
 
       <div className="space-y-2">
-        {MOBILE_MORE_ITEMS.map(({ href, label, icon: Icon, badge }) => (
+        {moreItems.map(({ href, label, icon: Icon, badge }) => (
           <Link
             key={href}
             href={href}

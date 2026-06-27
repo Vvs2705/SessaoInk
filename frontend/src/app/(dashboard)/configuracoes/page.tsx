@@ -293,7 +293,42 @@ export default function ConfiguracoesPage() {
     enabled: isAdmin,
   });
 
+  // Resumo da assinatura vigente (status/trial). Shape vindo de
+  // backend/app/services/assinatura.py::resumo — `ciclo`/`trial_expira_em` só
+  // existem quando há assinatura.
+  const { data: assinaturaResumo, isLoading: loadingAssinatura } = useQuery({
+    queryKey: ["assinatura-resumo"],
+    queryFn: () =>
+      api.get<{
+        status: string;
+        plano_slug: string | null;
+        plano_nome: string | null;
+        ciclo?: string | null;
+        acesso_liberado: boolean;
+        trial: boolean;
+        dias_restantes_trial: number | null;
+        trial_expira_em?: string | null;
+        precisa_assinar: boolean;
+      }>("/api/v1/pagamentos/assinatura"),
+    enabled: isAdmin,
+  });
+
   const selectedPlan = planosData?.planos?.find((p: any) => p.slug === selectedPlanSlug);
+
+  // Todos os ciclos do plano (mensal, trimestral, semestral, anual) com seus
+  // descontos. A recorrência mensal (preapproval) é reconciliada no webhook do
+  // backend, então pode ser ofertada normalmente.
+  const ciclosVisiveis: any[] = selectedPlan?.tabela_precos ?? [];
+
+  // Garante que o ciclo selecionado é sempre um ciclo válido do plano atual; se
+  // ficar um ciclo inexistente selecionado, cai para o primeiro disponível.
+  useEffect(() => {
+    if (ciclosVisiveis.length === 0) return;
+    const valido = ciclosVisiveis.some((p: any) => p.ciclo === selectedCycle);
+    if (!valido) {
+      setSelectedCycle(ciclosVisiveis[0].ciclo);
+    }
+  }, [selectedPlanSlug, ciclosVisiveis, selectedCycle]);
 
   // Inicializa o novoSlug com o slug atual do estúdio
   useEffect(() => {
@@ -1928,7 +1963,7 @@ export default function ConfiguracoesPage() {
                         <button
                           type="button"
                           onClick={() => setShowMfaDisableModal({ type: "totp" })}
-                          className="px-3.5 py-2 text-xs font-semibold rounded-[10px] border border-[#E35D5B]/30 hover:bg-[#E35D5B] hover:text-[#F0EADD] text-[#E35D5B] transition-all shrink-0"
+                          className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] px-4 py-2.5 text-xs font-semibold rounded-[10px] border border-[#E35D5B]/30 hover:bg-[#E35D5B] hover:text-[#F0EADD] text-[#E35D5B] transition-all shrink-0"
                         >
                           Desativar
                         </button>
@@ -1937,7 +1972,8 @@ export default function ConfiguracoesPage() {
                           type="button"
                           onClick={handleStartTotpSetup}
                           disabled={totpSetupPending}
-                          className="px-3.5 py-2 text-xs font-semibold rounded-[10px] bg-[#2F9285]/10 border border-[#2F9285]/30 hover:bg-[#2F9285] hover:text-[#050B12] text-[#2F9285] transition-all flex items-center gap-1.5 shrink-0"
+                          aria-busy={totpSetupPending}
+                          className="min-h-[44px] min-w-[44px] px-4 py-2.5 text-xs font-semibold rounded-[10px] bg-[#2F9285]/10 border border-[#2F9285]/30 hover:bg-[#2F9285] hover:text-[#050B12] text-[#2F9285] transition-all inline-flex items-center justify-center gap-1.5 shrink-0"
                         >
                           {totpSetupPending && <Loader2 size={12} className="animate-spin" />}
                           Ativar
@@ -1972,7 +2008,7 @@ export default function ConfiguracoesPage() {
                         <button
                           type="button"
                           onClick={() => setShowMfaDisableModal({ type: "email" })}
-                          className="px-3.5 py-2 text-xs font-semibold rounded-[10px] border border-[#E35D5B]/30 hover:bg-[#E35D5B] hover:text-[#F0EADD] text-[#E35D5B] transition-all shrink-0"
+                          className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] px-4 py-2.5 text-xs font-semibold rounded-[10px] border border-[#E35D5B]/30 hover:bg-[#E35D5B] hover:text-[#F0EADD] text-[#E35D5B] transition-all shrink-0"
                         >
                           Desativar
                         </button>
@@ -1981,7 +2017,8 @@ export default function ConfiguracoesPage() {
                           type="button"
                           onClick={handleActivateEmailMfa}
                           disabled={mfaEmailActivating}
-                          className="px-3.5 py-2 text-xs font-semibold rounded-[10px] bg-[#2F9285]/10 border border-[#2F9285]/30 hover:bg-[#2F9285] hover:text-[#050B12] text-[#2F9285] transition-all flex items-center gap-1.5 shrink-0"
+                          aria-busy={mfaEmailActivating}
+                          className="min-h-[44px] min-w-[44px] px-4 py-2.5 text-xs font-semibold rounded-[10px] bg-[#2F9285]/10 border border-[#2F9285]/30 hover:bg-[#2F9285] hover:text-[#050B12] text-[#2F9285] transition-all inline-flex items-center justify-center gap-1.5 shrink-0"
                         >
                           {mfaEmailActivating && <Loader2 size={12} className="animate-spin" />}
                           Ativar
@@ -2065,6 +2102,73 @@ export default function ConfiguracoesPage() {
                   </div>
                 ) : (
                   <>
+                    {/* F2: estado da assinatura vigente (trial/ativa/etc.).
+                        Sem dados fake — enquanto carrega mostra skeleton; sem
+                        assinatura mostra um aviso neutro. */}
+                    {loadingAssinatura ? (
+                      <div className="h-20 bg-[#102128] rounded-[14px] animate-pulse" />
+                    ) : assinaturaResumo ? (
+                      (() => {
+                        const r = assinaturaResumo;
+                        const emTrial = r.trial;
+                        const ativa = r.status === "ATIVA";
+                        const dias = r.dias_restantes_trial;
+                        const tom = ativa
+                          ? "bg-[#2F9285]/10 border-[#2F9285]/25 text-[#2F9285]"
+                          : emTrial
+                            ? "bg-[#102128] border-[#243337] text-[#F0EADD]"
+                            : "bg-[#C36B3F]/10 border-[#C36B3F]/25 text-[#C36B3F]";
+                        return (
+                          <div className={cn("p-4 rounded-[14px] border flex items-start gap-3", tom)}>
+                            {ativa ? (
+                              <CheckCircle size={18} className="shrink-0 mt-0.5" />
+                            ) : emTrial ? (
+                              <Clock size={18} className="shrink-0 mt-0.5 text-[#2F9285]" />
+                            ) : (
+                              <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                            )}
+                            <div className="min-w-0">
+                              {ativa ? (
+                                <>
+                                  <p className="text-sm font-semibold">
+                                    Plano ativo{r.plano_nome ? `: ${r.plano_nome}` : ""}
+                                  </p>
+                                  <p className="text-xs text-[#87938F] mt-0.5">
+                                    Sua assinatura está em dia. Obrigado por usar o SessãoInk!
+                                  </p>
+                                </>
+                              ) : emTrial ? (
+                                <>
+                                  <p className="text-sm font-semibold">
+                                    {dias !== null
+                                      ? `Trial: ${dias} ${dias === 1 ? "dia restante" : "dias restantes"}`
+                                      : "Período de avaliação ativo"}
+                                    {r.plano_nome ? ` — ${r.plano_nome}` : ""}
+                                  </p>
+                                  <p className="text-xs text-[#87938F] mt-0.5">
+                                    Aproveite o período de avaliação. Escolha um plano abaixo para
+                                    continuar sem interrupções.
+                                  </p>
+                                </>
+                              ) : (
+                                <>
+                                  <p className="text-sm font-semibold">
+                                    {r.status === "SEM_ASSINATURA"
+                                      ? "Nenhuma assinatura ativa"
+                                      : "Sua assinatura precisa de atenção"}
+                                  </p>
+                                  <p className="text-xs text-[#87938F] mt-0.5">
+                                    Escolha um plano abaixo para liberar todos os recursos do
+                                    estúdio.
+                                  </p>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()
+                    ) : null}
+
                     {/* Status do Gateway */}
                     {gatewayConfig && !gatewayConfig.go_live && (
                       <div className="p-3 bg-[#C36B3F]/10 border border-[#C36B3F]/20 text-[#C36B3F] text-xs rounded-[10px] flex items-start gap-2.5">
@@ -2091,9 +2195,12 @@ export default function ConfiguracoesPage() {
                               type="button"
                               onClick={() => {
                                 setSelectedPlanSlug(plano.slug);
-                                const hasCycle = plano.tabela_precos?.some((t: any) => t.ciclo === selectedCycle);
-                                if (!hasCycle) {
-                                  setSelectedCycle("mensal");
+                                // Se o ciclo atual não existir no novo plano,
+                                // cai para o primeiro ciclo disponível.
+                                const ciclosDoPlano = plano.tabela_precos ?? [];
+                                const hasCycle = ciclosDoPlano.some((t: any) => t.ciclo === selectedCycle);
+                                if (!hasCycle && ciclosDoPlano.length > 0) {
+                                  setSelectedCycle(ciclosDoPlano[0].ciclo);
                                 }
                               }}
                               className={cn(
@@ -2146,7 +2253,8 @@ export default function ConfiguracoesPage() {
                         2. Escolha o Ciclo de Faturamento
                       </label>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {planosData?.planos?.find((p: any) => p.slug === selectedPlanSlug)?.tabela_precos?.map((preco: any) => {
+                        {/* Todos os ciclos do plano: mensal, trimestral, semestral e anual. */}
+                        {ciclosVisiveis.map((preco: any) => {
                           const isSelected = selectedCycle === preco.ciclo;
                           return (
                             <button
@@ -2196,33 +2304,66 @@ export default function ConfiguracoesPage() {
                     </div>
 
                     {/* Resumo da Compra e Checkout */}
-                    <div className="pt-4 border-t border-[#243337] flex flex-col md:flex-row items-center justify-between gap-4">
-                      <div>
-                        <p className="text-xs text-[#87938F]">Plano e ciclo selecionados:</p>
-                        <p className="text-sm font-bold text-[#F0EADD]">
-                          {selectedPlan?.nome} — {selectedPlan?.tabela_precos?.find((p: any) => p.ciclo === selectedCycle)?.label}
-                        </p>
-                      </div>
+                    {/* F2: quando o gateway está fora do ar (go_live=false), a cobrança
+                        não está habilitada no backend (responde 503). Degradamos com
+                        elegância: botão desabilitado + aviso, em vez de deixar o usuário
+                        clicar e só descobrir a indisponibilidade no erro 503. */}
+                    {(() => {
+                      const pagamentosIndisponiveis = gatewayConfig
+                        ? !gatewayConfig.go_live
+                        : false;
+                      return (
+                        <div className="pt-4 border-t border-[#243337] space-y-3">
+                          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                            <div>
+                              <p className="text-xs text-[#87938F]">Plano e ciclo selecionados:</p>
+                              <p className="text-sm font-bold text-[#F0EADD]">
+                                {selectedPlan?.nome} — {selectedPlan?.tabela_precos?.find((p: any) => p.ciclo === selectedCycle)?.label}
+                              </p>
+                            </div>
 
-                      <button
-                        type="button"
-                        onClick={handleCheckout}
-                        disabled={checkoutPending}
-                        className="w-full md:w-auto px-6 h-11 bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm rounded-[12px] flex items-center justify-center gap-2 transition-all shadow-[0_4px_12px_rgba(47,146,133,0.2)] disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none"
-                      >
-                        {checkoutPending ? (
-                          <>
-                            <Loader2 size={16} className="animate-spin" />
-                            Redirecionando...
-                          </>
-                        ) : (
-                          <>
-                            <CreditCard size={16} />
-                            Assinar com Mercado Pago
-                          </>
-                        )}
-                      </button>
-                    </div>
+                            <button
+                              type="button"
+                              onClick={handleCheckout}
+                              disabled={checkoutPending || pagamentosIndisponiveis}
+                              aria-busy={checkoutPending}
+                              title={
+                                pagamentosIndisponiveis
+                                  ? "A cobrança ainda não está habilitada neste estúdio. Em breve você poderá assinar por aqui."
+                                  : undefined
+                              }
+                              className="w-full md:w-auto px-6 h-11 bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm rounded-[12px] flex items-center justify-center gap-2 transition-all shadow-[0_4px_12px_rgba(47,146,133,0.2)] disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none"
+                            >
+                              {checkoutPending ? (
+                                <>
+                                  <Loader2 size={16} className="animate-spin" />
+                                  Redirecionando...
+                                </>
+                              ) : pagamentosIndisponiveis ? (
+                                <>
+                                  <Clock size={16} />
+                                  Pagamentos em breve
+                                </>
+                              ) : (
+                                <>
+                                  <CreditCard size={16} />
+                                  Assinar com Mercado Pago
+                                </>
+                              )}
+                            </button>
+                          </div>
+
+                          {pagamentosIndisponiveis && (
+                            <p className="text-[11px] text-[#87938F] flex items-start gap-1.5">
+                              <AlertCircle size={13} className="shrink-0 mt-0.5 text-[#C36B3F]" />
+                              A assinatura paga ainda não está disponível neste estúdio. Estamos
+                              finalizando a configuração da cobrança — você será avisado assim
+                              que puder assinar.
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </>
                 )}
               </div>
@@ -2282,6 +2423,7 @@ export default function ConfiguracoesPage() {
                   id="verify-totp-code"
                   type="text"
                   inputMode="numeric"
+                  autoComplete="one-time-code"
                   pattern="[0-9]*"
                   maxLength={6}
                   placeholder="000000"
@@ -2348,6 +2490,7 @@ export default function ConfiguracoesPage() {
                 <input
                   id="disable-mfa-pass"
                   type="password"
+                  autoComplete="current-password"
                   value={mfaDisablePassword}
                   onChange={(e) => setMfaDisablePassword(e.target.value)}
                   placeholder="Digite sua senha"

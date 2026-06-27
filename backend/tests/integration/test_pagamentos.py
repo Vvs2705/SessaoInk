@@ -194,6 +194,64 @@ class TestP006CobrancaLocal:
             )
             assert pag is not None and pag.reconciliado_em is not None
 
+    async def test_webhook_preapproval_autorizado_ativa_assinatura(
+        self, autenticado, client, monkeypatch
+    ):
+        """Ciclo MENSAL: o webhook `preapproval` (recorrência) deve ativar a
+        assinatura quando autorizado — o evento `payment` não cobre esse ciclo."""
+        from app.api.v1.pagamentos import router as pr
+
+        monkeypatch.setattr(pr.settings, "PAGAMENTOS_GO_LIVE", True)
+        ref = {}
+
+        async def fake_assinatura(*, plano_slug, email_pagador, referencia):
+            ref["v"] = referencia
+            return {"tipo": "assinatura", "id": "preapp-ok-1", "init_point": "https://mp/sub"}
+
+        monkeypatch.setattr(pr.gateway, "criar_assinatura", fake_assinatura)
+
+        est_id = await _estudio_demo_id()
+        async with async_session() as s:
+            if not await s.scalar(select(Assinatura).where(Assinatura.estudio_id == est_id)):
+                s.add(Assinatura(estudio_id=est_id, status=StatusAssinatura.TRIAL))
+                await s.commit()
+
+        await autenticado.post(
+            "/api/v1/pagamentos/checkout",
+            json={"plano_slug": "profissional", "ciclo": "mensal"},
+        )
+        cob_ref = ref["v"]
+        async with async_session() as s:
+            esperado = (
+                await s.scalar(select(Cobranca).where(Cobranca.external_reference == cob_ref))
+            ).valor_centavos
+
+        monkeypatch.setattr(pr.gateway, "configurado", lambda: True)
+
+        async def fake_preapproval(_pid):
+            return {
+                "status": "authorized",
+                "external_reference": cob_ref,
+                "auto_recurring": {
+                    "transaction_amount": esperado / 100,
+                    "currency_id": "BRL",
+                },
+            }
+
+        monkeypatch.setattr(pr.gateway, "obter_preapproval", fake_preapproval)
+
+        w = await client.post(
+            "/api/v1/pagamentos/webhook",
+            json={"type": "preapproval", "data": {"id": "preapp-ok-1"}},
+        )
+        assert w.status_code == 200
+
+        async with async_session() as s:
+            cob = await s.scalar(select(Cobranca).where(Cobranca.external_reference == cob_ref))
+            assert cob.status == StatusCobranca.PAGA
+            ass = await s.scalar(select(Assinatura).where(Assinatura.estudio_id == est_id))
+            assert ass.status == StatusAssinatura.ATIVA
+
     async def test_webhook_valor_divergente_nao_ativa(
         self, autenticado, client, monkeypatch
     ):

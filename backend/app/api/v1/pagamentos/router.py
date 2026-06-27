@@ -405,5 +405,99 @@ async def webhook_mercadopago(
         except GatewayPagamentoError as exc:
             logger.warning("webhook_reconciliacao_falhou", extra={"extra": {"erro": str(exc)}})
 
+    # Recorrência mensal (preapproval): o evento "payment" NÃO cobre o ciclo
+    # mensal, que é uma assinatura recorrente. Reconcilia consultando o
+    # preapproval no gateway e ativa a assinatura quando autorizada — mesma regra
+    # anti-fraude do pagamento avulso: casa pela cobrança local (external_reference),
+    # valida o valor mensal e nunca confia no corpo do webhook. Falha de cobrança
+    # recorrente faz o MP pausar/cancelar o preapproval, o que suspende o acesso.
+    elif tipo == "preapproval" and gateway.configurado():
+        try:
+            pre = await gateway.obter_preapproval(recurso_id)
+            pre_status = (pre.get("status") or "").lower()
+            evento.status = pre_status
+            external_ref = pre.get("external_reference")
+            valor_mensal_cent = int(
+                round(float((pre.get("auto_recurring") or {}).get("transaction_amount") or 0) * 100)
+            )
+
+            cobranca = None
+            if external_ref:
+                cobranca = await session.scalar(
+                    select(Cobranca).where(Cobranca.external_reference == str(external_ref))
+                )
+
+            if cobranca:
+                evento.estudio_id = cobranca.estudio_id
+                assinatura = await session.scalar(
+                    select(Assinatura).where(Assinatura.estudio_id == cobranca.estudio_id)
+                )
+
+                if pre_status == "authorized":
+                    if valor_mensal_cent and valor_mensal_cent != cobranca.valor_centavos:
+                        # Valor recorrente divergente → NÃO ativa (revisão manual).
+                        logger.warning(
+                            "webhook_valor_divergente",
+                            extra={"extra": {
+                                "cobranca": str(cobranca.id),
+                                "esperado_centavos": cobranca.valor_centavos,
+                                "pago_centavos": valor_mensal_cent,
+                            }},
+                        )
+                        await log_event(
+                            session,
+                            acao="pagamento.valor_divergente",
+                            estudio_id=cobranca.estudio_id,
+                            entidade="cobranca",
+                            entidade_id=str(cobranca.id),
+                            dados={
+                                "esperado_centavos": cobranca.valor_centavos,
+                                "pago_centavos": valor_mensal_cent,
+                                "via": "preapproval",
+                            },
+                        )
+                    else:
+                        cobranca.status = StatusCobranca.PAGA
+                        if assinatura:
+                            ja_ativa = assinatura.status == StatusAssinatura.ATIVA
+                            assinatura.status = StatusAssinatura.ATIVA
+                            assinatura.gateway = "mercadopago"
+                            evento.assinatura_id = assinatura.id
+                            if not ja_ativa:
+                                await log_event(
+                                    session,
+                                    acao="assinatura.activated",
+                                    estudio_id=assinatura.estudio_id,
+                                    entidade="assinatura",
+                                    entidade_id=str(assinatura.id),
+                                    dados={
+                                        "gateway": "mercadopago",
+                                        "cobranca": str(cobranca.id),
+                                        "via": "preapproval",
+                                    },
+                                )
+
+                # Assinatura recorrente cancelada/pausada (ex.: falha de cobrança)
+                # → suspende o acesso (proteção de receita).
+                elif pre_status in ("cancelled", "paused"):
+                    if assinatura and assinatura.status == StatusAssinatura.ATIVA:
+                        assinatura.status = StatusAssinatura.SUSPENSA
+                        await log_event(
+                            session,
+                            acao="assinatura.suspended",
+                            estudio_id=assinatura.estudio_id,
+                            entidade="assinatura",
+                            entidade_id=str(assinatura.id),
+                            dados={
+                                "motivo": pre_status,
+                                "cobranca": str(cobranca.id),
+                                "via": "preapproval",
+                            },
+                        )
+
+            evento.processado = True
+        except GatewayPagamentoError as exc:
+            logger.warning("webhook_reconciliacao_falhou", extra={"extra": {"erro": str(exc)}})
+
     await session.commit()
     return {"status": "ok"}

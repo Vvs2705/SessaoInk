@@ -10,10 +10,13 @@ import { cn } from "@/lib/utils";
 import { BuscaModal } from "@/components/BuscaModal";
 import { BrandLogo } from "@/components/BrandLogo";
 import { withCsrfHeaders } from "@/lib/api/client";
-import { DESKTOP_NAV_ITEMS } from "./navigation";
+import { useRole } from "@/lib/auth/useRole";
+import { DESKTOP_NAV_ITEMS, filterNavByRole } from "./navigation";
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { tipo } = useRole();
+  const navItems = filterNavByRole(DESKTOP_NAV_ITEMS, tipo);
   const [buscaAberta, setBuscaAberta] = useState(false);
 
   // Ctrl+K / Cmd+K abre a busca
@@ -51,7 +54,7 @@ export function Sidebar() {
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto" aria-label="Navegação principal">
-          {DESKTOP_NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+          {navItems.map(({ href, label, icon: Icon }) => {
             const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
             return (
               <Link

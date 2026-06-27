@@ -13,6 +13,8 @@ import {
   Zap,
 } from "lucide-react";
 
+import type { TipoUsuario } from "@/lib/auth/useRole";
+
 export type AppNavItem = {
   href: string;
   label: string;
@@ -20,6 +22,11 @@ export type AppNavItem = {
   icon: LucideIcon;
   mobile: "tab" | "more" | "hidden";
   badge?: string;
+  /**
+   * Papéis que podem ver este item (espelha o RBAC do backend). Ausente =
+   * visível a todos os usuários logados.
+   */
+  roles?: TipoUsuario[];
 };
 
 export const APP_NAV_ITEMS: AppNavItem[] = [
@@ -71,6 +78,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     shortLabel: "Finanças",
     icon: Wallet,
     mobile: "more",
+    roles: ["ADMIN"],
   },
   {
     href: "/estoque",
@@ -92,6 +100,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     shortLabel: "Relatórios",
     icon: BarChart2,
     mobile: "more",
+    roles: ["ADMIN"],
   },
   {
     href: "/configuracoes",
@@ -121,3 +130,16 @@ export const MOBILE_MORE_TAB_ITEM: AppNavItem = {
   icon: MoreHorizontal,
   mobile: "tab",
 };
+
+/**
+ * Filtra itens de navegação pelo papel do usuário, espelhando o RBAC do
+ * backend. Itens sem `roles` são visíveis a todos. Enquanto o papel ainda não
+ * carregou (`tipo` indefinido), itens restritos ficam ocultos para evitar um
+ * flash do menu seguido de 403 silencioso.
+ */
+export function filterNavByRole<T extends AppNavItem>(
+  items: T[],
+  tipo: TipoUsuario | undefined,
+): T[] {
+  return items.filter((item) => !item.roles || (tipo ? item.roles.includes(tipo) : false));
+}

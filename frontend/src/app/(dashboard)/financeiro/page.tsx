@@ -216,6 +216,11 @@ export default function FinanceiroPage() {
   });
   const isAdmin = usuario?.tipo === "ADMIN";
 
+  // Aba efetiva: um não-admin nunca deve enxergar "consolidado". Derivamos o
+  // valor em vez de chamar setActiveTab no corpo do componente (que disparava
+  // setState durante o render e causava re-render em cascata / aviso do React).
+  const effectiveTab = !isAdmin && activeTab === "consolidado" ? "visao-geral" : activeTab;
+
   const { data: equipe = [] } = useQuery<EquipeMembro[]>({
     queryKey: ["estudio-equipe"],
     queryFn: () => api.get("/api/v1/estudio/equipe"),
@@ -233,16 +238,16 @@ export default function FinanceiroPage() {
     isLoading: isLoadingLancamentos,
     refetch: refetchLancamentos,
   } = useQuery<LancamentoItem[]>({
-    queryKey: ["financeiro-lancamentos", activeTab, filtroCategoria, filtroArtista, dataInicio, dataFim],
+    queryKey: ["financeiro-lancamentos", effectiveTab, filtroCategoria, filtroArtista, dataInicio, dataFim],
     queryFn: () => {
       let url = "/api/v1/financeiro/";
-      if (activeTab === "entradas") url = "/api/v1/financeiro/entradas";
-      else if (activeTab === "saidas") url = "/api/v1/financeiro/saidas";
-      else if (activeTab === "comissoes") url = "/api/v1/financeiro/comissoes";
-      else if (activeTab === "reservas") url = "/api/v1/financeiro/reservas";
+      if (effectiveTab === "entradas") url = "/api/v1/financeiro/entradas";
+      else if (effectiveTab === "saidas") url = "/api/v1/financeiro/saidas";
+      else if (effectiveTab === "comissoes") url = "/api/v1/financeiro/comissoes";
+      else if (effectiveTab === "reservas") url = "/api/v1/financeiro/reservas";
 
       const params = new URLSearchParams();
-      if (activeTab === "visao-geral") {
+      if (effectiveTab === "visao-geral") {
         if (filtroCategoria) params.append("categoria", filtroCategoria);
         if (filtroArtista) params.append("artista_id", filtroArtista);
         if (dataInicio) params.append("data_inicio", dataInicio);
@@ -260,7 +265,7 @@ export default function FinanceiroPage() {
   } = useQuery<ConsolidadoResponse>({
     queryKey: ["financeiro-consolidado", consolidadoInicio, consolidadoFim],
     queryFn: () => api.get(`/api/v1/financeiro/consolidado?inicio=${consolidadoInicio}&fim=${consolidadoFim}`),
-    enabled: activeTab === "consolidado",
+    enabled: effectiveTab === "consolidado",
   });
 
   // Mutations
@@ -448,10 +453,6 @@ export default function FinanceiroPage() {
     );
   }
 
-  if (activeTab === "consolidado" && !isAdmin) {
-    setActiveTab("visao-geral");
-  }
-
   const handleComissaoSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!comArtistId || !comAtendId || !comValor || !comPercent) {
@@ -476,20 +477,20 @@ export default function FinanceiroPage() {
     if (dataInicio) params.append("data_inicio", dataInicio);
     if (dataFim) params.append("data_fim", dataFim);
 
-    if (activeTab === "entradas") {
+    if (effectiveTab === "entradas") {
       params.append("tipo", "ENTRADA");
-    } else if (activeTab === "saidas") {
+    } else if (effectiveTab === "saidas") {
       params.append("tipo", "SAIDA");
-    } else if (activeTab === "comissoes") {
+    } else if (effectiveTab === "comissoes") {
       params.append("tipo", "COMISSAO");
-    } else if (activeTab === "reservas") {
+    } else if (effectiveTab === "reservas") {
       params.append("tipo", "SINAL");
     }
     window.open(url + (params.toString() ? `?${params.toString()}` : ""), "_blank");
   };
 
   const handleRefresh = () => {
-    if (activeTab === "consolidado") refetchConsolidado();
+    if (effectiveTab === "consolidado") refetchConsolidado();
     else refetchLancamentos();
   };
 
@@ -561,7 +562,7 @@ export default function FinanceiroPage() {
             onClick={() => setActiveTab(t.id as any)}
             className={cn(
               "px-4 py-2.5 rounded-[12px] text-xs font-semibold whitespace-nowrap transition-all duration-300",
-              activeTab === t.id
+              effectiveTab === t.id
                 ? "bg-[#2F9285]/15 text-[#2F9285] shadow-sm"
                 : "text-[#87938F] hover:text-[#F0EADD] hover:bg-[#102128]"
             )}
@@ -572,7 +573,7 @@ export default function FinanceiroPage() {
       </div>
 
       {/* Tab Contents: Consolidado View */}
-      {activeTab === "consolidado" && (
+      {effectiveTab === "consolidado" && (
         <div className="space-y-6 animate-in fade-in duration-300">
           {/* Period Selection */}
           <div className="flex items-center gap-3 p-4 bg-[#0B171C] border border-[#243337] rounded-[18px] w-fit flex-wrap">
@@ -684,19 +685,29 @@ export default function FinanceiroPage() {
                 {consolidado.graficos.fluxo_diario.length === 0 ? (
                   <div className="h-48 flex items-center justify-center border border-dashed border-[#243337] rounded-[12px] text-xs text-[#87938F]">Sem dados para exibir no período</div>
                 ) : (
-                  <div className="relative pt-4">
+                  <div
+                    className="relative pt-4"
+                    role="img"
+                    aria-label={`Gráfico de fluxo diário: ${consolidado.graficos.fluxo_diario.length} dia(s) com entradas e saídas pagas no período.`}
+                  >
                     <div className="flex justify-between items-end gap-1.5 h-48">
                       {consolidado.graficos.fluxo_diario.map((d, idx) => {
                         const maxVal = Math.max(...consolidado.graficos.fluxo_diario.map(fd => Math.max(fd.entradas, fd.saidas)), 1);
                         const entPct = (d.entradas / maxVal) * 100;
                         const saiPct = (d.saidas / maxVal) * 100;
+                        const diaLabel = new Date(d.dia + "T00:00:00").toLocaleDateString("pt-BR");
                         return (
-                          <div key={idx} className="flex-1 flex flex-col items-center group relative h-full justify-end">
-                            <div className="w-full flex gap-0.5 justify-center items-end h-full">
+                          <div
+                            key={idx}
+                            className="flex-1 flex flex-col items-center group relative h-full justify-end"
+                            role="img"
+                            aria-label={`${diaLabel}: entradas ${formatCurrency(d.entradas)}, saídas ${formatCurrency(d.saidas)}`}
+                          >
+                            <div className="w-full flex gap-0.5 justify-center items-end h-full" aria-hidden="true">
                               <div style={{ height: `${entPct}%` }} className="w-2.5 bg-[#54B88D] rounded-t-[3px] hover:bg-[#68cca0] transition-all" title={`Entrada: ${formatCurrency(d.entradas)}`} />
                               <div style={{ height: `${saiPct}%` }} className="w-2.5 bg-[#E35D5B] rounded-t-[3px] hover:bg-[#c94d4b] transition-all" title={`Saída: ${formatCurrency(d.saidas)}`} />
                             </div>
-                            <span className="text-[9px] text-[#87938F] font-semibold mt-2.5 transform -rotate-45 origin-top-left translate-y-1 block whitespace-nowrap">{d.dia.split("-")[2]}</span>
+                            <span className="text-[9px] text-[#87938F] font-semibold mt-2.5 transform -rotate-45 origin-top-left translate-y-1 block whitespace-nowrap" aria-hidden="true">{d.dia.split("-")[2]}</span>
                           </div>
                         );
                       })}
@@ -726,7 +737,7 @@ export default function FinanceiroPage() {
                               <span>{art.artista_nome}</span>
                               <span>{formatCurrency(art.valor)}</span>
                             </div>
-                            <div className="w-full bg-[#050B12] h-2 rounded-full overflow-hidden border border-[#243337]">
+                            <div className="w-full bg-[#050B12] h-2 rounded-full overflow-hidden border border-[#243337]" aria-hidden="true">
                               <div style={{ width: `${pct}%` }} className="bg-[#2F9285] h-full rounded-full" />
                             </div>
                           </div>
@@ -755,7 +766,7 @@ export default function FinanceiroPage() {
                               <span className="capitalize">{cat.categoria.toLowerCase().replace("_", " ")}</span>
                               <span>{formatCurrency(cat.valor)}</span>
                             </div>
-                            <div className="w-full bg-[#050B12] h-2 rounded-full overflow-hidden border border-[#243337]">
+                            <div className="w-full bg-[#050B12] h-2 rounded-full overflow-hidden border border-[#243337]" aria-hidden="true">
                               <div style={{ width: `${pct}%` }} className="bg-[#E35D5B] h-full rounded-full" />
                             </div>
                           </div>
@@ -771,7 +782,7 @@ export default function FinanceiroPage() {
       )}
 
       {/* Tab Contents: Visão Geral / List Tabs */}
-      {activeTab !== "consolidado" && (
+      {effectiveTab !== "consolidado" && (
         <div className="space-y-4 animate-in fade-in duration-300">
           {/* Filters Bar */}
           <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
@@ -785,7 +796,7 @@ export default function FinanceiroPage() {
               />
             </div>
 
-            {activeTab === "visao-geral" && (
+            {effectiveTab === "visao-geral" && (
               <div className="flex gap-2 flex-wrap items-center">
                 <select
                   value={filtroCategoria}

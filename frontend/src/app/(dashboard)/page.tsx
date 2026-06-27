@@ -421,24 +421,31 @@ export default function DashboardPage() {
                  não estouram mais a viewport. Poucos dias preenchem a largura
                  (flex grow); muitos dias rolam lateralmente sem scroll na página. */
               <div className="overflow-x-auto pt-4 no-scrollbar">
-                <div className="flex h-48 min-w-full items-end gap-1">
+                <div
+                  className="flex h-48 min-w-full items-end gap-1"
+                  role="img"
+                  aria-label={`Gráfico de fluxo diário: ${dashboard.graficos.fluxo_diario.length} dia(s) com entradas e saídas liquidadas no período.`}
+                >
                   {dashboard.graficos.fluxo_diario.map((d, idx) => {
                     const maxVal = Math.max(...dashboard.graficos.fluxo_diario.map(fd => Math.max(fd.entradas, fd.saidas)), 1);
                     const entPct = (d.entradas / maxVal) * 100;
                     const saiPct = (d.saidas / maxVal) * 100;
+                    const diaLabel = new Date(d.dia + "T00:00:00").toLocaleDateString("pt-BR");
                     return (
                       <div
                         key={idx}
                         className="group relative flex h-full flex-col items-center justify-end"
                         style={{ flex: "1 0 auto", minWidth: 18 }}
+                        role="img"
+                        aria-label={`${diaLabel}: entradas ${formatCurrency(d.entradas)}, saídas ${formatCurrency(d.saidas)}`}
                       >
-                        <div className="flex h-full w-full items-end justify-center gap-0.5">
+                        <div className="flex h-full w-full items-end justify-center gap-0.5" aria-hidden="true">
                           {/* Green color for entradas status constraint */}
                           <div style={{ height: `${entPct}%` }} className="w-2 bg-[#54B88D] rounded-t-[2px] hover:bg-[#68cca0] transition-all" title={`Entrada: ${formatCurrency(d.entradas)}`} />
                           {/* Red color for saídas status constraint */}
                           <div style={{ height: `${saiPct}%` }} className="w-2 bg-[#E35D5B] rounded-t-[2px] hover:bg-[#c94d4b] transition-all" title={`Saída: ${formatCurrency(d.saidas)}`} />
                         </div>
-                        <span className="mt-2 block origin-top-left -rotate-45 text-[10px] text-[#87938F]">{d.dia.split("-")[2]}</span>
+                        <span className="mt-2 block origin-top-left -rotate-45 text-[10px] text-[#87938F]" aria-hidden="true">{d.dia.split("-")[2]}</span>
                       </div>
                     );
                   })}
@@ -469,7 +476,7 @@ export default function DashboardPage() {
                         </span>
                         <span>{formatCurrency(art.valor)}</span>
                       </div>
-                      <div className="w-full bg-[#050B12] h-1.5 rounded-full overflow-hidden border border-[#243337]">
+                      <div className="w-full bg-[#050B12] h-1.5 rounded-full overflow-hidden border border-[#243337]" aria-hidden="true">
                         <div style={{ width: `${pct}%` }} className="bg-[#2F9285] h-full rounded-full" />
                       </div>
                     </div>

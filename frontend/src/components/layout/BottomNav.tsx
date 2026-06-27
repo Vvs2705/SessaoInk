@@ -7,19 +7,24 @@ import {
   MOBILE_MORE_ITEMS,
   MOBILE_MORE_TAB_ITEM,
   MOBILE_TAB_ITEMS,
+  filterNavByRole,
 } from "./navigation";
 import { cn } from "@/lib/utils";
+import { useRole } from "@/lib/auth/useRole";
 
 export function BottomNav() {
   const pathname = usePathname();
+  const { tipo } = useRole();
 
-  const items = [...MOBILE_TAB_ITEMS, MOBILE_MORE_TAB_ITEM];
+  const tabItems = filterNavByRole(MOBILE_TAB_ITEMS, tipo);
+  const moreItems = filterNavByRole(MOBILE_MORE_ITEMS, tipo);
+  const items = [...tabItems, MOBILE_MORE_TAB_ITEM];
 
   const isActive = (href: string) => {
     if (href === MOBILE_MORE_TAB_ITEM.href) {
       return (
         pathname === "/mais" ||
-        MOBILE_MORE_ITEMS.some(
+        moreItems.some(
           (item) =>
             pathname === item.href || pathname.startsWith(`${item.href}/`),
         )

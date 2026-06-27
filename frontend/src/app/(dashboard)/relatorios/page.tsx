@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
+import { useRole } from "@/lib/auth/useRole";
+import { EmptyState } from "@/components/ui/empty-state";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -66,17 +68,20 @@ function VariacaoChip({ v }: { v: number | null }) {
 
 export default function RelatoriosPage() {
   const [periodo, setPeriodo] = useState(30);
+  const { isAdmin, isLoading: loadRole } = useRole();
 
   const { data: resumo, isLoading: loadResumo } = useQuery({
     queryKey: ["relatorios-resumo", periodo],
     queryFn: () => api.get<ResumoFinanceiro>(`/api/v1/relatorios/resumo?periodo=${periodo}`),
     staleTime: 1000 * 60 * 5,
+    enabled: isAdmin,
   });
 
   const { data: porStatus, isLoading: loadStatus } = useQuery({
     queryKey: ["relatorios-status"],
     queryFn: () => api.get<RelatorioStatus>("/api/v1/relatorios/por-status"),
     staleTime: 1000 * 60 * 5,
+    enabled: isAdmin,
   });
 
   const PERIODOS = [
@@ -87,6 +92,33 @@ export default function RelatoriosPage() {
   ];
 
   const maxTotal = Math.max(...(porStatus?.por_status.map(s => s.total) ?? [1]));
+
+  // Guard de papel — espelha o backend (Relatórios = ADMIN). Enquanto o papel
+  // carrega, mostra skeleton; não-admins veem empty-state em vez de tomar 403.
+  if (loadRole) {
+    return (
+      <div className="p-6 max-w-5xl mx-auto space-y-6 animate-pulse">
+        <div className="h-8 w-48 bg-[#102128] rounded mb-2" />
+        <div className="h-4 w-72 bg-[#102128] rounded mb-6" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-28 bg-[#0B171C] border border-[#243337] rounded-[18px]" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="p-6 max-w-5xl mx-auto">
+        <EmptyState
+          title="Apenas administradores"
+          description="Os relatórios do estúdio estão disponíveis somente para administradores. Fale com o responsável pela conta se precisar de acesso."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-5xl mx-auto">

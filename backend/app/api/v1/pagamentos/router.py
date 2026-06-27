@@ -22,6 +22,7 @@ from app.core.pagamentos import (
     GatewayNaoConfiguradoError,
     GatewayPagamentoError,
     gateway,
+    preco_teste_override_reais,
     validar_assinatura_webhook,
     valor_venda_centavos,
 )
@@ -133,7 +134,11 @@ async def criar_checkout(
 
     # P0-06 — reuso anti duplo-clique: se já há uma cobrança pendente válida
     # (mesmo plano/ciclo) com checkout gerado, reaproveita em vez de duplicar.
-    cobranca = await session.scalar(
+    # TESTE: com o override de preço ativo, NUNCA reusar — uma cobrança stale a
+    # preço cheio bloquearia o valor de teste (R$2). Força criar uma nova.
+    # (Remover junto do override.)
+    _override_teste = preco_teste_override_reais(email, dados.plano_slug, dados.ciclo) is not None
+    cobranca = None if _override_teste else await session.scalar(
         select(Cobranca)
         .where(
             Cobranca.estudio_id == usuario.estudio_id,

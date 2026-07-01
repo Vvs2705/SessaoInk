@@ -25,12 +25,12 @@ const BENEFICIOS = [
 
 export function AuthMarketingPanel() {
   return (
-    <aside className="relative hidden min-h-app overflow-hidden border-r border-[#243337] bg-[#050B12] px-10 py-10 text-[#F0EADD] lg:flex lg:flex-col lg:justify-between">
-      <div className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-[#2F9285]/20 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-10 right-0 h-80 w-80 rounded-full bg-[#C36B3F]/10 blur-3xl" />
+    <aside className="relative hidden min-h-app overflow-hidden border-r border-mist-line bg-ink-night px-10 py-10 text-porcelain-ink lg:flex lg:flex-col lg:justify-between">
+      <div className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-teal-ink/20 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-10 right-0 h-80 w-80 rounded-full bg-copper-needle/10 blur-3xl" />
 
       <div className="relative z-10 max-w-xl">
-        <div className="mb-8 inline-flex rounded-full border border-[#2F9285]/30 bg-[#2F9285]/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-[#2F9285]">
+        <div className="mb-8 inline-flex rounded-full border border-teal-ink/30 bg-teal-ink/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-teal-ink">
           SessãoInk
         </div>
 
@@ -38,7 +38,7 @@ export function AuthMarketingPanel() {
           Gestão feita para tatuadores que querem viver da arte sem se perder na operação.
         </p>
 
-        <p className="mt-5 max-w-lg text-base leading-7 text-[#87938F]">
+        <p className="mt-5 max-w-lg text-base leading-7 text-text-subtle">
           Agenda, clientes, atendimentos, financeiro, portfólio, flash arts e documentos em um só lugar.
         </p>
       </div>
@@ -47,14 +47,14 @@ export function AuthMarketingPanel() {
         {BENEFICIOS.map(({ titulo, texto, icon: Icon }) => (
           <article
             key={titulo}
-            className="rounded-3xl border border-[#243337] bg-[#0B171C]/80 p-5 shadow-2xl shadow-black/20 backdrop-blur"
+            className="rounded-3xl border border-mist-line bg-ink-bg/80 p-5 shadow-2xl shadow-black/20 backdrop-blur"
           >
-            <div className="mb-4 grid h-11 w-11 place-items-center rounded-2xl border border-[#2F9285]/25 bg-[#2F9285]/10 text-[#2F9285]">
+            <div className="mb-4 grid h-11 w-11 place-items-center rounded-2xl border border-teal-ink/25 bg-teal-ink/10 text-teal-ink">
               <Icon size={21} />
             </div>
 
-            <h2 className="text-sm font-bold text-[#F0EADD]">{titulo}</h2>
-            <p className="mt-2 text-xs leading-5 text-[#87938F]">{texto}</p>
+            <h2 className="text-sm font-bold text-porcelain-ink">{titulo}</h2>
+            <p className="mt-2 text-xs leading-5 text-text-subtle">{texto}</p>
           </article>
         ))}
       </div>

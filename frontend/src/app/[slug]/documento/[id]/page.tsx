@@ -107,51 +107,51 @@ export default function DocumentoAssinaturaPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#050B12] flex flex-col items-center justify-center p-6">
-        <Loader2 size={32} className="text-[#2F9285] animate-spin mb-4" />
-        <p className="text-sm text-[#87938F]">Carregando documento...</p>
+      <div className="min-h-screen bg-ink-night flex flex-col items-center justify-center p-6">
+        <Loader2 size={32} className="text-teal-ink animate-spin mb-4" />
+        <p className="text-sm text-text-subtle">Carregando documento...</p>
       </div>
     );
   }
 
   if (erro && !documento) {
     return (
-      <div className="min-h-screen bg-[#050B12] flex items-center justify-center p-6">
+      <div className="min-h-screen bg-ink-night flex items-center justify-center p-6">
         <div className="text-center max-w-sm">
-          <div className="w-16 h-16 rounded-2xl bg-[#0B171C] border border-[#243337] mx-auto mb-5 flex items-center justify-center">
-            <AlertCircle size={28} className="text-[#E35D5B]" />
+          <div className="w-16 h-16 rounded-2xl bg-ink-bg border border-mist-line mx-auto mb-5 flex items-center justify-center">
+            <AlertCircle size={28} className="text-error-red" />
           </div>
-          <h1 className="text-xl font-bold text-[#F0EADD] mb-2">Erro ao carregar termo</h1>
-          <p className="text-sm text-[#87938F] mb-6">{erro}</p>
+          <h1 className="text-xl font-bold text-porcelain-ink mb-2">Erro ao carregar termo</h1>
+          <p className="text-sm text-text-subtle mb-6">{erro}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#050B12] text-[#F0EADD] px-4 py-10 flex flex-col items-center justify-center">
+    <div className="min-h-screen bg-ink-night text-porcelain-ink px-4 py-10 flex flex-col items-center justify-center">
       <div className="max-w-lg w-full">
         {/* Header */}
         <div className="text-center mb-8 flex flex-col items-center">
-          <div className="w-14 h-14 rounded-2xl bg-[#2F9285]/10 border border-[#2F9285]/20 flex items-center justify-center mb-4">
-            <FileText size={24} className="text-[#2F9285]" />
+          <div className="w-14 h-14 rounded-2xl bg-teal-ink/10 border border-teal-ink/20 flex items-center justify-center mb-4">
+            <FileText size={24} className="text-teal-ink" />
           </div>
-          <h1 className="text-xl font-bold text-[#F0EADD]">{documento?.titulo}</h1>
-          <p className="text-xs text-[#87938F] mt-1">Estúdio: @{slug}</p>
+          <h1 className="text-xl font-bold text-porcelain-ink">{documento?.titulo}</h1>
+          <p className="text-xs text-text-subtle mt-1">Estúdio: @{slug}</p>
         </div>
 
         {/* Card do Termo */}
-        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6 shadow-xl mb-6 space-y-4">
-          <div className="max-h-60 overflow-y-auto pr-2 text-sm text-[#B8C2BF] leading-relaxed border border-[#243337]/50 rounded-[12px] p-4 bg-[#050B12]/40 font-mono whitespace-pre-wrap">
+        <div className="bg-ink-bg border border-mist-line rounded-[18px] p-6 shadow-xl mb-6 space-y-4">
+          <div className="max-h-60 overflow-y-auto pr-2 text-sm text-smoke-text leading-relaxed border border-mist-line/50 rounded-[12px] p-4 bg-ink-night/40 font-mono whitespace-pre-wrap">
             {documento?.conteudo || "Sem conteúdo disponível no momento."}
           </div>
 
           {success ? (
-            <div className="p-4 bg-[#54B88D]/10 border border-[#54B88D]/20 text-[#54B88D] rounded-[14px] flex flex-col items-center text-center space-y-2">
-              <CheckCircle size={32} className="text-[#54B88D]" />
+            <div className="p-4 bg-success/10 border border-success/20 text-success rounded-[14px] flex flex-col items-center text-center space-y-2">
+              <CheckCircle size={32} className="text-success" />
               <div>
                 <p className="font-bold text-sm">Assinado Digitalmente</p>
-                <p className="text-xs text-[#87938F] mt-1">
+                <p className="text-xs text-text-subtle mt-1">
                   Data: {documento?.data_assinatura ? new Date(documento.data_assinatura).toLocaleString("pt-BR") : "-"}
                 </p>
               </div>
@@ -159,21 +159,21 @@ export default function DocumentoAssinaturaPage() {
           ) : (
             <form onSubmit={handleAssinar} className="space-y-4 pt-2">
               {erro && (
-                <div className="p-3 bg-[#E35D5B]/10 border border-[#E35D5B]/25 text-[#E35D5B] text-xs rounded-lg">
+                <div className="p-3 bg-error-red/10 border border-error-red/25 text-error-red text-xs rounded-lg">
                   {erro}
                 </div>
               )}
 
               {/* Nome */}
               <div className="space-y-1">
-                <label className="block text-xs font-semibold text-[#87938F]">Nome Completo do Assinante *</label>
+                <label className="block text-xs font-semibold text-text-subtle">Nome Completo do Assinante *</label>
                 <input
                   type="text"
                   required
                   placeholder="Seu nome completo"
                   value={nomeAssinante}
                   onChange={(e) => setNomeAssinante(e.target.value)}
-                  className="w-full h-11 px-3.5 rounded-[14px] bg-[#050B12] border border-[#243337] text-sm text-[#F0EADD] placeholder-[#87938F]/60 focus:outline-none focus:border-[#2F9285]/60 transition-colors"
+                  className="w-full h-11 px-3.5 rounded-[14px] bg-ink-night border border-mist-line text-sm text-porcelain-ink placeholder-text-subtle/60 focus:outline-none focus:border-teal-ink/60 transition-colors"
                 />
               </div>
 
@@ -186,7 +186,7 @@ export default function DocumentoAssinaturaPage() {
                     onChange={(e) => setAceito(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-4.5 h-4.5 rounded-[4px] border border-[#243337] bg-[#050B12] peer-checked:bg-[#2F9285] peer-checked:border-[#2F9285] transition-colors flex items-center justify-center">
+                  <div className="w-4.5 h-4.5 rounded-[4px] border border-mist-line bg-ink-night peer-checked:bg-teal-ink peer-checked:border-teal-ink transition-colors flex items-center justify-center">
                     {aceito && (
                       <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
                         <path d="M1 4L4 7L9 1" stroke="#050B12" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -194,14 +194,14 @@ export default function DocumentoAssinaturaPage() {
                     )}
                   </div>
                 </div>
-                <span className="text-xs text-[#87938F] group-hover:text-[#B8C2BF] transition-colors leading-relaxed">
+                <span className="text-xs text-text-subtle group-hover:text-smoke-text transition-colors leading-relaxed">
                   Declaro que li e concordo com os termos expostos no documento acima.
                 </span>
               </label>
 
               {/* Proteção LGPD Alert */}
-              <div className="flex items-start gap-2.5 p-3 rounded-[12px] bg-[#2F9285]/5 border border-[#2F9285]/10 text-[11px] text-[#87938F]">
-                <Shield size={14} className="text-[#2F9285] shrink-0 mt-0.5" />
+              <div className="flex items-start gap-2.5 p-3 rounded-[12px] bg-teal-ink/5 border border-teal-ink/10 text-[11px] text-text-subtle">
+                <Shield size={14} className="text-teal-ink shrink-0 mt-0.5" />
                 <span>
                   Sua assinatura digital será registrada junto com seu endereço IP e dados de dispositivo para fins de validade jurídica.
                 </span>
@@ -210,7 +210,7 @@ export default function DocumentoAssinaturaPage() {
               <button
                 type="submit"
                 disabled={!nomeAssinante.trim() || !aceito || signing}
-                className="w-full h-12 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] disabled:opacity-40 disabled:cursor-not-allowed text-[#050B12] font-bold text-sm transition-all flex items-center justify-center gap-2"
+                className="w-full h-12 rounded-[14px] bg-teal-ink hover:bg-ink-gold disabled:opacity-40 disabled:cursor-not-allowed text-ink-night font-bold text-sm transition-all flex items-center justify-center gap-2"
               >
                 {signing ? (
                   <>

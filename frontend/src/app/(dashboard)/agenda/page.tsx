@@ -59,11 +59,11 @@ function formatData(iso: string) {
 }
 
 const STATUS_COR: Record<string, string> = {
-  CONFIRMADO: "text-[#2F9285] bg-[#2F9285]/10",
-  EM_ATENDIMENTO: "text-[#2F9285] bg-[#2F9285]/10",
-  SOLICITADO: "text-[#C36B3F] bg-[#C36B3F]/10",
-  AGUARDANDO_SINAL: "text-[#C36B3F] bg-[#C36B3F]/10",
-  FINALIZADO: "text-[#87938F] bg-[#87938F]/10",
+  CONFIRMADO: "text-teal-ink bg-teal-ink/10",
+  EM_ATENDIMENTO: "text-teal-ink bg-teal-ink/10",
+  SOLICITADO: "text-copper-needle bg-copper-needle/10",
+  AGUARDANDO_SINAL: "text-copper-needle bg-copper-needle/10",
+  FINALIZADO: "text-text-subtle bg-text-subtle/10",
 };
 
 // ---------------------------------------------------------------------------
@@ -115,28 +115,28 @@ function AgendarSessaoModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-[#0B171C] border border-[#243337] rounded-[18px] shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#243337]">
-          <h2 className="text-base font-bold text-[#F0EADD]">Agendar Sessão</h2>
-          <button onClick={onClose} className="p-2 rounded-[10px] text-[#87938F] hover:text-[#F0EADD] hover:bg-[#102128] transition-all">
+      <div className="w-full max-w-md bg-ink-bg border border-mist-line rounded-[18px] shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-mist-line">
+          <h2 className="text-base font-bold text-porcelain-ink">Agendar Sessão</h2>
+          <button onClick={onClose} className="p-2 rounded-[10px] text-text-subtle hover:text-porcelain-ink hover:bg-surface-raised transition-all">
             <X size={18} />
           </button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-[#87938F] mb-1.5">Atendimento</label>
+            <label className="block text-xs font-medium text-text-subtle mb-1.5">Atendimento</label>
             {isLoading ? (
-              <div className="h-10 bg-[#102128] animate-pulse rounded-[12px]" />
+              <div className="h-10 bg-surface-raised animate-pulse rounded-[12px]" />
             ) : atendimentos.length === 0 ? (
-              <p className="text-sm text-[#87938F] p-3 bg-[#050B12] border border-[#243337] rounded-[12px]">
+              <p className="text-sm text-text-subtle p-3 bg-ink-night border border-mist-line rounded-[12px]">
                 Nenhum atendimento sem sessão.{" "}
-                <a href="/atendimentos" className="text-[#2F9285] hover:underline">Criar novo</a>
+                <a href="/atendimentos" className="text-teal-ink hover:underline">Criar novo</a>
               </p>
             ) : (
               <select
                 value={atendimentoId}
                 onChange={(e) => setAtendimentoId(e.target.value)}
-                className="w-full h-10 px-3 rounded-[12px] bg-[#050B12] border border-[#243337] text-[#F0EADD] text-sm focus:border-[#2F9285]/60 outline-none cursor-pointer"
+                className="w-full h-10 px-3 rounded-[12px] bg-ink-night border border-mist-line text-porcelain-ink text-sm focus:border-teal-ink/60 outline-none cursor-pointer"
               >
                 <option value="">Selecione um atendimento...</option>
                 {atendimentos.map((a: any) => (
@@ -151,39 +151,39 @@ function AgendarSessaoModal({ onClose }: { onClose: () => void }) {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[#87938F] mb-1.5">Data e Hora</label>
+            <label className="block text-xs font-medium text-text-subtle mb-1.5">Data e Hora</label>
             <input
               type="datetime-local"
               value={dataHora}
               onChange={(e) => setDataHora(e.target.value)}
-              className="w-full h-10 px-3 rounded-[12px] bg-[#050B12] border border-[#243337] text-[#F0EADD] text-sm focus:border-[#2F9285]/60 outline-none [color-scheme:dark]"
+              className="w-full h-10 px-3 rounded-[12px] bg-ink-night border border-mist-line text-porcelain-ink text-sm focus:border-teal-ink/60 outline-none [color-scheme:dark]"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[#87938F] mb-1.5">Duração (minutos)</label>
+            <label className="block text-xs font-medium text-text-subtle mb-1.5">Duração (minutos)</label>
             <input
               type="number"
               min={15}
               step={15}
               value={duracao}
               onChange={(e) => setDuracao(e.target.value)}
-              className="w-full h-10 px-3 rounded-[12px] bg-[#050B12] border border-[#243337] text-[#F0EADD] text-sm focus:border-[#2F9285]/60 outline-none"
+              className="w-full h-10 px-3 rounded-[12px] bg-ink-night border border-mist-line text-porcelain-ink text-sm focus:border-teal-ink/60 outline-none"
             />
           </div>
 
           {erro && (
-            <p className="text-sm text-[#E35D5B] p-3 bg-[#E35D5B]/10 border border-[#E35D5B]/30 rounded-[10px]">{erro}</p>
+            <p className="text-sm text-error-red p-3 bg-error-red/10 border border-error-red/30 rounded-[10px]">{erro}</p>
           )}
 
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 h-10 rounded-[12px] border border-[#243337] text-sm text-[#87938F] hover:text-[#F0EADD] hover:bg-[#102128] transition-all">
+            <button type="button" onClick={onClose} className="flex-1 h-10 rounded-[12px] border border-mist-line text-sm text-text-subtle hover:text-porcelain-ink hover:bg-surface-raised transition-all">
               Cancelar
             </button>
             <button
               type="submit"
               disabled={mutation.isPending || sucesso}
-              className="flex-1 h-10 rounded-[12px] bg-[#2F9285] hover:bg-[#3AA99A] disabled:opacity-50 text-[#050B12] font-semibold text-sm transition-all flex items-center justify-center gap-2"
+              className="flex-1 h-10 rounded-[12px] bg-teal-ink hover:bg-ink-gold disabled:opacity-50 text-ink-night font-semibold text-sm transition-all flex items-center justify-center gap-2"
             >
               {mutation.isPending ? (
                 <><Loader2 size={16} className="animate-spin" /> Agendando...</>
@@ -248,14 +248,14 @@ export default function AgendaPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#F0EADD]">Agenda</h1>
-          <p className="text-sm text-[#87938F] mt-1">
+          <h1 className="text-2xl font-bold text-porcelain-ink">Agenda</h1>
+          <p className="text-sm text-text-subtle mt-1">
             {isLoading ? "Carregando…" : `${agenda?.total_sessoes ?? 0} sessão${agenda?.total_sessoes !== 1 ? "ões" : ""} em ${MONTHS[current.month]}`}
           </p>
         </div>
         <button
           onClick={() => setModalAgendar(true)}
-          className="flex items-center gap-2 h-10 px-4 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm transition-all"
+          className="flex items-center gap-2 h-10 px-4 rounded-[14px] bg-teal-ink hover:bg-ink-gold text-ink-night font-semibold text-sm transition-all"
         >
           <Plus size={16} />
           Agendar Sessão
@@ -264,16 +264,16 @@ export default function AgendaPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Calendário */}
-        <div className="lg:col-span-2 bg-[#0B171C] border border-[#243337] rounded-[18px] p-5">
+        <div className="lg:col-span-2 bg-ink-bg border border-mist-line rounded-[18px] p-5">
           {/* Nav */}
           <div className="flex items-center justify-between mb-5">
-            <button onClick={prev} className="w-9 h-9 flex items-center justify-center rounded-[10px] border border-[#243337] text-[#87938F] hover:text-[#F0EADD] hover:bg-[#102128] transition-all">
+            <button onClick={prev} className="w-9 h-9 flex items-center justify-center rounded-[10px] border border-mist-line text-text-subtle hover:text-porcelain-ink hover:bg-surface-raised transition-all">
               <ChevronLeft size={16} />
             </button>
-            <h2 className="font-semibold text-[#F0EADD]">
+            <h2 className="font-semibold text-porcelain-ink">
               {MONTHS[current.month]} {current.year}
             </h2>
-            <button onClick={next} className="w-9 h-9 flex items-center justify-center rounded-[10px] border border-[#243337] text-[#87938F] hover:text-[#F0EADD] hover:bg-[#102128] transition-all">
+            <button onClick={next} className="w-9 h-9 flex items-center justify-center rounded-[10px] border border-mist-line text-text-subtle hover:text-porcelain-ink hover:bg-surface-raised transition-all">
               <ChevronRight size={16} />
             </button>
           </div>
@@ -281,7 +281,7 @@ export default function AgendaPage() {
           {/* Cabeçalho dos dias */}
           <div className="grid grid-cols-7 mb-1">
             {DAYS.map(d => (
-              <div key={d} className="text-center text-[11px] font-medium text-[#87938F] pb-2">{d}</div>
+              <div key={d} className="text-center text-[11px] font-medium text-text-subtle pb-2">{d}</div>
             ))}
           </div>
 
@@ -301,17 +301,17 @@ export default function AgendaPage() {
                   className={cn(
                     "relative aspect-square flex flex-col items-center justify-center text-sm rounded-[10px] transition-all",
                     selecionado
-                      ? "bg-[#2F9285] text-[#050B12] font-bold"
+                      ? "bg-teal-ink text-ink-night font-bold"
                       : isToday
-                      ? "bg-[#2F9285]/20 text-[#2F9285] font-bold ring-1 ring-[#2F9285]/40"
-                      : "text-[#87938F] hover:bg-[#102128] hover:text-[#F0EADD]"
+                      ? "bg-teal-ink/20 text-teal-ink font-bold ring-1 ring-teal-ink/40"
+                      : "text-text-subtle hover:bg-surface-raised hover:text-porcelain-ink"
                   )}
                 >
                   <span>{day}</span>
                   {temSessao && (
                     <span className={cn(
                       "absolute bottom-1 w-1 h-1 rounded-full",
-                      selecionado ? "bg-[#050B12]" : "bg-[#2F9285]"
+                      selecionado ? "bg-ink-night" : "bg-teal-ink"
                     )} />
                   )}
                 </button>
@@ -320,13 +320,13 @@ export default function AgendaPage() {
           </div>
 
           {/* Legenda */}
-          <div className="flex items-center gap-4 mt-4 pt-3 border-t border-[#243337]">
-            <div className="flex items-center gap-1.5 text-xs text-[#87938F]">
-              <span className="w-2 h-2 rounded-full bg-[#2F9285]" />
+          <div className="flex items-center gap-4 mt-4 pt-3 border-t border-mist-line">
+            <div className="flex items-center gap-1.5 text-xs text-text-subtle">
+              <span className="w-2 h-2 rounded-full bg-teal-ink" />
               Com sessão
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-[#87938F]">
-              <span className="w-2 h-2 rounded-full bg-[#2F9285]/20 ring-1 ring-[#2F9285]/40" />
+            <div className="flex items-center gap-1.5 text-xs text-text-subtle">
+              <span className="w-2 h-2 rounded-full bg-teal-ink/20 ring-1 ring-teal-ink/40" />
               Hoje
             </div>
           </div>
@@ -335,15 +335,15 @@ export default function AgendaPage() {
         {/* Painel lateral: Sessões do dia + Próximas */}
         <div className="space-y-4">
           {/* Sessões do dia selecionado */}
-          <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5">
+          <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-[#F0EADD]">
+              <h3 className="text-sm font-semibold text-porcelain-ink">
                 {diaSelecionado
                   ? `${diaSelecionado} de ${MONTHS[current.month]}`
                   : "Selecione um dia"}
               </h3>
               {diaSelecionado && (
-                <button onClick={() => setDiaSelecionado(null)} className="text-[#87938F] hover:text-[#F0EADD]">
+                <button onClick={() => setDiaSelecionado(null)} className="text-text-subtle hover:text-porcelain-ink">
                   <X size={14} />
                 </button>
               )}
@@ -351,32 +351,32 @@ export default function AgendaPage() {
 
             {!diaSelecionado && (
               <div className="flex flex-col items-center py-6 text-center">
-                <Calendar size={28} className="text-[#243337] mb-2" />
-                <p className="text-xs text-[#87938F]">Clique em um dia para ver as sessões</p>
+                <Calendar size={28} className="text-mist-line mb-2" />
+                <p className="text-xs text-text-subtle">Clique em um dia para ver as sessões</p>
               </div>
             )}
 
             {diaSelecionado && sessoesDia.length === 0 && (
               <div className="flex flex-col items-center py-6 text-center">
-                <Calendar size={28} className="text-[#243337] mb-2" />
-                <p className="text-xs text-[#87938F]">Nenhuma sessão neste dia</p>
+                <Calendar size={28} className="text-mist-line mb-2" />
+                <p className="text-xs text-text-subtle">Nenhuma sessão neste dia</p>
               </div>
             )}
 
             <div className="space-y-2">
               {sessoesDia.map(s => (
-                <div key={s.id} className="p-3 bg-[#050B12] border border-[#243337] rounded-[10px]">
+                <div key={s.id} className="p-3 bg-ink-night border border-mist-line rounded-[10px]">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium text-[#F0EADD]">{formatHora(s.data_sessao)}</span>
-                    <span className={cn("text-[10px] px-1.5 py-0.5 rounded-[4px]", STATUS_COR[s.status_operacional] ?? "text-[#87938F] bg-[#87938F]/10")}>
+                    <span className="text-xs font-medium text-porcelain-ink">{formatHora(s.data_sessao)}</span>
+                    <span className={cn("text-[10px] px-1.5 py-0.5 rounded-[4px]", STATUS_COR[s.status_operacional] ?? "text-text-subtle bg-text-subtle/10")}>
                       {s.status_operacional.replace("_", " ")}
                     </span>
                   </div>
-                  <p className="text-xs text-[#87938F] truncate">{s.descricao ?? s.tipo}</p>
+                  <p className="text-xs text-text-subtle truncate">{s.descricao ?? s.tipo}</p>
                   {s.duracao_minutos && (
                     <div className="flex items-center gap-1 mt-1">
-                      <Clock size={10} className="text-[#87938F]" />
-                      <span className="text-[10px] text-[#87938F]">{s.duracao_minutos} min</span>
+                      <Clock size={10} className="text-text-subtle" />
+                      <span className="text-[10px] text-text-subtle">{s.duracao_minutos} min</span>
                     </div>
                   )}
                 </div>
@@ -385,22 +385,22 @@ export default function AgendaPage() {
           </div>
 
           {/* Próximas 7 dias */}
-          <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5">
-            <h3 className="text-sm font-semibold text-[#F0EADD] mb-4">Próximos 7 dias</h3>
+          <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5">
+            <h3 className="text-sm font-semibold text-porcelain-ink mb-4">Próximos 7 dias</h3>
             {!proximas || proximas.length === 0 ? (
               <div className="flex flex-col items-center py-4 text-center">
-                <p className="text-xs text-[#87938F]">Nenhuma sessão agendada</p>
+                <p className="text-xs text-text-subtle">Nenhuma sessão agendada</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {proximas.map(s => (
-                  <div key={s.id} className="flex items-start gap-2 p-2 rounded-[8px] hover:bg-[#050B12] transition-colors">
-                    <div className="w-8 h-8 rounded-[8px] bg-[#2F9285]/10 flex items-center justify-center shrink-0">
-                      <Calendar size={13} className="text-[#2F9285]" />
+                  <div key={s.id} className="flex items-start gap-2 p-2 rounded-[8px] hover:bg-ink-night transition-colors">
+                    <div className="w-8 h-8 rounded-[8px] bg-teal-ink/10 flex items-center justify-center shrink-0">
+                      <Calendar size={13} className="text-teal-ink" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs text-[#F0EADD] truncate">{s.descricao ?? s.tipo}</p>
-                      <p className="text-[10px] text-[#87938F]">{formatData(s.data_sessao)} · {formatHora(s.data_sessao)}</p>
+                      <p className="text-xs text-porcelain-ink truncate">{s.descricao ?? s.tipo}</p>
+                      <p className="text-[10px] text-text-subtle">{formatData(s.data_sessao)} · {formatHora(s.data_sessao)}</p>
                     </div>
                   </div>
                 ))}

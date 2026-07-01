@@ -80,8 +80,8 @@ export default function ClienteDetalhePage() {
   if (loadCliente) {
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center p-6">
-        <Loader2 size={32} className="text-[#2F9285] animate-spin mb-4" />
-        <p className="text-sm text-[#87938F]">Carregando perfil do cliente...</p>
+        <Loader2 size={32} className="text-teal-ink animate-spin mb-4" />
+        <p className="text-sm text-text-subtle">Carregando perfil do cliente...</p>
       </div>
     );
   }
@@ -89,11 +89,11 @@ export default function ClienteDetalhePage() {
   if (isError || !cliente) {
     return (
       <div className="p-6 max-w-3xl mx-auto text-center py-20">
-        <h2 className="text-xl font-bold text-[#F0EADD] mb-2">Cliente não encontrado</h2>
-        <p className="text-sm text-[#87938F] mb-6">O cliente selecionado não existe ou pertence a outro estúdio.</p>
+        <h2 className="text-xl font-bold text-porcelain-ink mb-2">Cliente não encontrado</h2>
+        <p className="text-sm text-text-subtle mb-6">O cliente selecionado não existe ou pertence a outro estúdio.</p>
         <button
           onClick={() => router.push("/clientes")}
-          className="inline-flex items-center gap-2 h-10 px-5 rounded-[14px] bg-[#2F9285] text-[#050B12] font-semibold text-sm hover:bg-[#3AA99A] transition-all"
+          className="inline-flex items-center gap-2 h-10 px-5 rounded-[14px] bg-teal-ink text-ink-night font-semibold text-sm hover:bg-ink-gold transition-all"
         >
           <ArrowLeft size={16} /> Voltar para clientes
         </button>
@@ -106,7 +106,7 @@ export default function ClienteDetalhePage() {
       {/* Voltar */}
       <button
         onClick={() => router.push("/clientes")}
-        className="inline-flex items-center gap-1.5 text-sm text-[#87938F] hover:text-[#F0EADD] transition-colors mb-6"
+        className="inline-flex items-center gap-1.5 text-sm text-text-subtle hover:text-porcelain-ink transition-colors mb-6"
       >
         <ArrowLeft size={14} /> Voltar para clientes
       </button>
@@ -115,53 +115,53 @@ export default function ClienteDetalhePage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
         {/* Card do Perfil */}
-        <div className="md:col-span-1 bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 flex flex-col items-center text-center space-y-4">
-          <div className="w-20 h-20 rounded-full bg-[#2F9285]/10 border border-[#2F9285]/20 flex items-center justify-center">
-            <span className="text-2xl font-bold text-[#2F9285]">
+        <div className="md:col-span-1 bg-ink-bg border border-mist-line rounded-[18px] p-5 flex flex-col items-center text-center space-y-4">
+          <div className="w-20 h-20 rounded-full bg-teal-ink/10 border border-teal-ink/20 flex items-center justify-center">
+            <span className="text-2xl font-bold text-teal-ink">
               {getIniciais(cliente.nome)}
             </span>
           </div>
           <div>
-            <h2 className="text-lg font-bold text-[#F0EADD]">{cliente.nome}</h2>
-            <p className="text-xs text-[#87938F] mt-1">Cliente do Estúdio</p>
+            <h2 className="text-lg font-bold text-porcelain-ink">{cliente.nome}</h2>
+            <p className="text-xs text-text-subtle mt-1">Cliente do Estúdio</p>
           </div>
 
-          <div className="w-full border-t border-[#243337] pt-4 space-y-3 text-left">
+          <div className="w-full border-t border-mist-line pt-4 space-y-3 text-left">
             {cliente.telefone && (
-              <div className="flex items-center gap-3 text-sm text-[#F0EADD]">
-                <Phone size={14} className="text-[#87938F] shrink-0" />
+              <div className="flex items-center gap-3 text-sm text-porcelain-ink">
+                <Phone size={14} className="text-text-subtle shrink-0" />
                 <a
                   href={`https://wa.me/${cliente.telefone.replace(/\D/g, "")}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-[#2F9285] hover:underline truncate"
+                  className="text-teal-ink hover:underline truncate"
                 >
                   {cliente.telefone}
                 </a>
               </div>
             )}
             {cliente.instagram && (
-              <div className="flex items-center gap-3 text-sm text-[#F0EADD]">
-                <Instagram size={14} className="text-[#87938F] shrink-0" />
+              <div className="flex items-center gap-3 text-sm text-porcelain-ink">
+                <Instagram size={14} className="text-text-subtle shrink-0" />
                 <a
                   href={`https://instagram.com/${cliente.instagram.replace("@", "")}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-[#2F9285] hover:underline truncate"
+                  className="text-teal-ink hover:underline truncate"
                 >
                   {cliente.instagram}
                 </a>
               </div>
             )}
             {cliente.email && (
-              <div className="flex items-center gap-3 text-sm text-[#F0EADD]">
-                <Mail size={14} className="text-[#87938F] shrink-0" />
+              <div className="flex items-center gap-3 text-sm text-porcelain-ink">
+                <Mail size={14} className="text-text-subtle shrink-0" />
                 <span className="truncate">{cliente.email}</span>
               </div>
             )}
             {cliente.data_nascimento && (
-              <div className="flex items-center gap-3 text-sm text-[#F0EADD]">
-                <Calendar size={14} className="text-[#87938F] shrink-0" />
+              <div className="flex items-center gap-3 text-sm text-porcelain-ink">
+                <Calendar size={14} className="text-text-subtle shrink-0" />
                 <span>Nascimento: {formatData(cliente.data_nascimento)}</span>
               </div>
             )}
@@ -172,24 +172,24 @@ export default function ClienteDetalhePage() {
         <div className="md:col-span-2 space-y-6">
           
           {/* Bloco de Notas */}
-          <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-3">
-            <h3 className="text-sm font-bold text-[#F0EADD] flex items-center gap-2">
-              <FileText size={16} className="text-[#2F9285]" /> Notas do Cliente
+          <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 space-y-3">
+            <h3 className="text-sm font-bold text-porcelain-ink flex items-center gap-2">
+              <FileText size={16} className="text-teal-ink" /> Notas do Cliente
             </h3>
-            <p className="text-sm text-[#87938F] whitespace-pre-wrap leading-relaxed">
+            <p className="text-sm text-text-subtle whitespace-pre-wrap leading-relaxed">
               {cliente.notas || "Nenhuma observação interna registrada para este cliente."}
             </p>
           </div>
 
           {/* Histórico de Atendimentos */}
-          <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4">
+          <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-[#F0EADD] flex items-center gap-2">
-                <ClipboardList size={16} className="text-[#2F9285]" /> Histórico de Atendimentos
+              <h3 className="text-sm font-bold text-porcelain-ink flex items-center gap-2">
+                <ClipboardList size={16} className="text-teal-ink" /> Histórico de Atendimentos
               </h3>
               <Link
                 href={`/atendimentos?cliente_id=${cliente.id}`}
-                className="inline-flex items-center gap-1.5 text-xs text-[#2F9285] hover:underline"
+                className="inline-flex items-center gap-1.5 text-xs text-teal-ink hover:underline"
               >
                 <Plus size={12} /> Novo Atendimento
               </Link>
@@ -198,12 +198,12 @@ export default function ClienteDetalhePage() {
             {loadAtendimentos ? (
               <div className="space-y-2">
                 {[1, 2].map((i) => (
-                  <div key={i} className="h-14 bg-[#102128] rounded-[12px] animate-pulse" />
+                  <div key={i} className="h-14 bg-surface-raised rounded-[12px] animate-pulse" />
                 ))}
               </div>
             ) : historico.length === 0 ? (
-              <div className="text-center py-10 border border-dashed border-[#243337] rounded-[14px]">
-                <p className="text-sm text-[#87938F]">Nenhum atendimento registrado para este cliente.</p>
+              <div className="text-center py-10 border border-dashed border-mist-line rounded-[14px]">
+                <p className="text-sm text-text-subtle">Nenhum atendimento registrado para este cliente.</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -211,19 +211,19 @@ export default function ClienteDetalhePage() {
                   <div
                     key={a.id}
                     onClick={() => setAtendimentoSelecionado(a)}
-                    className="flex items-center justify-between p-3.5 bg-[#050B12] border border-[#243337] rounded-[12px] hover:border-[#2F9285]/40 hover:bg-[#102128] transition-all cursor-pointer"
+                    className="flex items-center justify-between p-3.5 bg-ink-night border border-mist-line rounded-[12px] hover:border-teal-ink/40 hover:bg-surface-raised transition-all cursor-pointer"
                   >
                     <div>
-                      <p className="text-sm font-semibold text-[#F0EADD]">{a.tipo}</p>
-                      <p className="text-xs text-[#87938F] mt-0.5">
+                      <p className="text-sm font-semibold text-porcelain-ink">{a.tipo}</p>
+                      <p className="text-xs text-text-subtle mt-0.5">
                         {a.parte_corpo || "Corpo"} • {a.estilo || "Estilo livre"}
                       </p>
                     </div>
                     <div className="text-right">
                       {a.valor_total && (
-                        <p className="text-sm font-bold text-[#F0EADD]">{formatCurrency(a.valor_total)}</p>
+                        <p className="text-sm font-bold text-porcelain-ink">{formatCurrency(a.valor_total)}</p>
                       )}
-                      <p className="text-[10px] text-[#87938F] mt-0.5">{formatData(a.data_sessao)}</p>
+                      <p className="text-[10px] text-text-subtle mt-0.5">{formatData(a.data_sessao)}</p>
                     </div>
                   </div>
                 ))}

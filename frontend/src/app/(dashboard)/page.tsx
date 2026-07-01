@@ -84,17 +84,17 @@ function StatCard({
   subtitle?: string;
 }) {
   return (
-    <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 flex items-center justify-between shadow-[0_18px_50px_rgba(0,0,0,0.35)] hover:border-[#2F9285]/20 transition-all">
+    <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 flex items-center justify-between shadow-[0_18px_50px_rgba(0,0,0,0.35)] hover:border-teal-ink/20 transition-all">
       <div>
-        <p className="text-[11px] text-[#87938F] font-bold uppercase tracking-wider mb-1">{label}</p>
+        <p className="text-[11px] text-text-subtle font-bold uppercase tracking-wider mb-1">{label}</p>
         {loading ? (
-          <div className="h-8 w-24 bg-[#102128] animate-pulse rounded" />
+          <div className="h-8 w-24 bg-surface-raised animate-pulse rounded" />
         ) : (
-          <p className="text-2xl font-extrabold text-[#F0EADD]">{value}</p>
+          <p className="text-2xl font-extrabold text-porcelain-ink">{value}</p>
         )}
-        {subtitle && <p className="text-[10px] text-[#87938F] mt-1">{subtitle}</p>}
+        {subtitle && <p className="text-[10px] text-text-subtle mt-1">{subtitle}</p>}
       </div>
-      <div className="p-3 bg-[#102128] rounded-[12px] border border-[#243337]">
+      <div className="p-3 bg-surface-raised rounded-[12px] border border-mist-line">
         <Icon size={20} className={color} />
       </div>
     </div>
@@ -109,49 +109,49 @@ function DashboardSkeleton() {
       {/* Header Skeleton */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-2">
-          <div className="h-8 w-48 bg-[#102128] rounded" />
-          <div className="h-4 w-72 bg-[#102128] rounded" />
+          <div className="h-8 w-48 bg-surface-raised rounded" />
+          <div className="h-4 w-72 bg-surface-raised rounded" />
         </div>
-        <div className="h-10 w-44 bg-[#102128] rounded" />
+        <div className="h-10 w-44 bg-surface-raised rounded" />
       </div>
 
       {/* KPI Cards Skeleton */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 flex items-center justify-between h-28">
+          <div key={i} className="bg-ink-bg border border-mist-line rounded-[18px] p-5 flex items-center justify-between h-28">
             <div className="space-y-2 flex-1">
-              <div className="h-3 w-20 bg-[#102128] rounded" />
-              <div className="h-8 w-24 bg-[#102128] rounded" />
-              <div className="h-3 w-32 bg-[#102128] rounded" />
+              <div className="h-3 w-20 bg-surface-raised rounded" />
+              <div className="h-8 w-24 bg-surface-raised rounded" />
+              <div className="h-3 w-32 bg-surface-raised rounded" />
             </div>
-            <div className="w-10 h-10 bg-[#102128] rounded-[12px] border border-[#243337]" />
+            <div className="w-10 h-10 bg-surface-raised rounded-[12px] border border-mist-line" />
           </div>
         ))}
       </div>
 
       {/* Client Portal Link Skeleton */}
-      <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 h-24">
+      <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 h-24">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-[#102128] rounded-[12px]" />
+          <div className="w-12 h-12 bg-surface-raised rounded-[12px]" />
           <div className="space-y-2">
-            <div className="h-4 w-32 bg-[#102128] rounded" />
-            <div className="h-3 w-64 bg-[#102128] rounded" />
+            <div className="h-4 w-32 bg-surface-raised rounded" />
+            <div className="h-3 w-64 bg-surface-raised rounded" />
           </div>
         </div>
-        <div className="h-9 w-24 bg-[#102128] rounded-[12px]" />
+        <div className="h-9 w-24 bg-surface-raised rounded-[12px]" />
       </div>
 
       {/* Charts Skeleton */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 h-64 lg:col-span-2 space-y-4">
-          <div className="h-4 w-32 bg-[#102128] rounded" />
-          <div className="h-36 bg-[#102128]/40 rounded-[12px]" />
+        <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 h-64 lg:col-span-2 space-y-4">
+          <div className="h-4 w-32 bg-surface-raised rounded" />
+          <div className="h-36 bg-surface-raised/40 rounded-[12px]" />
         </div>
-        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 h-64 space-y-4">
-          <div className="h-4 w-32 bg-[#102128] rounded" />
+        <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 h-64 space-y-4">
+          <div className="h-4 w-32 bg-surface-raised rounded" />
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-8 bg-[#102128] rounded" />
+              <div key={i} className="h-8 bg-surface-raised rounded" />
             ))}
           </div>
         </div>
@@ -228,16 +228,16 @@ export default function DashboardPage() {
   const getAlertaColor = (tipo: string) => {
     switch (tipo) {
       case "ESTOQUE_BAIXO":
-        return "text-[#E35D5B] bg-[#E35D5B]/10 border-[#E35D5B]/20"; // Red
+        return "text-error-red bg-error-red/10 border-error-red/20"; // Red
       case "SEM_PAGAMENTO":
-        return "text-[#D99A3D] bg-[#D99A3D]/10 border-[#D99A3D]/20"; // Yellow
+        return "text-warning bg-warning/10 border-warning/20"; // Yellow
       case "COMISSAO_PENDENTE":
         return "text-[#A78BFA] bg-[#A78BFA]/10 border-[#A78BFA]/20"; // Purple
       case "SINAL_PENDENTE":
       case "ORCAMENTO_PARADO":
-        return "text-[#5E9ED6] bg-[#5E9ED6]/10 border-[#5E9ED6]/20"; // Blue
+        return "text-info bg-info/10 border-info/20"; // Blue
       default:
-        return "text-[#D99A3D] bg-[#D99A3D]/10 border-[#D99A3D]/20"; // Yellow
+        return "text-warning bg-warning/10 border-warning/20"; // Yellow
     }
   };
 
@@ -246,32 +246,32 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-[#F0EADD] sm:text-3xl">Painel Inicial</h1>
-          <p className="mt-0.5 text-sm text-[#87938F]">Desempenho operacional, faturamento e alertas do estúdio</p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-porcelain-ink sm:text-3xl">Painel Inicial</h1>
+          <p className="mt-0.5 text-sm text-text-subtle">Desempenho operacional, faturamento e alertas do estúdio</p>
         </div>
         {/* Controles: ocupam a largura toda no mobile e encolhem sem estourar */}
         <div className="flex w-full items-center gap-2 sm:w-auto sm:gap-3">
-          <div className="flex min-w-0 flex-1 items-center gap-1 rounded-[14px] border border-[#243337] bg-[#0B171C] p-1.5 sm:flex-none sm:gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-1 rounded-[14px] border border-mist-line bg-ink-bg p-1.5 sm:flex-none sm:gap-2">
             <input
               type="date"
               value={inicio}
               onChange={(e) => setInicio(e.target.value)}
-              className="min-w-0 flex-1 bg-transparent px-1 text-xs text-[#F0EADD] outline-none sm:flex-none sm:px-2"
+              className="min-w-0 flex-1 bg-transparent px-1 text-xs text-porcelain-ink outline-none sm:flex-none sm:px-2"
               title="Início"
             />
-            <span className="shrink-0 text-xs text-[#87938F]">até</span>
+            <span className="shrink-0 text-xs text-text-subtle">até</span>
             <input
               type="date"
               value={fim}
               onChange={(e) => setFim(e.target.value)}
-              className="min-w-0 flex-1 bg-transparent px-1 text-xs text-[#F0EADD] outline-none sm:flex-none sm:px-2"
+              className="min-w-0 flex-1 bg-transparent px-1 text-xs text-porcelain-ink outline-none sm:flex-none sm:px-2"
               title="Fim"
             />
           </div>
           <button
             onClick={() => refetch()}
             aria-label="Atualizar dados"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border border-[#243337] bg-[#0B171C] text-[#87938F] transition-all hover:bg-[#102128] hover:text-[#F0EADD]"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border border-mist-line bg-ink-bg text-text-subtle transition-all hover:bg-surface-raised hover:text-porcelain-ink"
           >
             <RefreshCw size={16} className={loadResumo ? "animate-spin" : ""} />
           </button>
@@ -288,7 +288,7 @@ export default function DashboardPage() {
               <div className={cn(
                 "flex items-center justify-between p-3.5 rounded-[16px] border text-xs font-semibold h-full transition-all",
                 classes,
-                alerta.link && "hover:bg-[#102128]/30 hover:border-current cursor-pointer"
+                alerta.link && "hover:bg-surface-raised/30 hover:border-current cursor-pointer"
               )}>
                 <div className="flex items-center gap-2.5">
                   <Icon size={16} />
@@ -320,7 +320,7 @@ export default function DashboardPage() {
             label="Saldo Realizado"
             value={formatCurrency(dashboard?.financeiro.saldo_realizado ?? 0)}
             icon={Wallet}
-            color="text-[#54B88D]"
+            color="text-success"
             loading={loadResumo}
             subtitle={`Lucro Estimado: ${formatCurrency(dashboard?.financeiro.lucro_estimado ?? 0)}`}
           />
@@ -329,7 +329,7 @@ export default function DashboardPage() {
           label="Sessões Hoje"
           value={String(dashboard?.operacional.sessoes_hoje ?? 0)}
           icon={Calendar}
-          color="text-[#5E9ED6]" // Blue color for agenda/schedule status constraint
+          color="text-info" // Blue color for agenda/schedule status constraint
           loading={loadResumo}
           subtitle={`Próximos 7 dias: ${dashboard?.operacional.sessoes_sete_dias ?? 0}`}
         />
@@ -337,7 +337,7 @@ export default function DashboardPage() {
           label="Conversão Orçamentos"
           value={`${dashboard?.operacional.conversao_orcamento_sessao ?? 0}%`}
           icon={Percent}
-          color="text-[#2F9285]"
+          color="text-teal-ink"
           loading={loadResumo}
           subtitle={`Orçamentos Pendentes: ${dashboard?.operacional.orcamentos_pendentes ?? 0}`}
         />
@@ -345,27 +345,27 @@ export default function DashboardPage() {
           label="Clientes Novos"
           value={String(dashboard?.operacional.clientes_novos ?? 0)}
           icon={Users}
-          color="text-[#5E9ED6]"
+          color="text-info"
           loading={loadResumo}
           subtitle={showFinancials ? `Ticket Médio: ${formatCurrency(dashboard?.financeiro.ticket_medio ?? 0)}` : "Total no período"}
         />
       </div>
 
       {/* Client Portal Link */}
-      <div className="bg-[#0B171C] border border-[#2F9285]/20 hover:border-[#2F9285]/40 rounded-[18px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-[0_0_30px_rgba(47,146,133,0.05)] transition-all">
+      <div className="bg-ink-bg border border-teal-ink/20 hover:border-teal-ink/40 rounded-[18px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-[0_0_30px_rgba(47,146,133,0.05)] transition-all">
         <div className="flex min-w-0 items-start gap-4">
-          <div className="p-3 bg-[#2F9285]/10 rounded-[12px] border border-[#2F9285]/20 shrink-0">
-            <ExternalLink size={20} className="text-[#2F9285]" />
+          <div className="p-3 bg-teal-ink/10 rounded-[12px] border border-teal-ink/20 shrink-0">
+            <ExternalLink size={20} className="text-teal-ink" />
           </div>
           {/* min-w-0 deixa o truncate do link funcionar dentro do flex (sem min-w-0
               o filho assume largura intrínseca e empurra o layout no mobile) */}
           <div className="min-w-0">
-            <p className="text-sm font-bold text-[#F0EADD]">Portal do cliente</p>
-            <p className="text-xs text-[#87938F] mt-0.5">Compartilhe este link em redes sociais ou Instagram para receber propostas de orçamentos diretas.</p>
+            <p className="text-sm font-bold text-porcelain-ink">Portal do cliente</p>
+            <p className="text-xs text-text-subtle mt-0.5">Compartilhe este link em redes sociais ou Instagram para receber propostas de orçamentos diretas.</p>
             {portalUrl ? (
-              <p className="text-xs font-mono text-[#2F9285] mt-1 truncate">{portalUrl}</p>
+              <p className="text-xs font-mono text-teal-ink mt-1 truncate">{portalUrl}</p>
             ) : (
-              <div className="h-3 w-40 bg-[#102128] animate-pulse rounded mt-1" />
+              <div className="h-3 w-40 bg-surface-raised animate-pulse rounded mt-1" />
             )}
           </div>
         </div>
@@ -373,7 +373,7 @@ export default function DashboardPage() {
           <button
             onClick={handleCopiarPortal}
             disabled={!portalUrl}
-            className="flex items-center gap-2 h-9 px-4 rounded-[12px] bg-[#2F9285] hover:bg-[#3AA99A] disabled:opacity-40 text-[#050B12] font-semibold text-xs transition-all"
+            className="flex items-center gap-2 h-9 px-4 rounded-[12px] bg-teal-ink hover:bg-ink-gold disabled:opacity-40 text-ink-night font-semibold text-xs transition-all"
           >
             <Copy size={13} />
             {copiado ? "Copiado!" : "Copiar link"}
@@ -383,7 +383,7 @@ export default function DashboardPage() {
               href={portalUrl}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-2 h-9 px-3 rounded-[12px] border border-[#243337] bg-[#0B171C] hover:bg-[#102128] text-[#87938F] hover:text-[#F0EADD] text-xs transition-all"
+              className="flex items-center gap-2 h-9 px-3 rounded-[12px] border border-mist-line bg-ink-bg hover:bg-surface-raised text-text-subtle hover:text-porcelain-ink text-xs transition-all"
             >
               <ExternalLink size={13} />
               Ver portal
@@ -396,26 +396,26 @@ export default function DashboardPage() {
       {showFinancials && dashboard && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Cash Flow SVG Chart */}
-          <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4 shadow-lg lg:col-span-2">
+          <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 space-y-4 shadow-lg lg:col-span-2">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <h3 className="text-sm font-bold text-[#F0EADD]">Fluxo diário no período</h3>
-                <p className="text-xs text-[#87938F]">Entradas e saídas liquidadas</p>
+                <h3 className="text-sm font-bold text-porcelain-ink">Fluxo diário no período</h3>
+                <p className="text-xs text-text-subtle">Entradas e saídas liquidadas</p>
               </div>
               <div className="flex items-center gap-3 text-[10px] font-semibold">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded bg-[#54B88D]" />
-                  <span className="text-[#87938F]">Entradas (Pago)</span>
+                  <span className="w-2.5 h-2.5 rounded bg-success" />
+                  <span className="text-text-subtle">Entradas (Pago)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded bg-[#E35D5B]" />
-                  <span className="text-[#87938F]">Saídas (Pago)</span>
+                  <span className="w-2.5 h-2.5 rounded bg-error-red" />
+                  <span className="text-text-subtle">Saídas (Pago)</span>
                 </div>
               </div>
-              <Link href="/financeiro" className="text-xs text-[#2F9285] hover:underline">Ir para financeiro</Link>
+              <Link href="/financeiro" className="text-xs text-teal-ink hover:underline">Ir para financeiro</Link>
             </div>
             {dashboard.graficos.fluxo_diario.length === 0 ? (
-              <div className="h-48 flex items-center justify-center border border-dashed border-[#243337] rounded-[12px] text-xs text-[#87938F]">Sem lançamentos no período</div>
+              <div className="h-48 flex items-center justify-center border border-dashed border-mist-line rounded-[12px] text-xs text-text-subtle">Sem lançamentos no período</div>
             ) : (
               /* Rolagem horizontal DENTRO do card: períodos longos (mês cheio)
                  não estouram mais a viewport. Poucos dias preenchem a largura
@@ -441,11 +441,11 @@ export default function DashboardPage() {
                       >
                         <div className="flex h-full w-full items-end justify-center gap-0.5" aria-hidden="true">
                           {/* Green color for entradas status constraint */}
-                          <div style={{ height: `${entPct}%` }} className="w-2 bg-[#54B88D] rounded-t-[2px] hover:bg-[#68cca0] transition-all" title={`Entrada: ${formatCurrency(d.entradas)}`} />
+                          <div style={{ height: `${entPct}%` }} className="w-2 bg-success rounded-t-[2px] hover:bg-[#68cca0] transition-all" title={`Entrada: ${formatCurrency(d.entradas)}`} />
                           {/* Red color for saídas status constraint */}
-                          <div style={{ height: `${saiPct}%` }} className="w-2 bg-[#E35D5B] rounded-t-[2px] hover:bg-[#c94d4b] transition-all" title={`Saída: ${formatCurrency(d.saidas)}`} />
+                          <div style={{ height: `${saiPct}%` }} className="w-2 bg-error-red rounded-t-[2px] hover:bg-[#c94d4b] transition-all" title={`Saída: ${formatCurrency(d.saidas)}`} />
                         </div>
-                        <span className="mt-2 block origin-top-left -rotate-45 text-[10px] text-[#87938F]" aria-hidden="true">{d.dia.split("-")[2]}</span>
+                        <span className="mt-2 block origin-top-left -rotate-45 text-[10px] text-text-subtle" aria-hidden="true">{d.dia.split("-")[2]}</span>
                       </div>
                     );
                   })}
@@ -455,29 +455,29 @@ export default function DashboardPage() {
           </div>
 
           {/* Revenue by Artist List */}
-          <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4 shadow-lg flex flex-col">
+          <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 space-y-4 shadow-lg flex flex-col">
             <div>
-              <h3 className="text-sm font-bold text-[#F0EADD]">Faturamento por Artista</h3>
-              <p className="text-xs text-[#87938F]">Fórmula proporcional no período</p>
+              <h3 className="text-sm font-bold text-porcelain-ink">Faturamento por Artista</h3>
+              <p className="text-xs text-text-subtle">Fórmula proporcional no período</p>
             </div>
             <div className="flex-1 flex flex-col justify-center space-y-3">
               {dashboard.graficos.por_artista.length === 0 ? (
-                <p className="text-xs text-[#87938F] text-center my-10">Nenhuma comissão ou entrada processada</p>
+                <p className="text-xs text-text-subtle text-center my-10">Nenhuma comissão ou entrada processada</p>
               ) : (
                 dashboard.graficos.por_artista.map((art, idx) => {
                   const total = dashboard.financeiro.entradas_pagas || 1;
                   const pct = (art.valor / total) * 100;
                   return (
                     <div key={idx} className="space-y-1">
-                      <div className="flex justify-between text-xs font-semibold text-[#F0EADD]">
+                      <div className="flex justify-between text-xs font-semibold text-porcelain-ink">
                         <span className="flex items-center gap-1">
-                          <Users size={12} className="text-[#87938F]" />
+                          <Users size={12} className="text-text-subtle" />
                           {art.artista_nome}
                         </span>
                         <span>{formatCurrency(art.valor)}</span>
                       </div>
-                      <div className="w-full bg-[#050B12] h-1.5 rounded-full overflow-hidden border border-[#243337]" aria-hidden="true">
-                        <div style={{ width: `${pct}%` }} className="bg-[#2F9285] h-full rounded-full" />
+                      <div className="w-full bg-ink-night h-1.5 rounded-full overflow-hidden border border-mist-line" aria-hidden="true">
+                        <div style={{ width: `${pct}%` }} className="bg-teal-ink h-full rounded-full" />
                       </div>
                     </div>
                   );

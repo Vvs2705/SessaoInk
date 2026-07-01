@@ -47,25 +47,25 @@ export default function PortfolioPublicoPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#050B12] flex flex-col items-center justify-center p-6">
-        <Loader2 size={32} className="text-[#2F9285] animate-spin mb-4" />
-        <p className="text-sm text-[#87938F]">Carregando portfólio...</p>
+      <div className="min-h-screen bg-ink-night flex flex-col items-center justify-center p-6">
+        <Loader2 size={32} className="text-teal-ink animate-spin mb-4" />
+        <p className="text-sm text-text-subtle">Carregando portfólio...</p>
       </div>
     );
   }
 
   if (erro) {
     return (
-      <div className="min-h-screen bg-[#050B12] flex items-center justify-center p-6">
+      <div className="min-h-screen bg-ink-night flex items-center justify-center p-6">
         <div className="text-center max-w-sm">
-          <div className="w-16 h-16 rounded-2xl bg-[#0B171C] border border-[#243337] mx-auto mb-5 flex items-center justify-center">
-            <AlertCircle size={28} className="text-[#E35D5B]" />
+          <div className="w-16 h-16 rounded-2xl bg-ink-bg border border-mist-line mx-auto mb-5 flex items-center justify-center">
+            <AlertCircle size={28} className="text-error-red" />
           </div>
-          <h1 className="text-xl font-bold text-[#F0EADD] mb-2">Erro ao carregar portfólio</h1>
-          <p className="text-sm text-[#87938F] mb-6">{erro}</p>
+          <h1 className="text-xl font-bold text-porcelain-ink mb-2">Erro ao carregar portfólio</h1>
+          <p className="text-sm text-text-subtle mb-6">{erro}</p>
           <a
             href={`/${slug}`}
-            className="inline-flex items-center gap-1.5 text-sm text-[#2F9285] hover:text-[#3AA99A] transition-colors"
+            className="inline-flex items-center gap-1.5 text-sm text-teal-ink hover:text-ink-gold transition-colors"
           >
             <ArrowLeft size={14} />
             Voltar ao perfil
@@ -76,31 +76,31 @@ export default function PortfolioPublicoPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#050B12] text-[#F0EADD] px-6 py-10">
+    <div className="min-h-screen bg-ink-night text-porcelain-ink px-6 py-10">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <a
             href={`/${slug}`}
-            className="inline-flex items-center gap-1.5 text-sm text-[#87938F] hover:text-[#F0EADD] transition-colors mb-6"
+            className="inline-flex items-center gap-1.5 text-sm text-text-subtle hover:text-porcelain-ink transition-colors mb-6"
           >
             <ArrowLeft size={14} />
             Voltar ao perfil
           </a>
           <h1 className="text-2xl font-extrabold tracking-tight">Portfólio Completo</h1>
-          <p className="text-sm text-[#87938F] mt-1">
-            Trabalhos publicados por <span className="text-[#2F9285]">@{slug}</span>
+          <p className="text-sm text-text-subtle mt-1">
+            Trabalhos publicados por <span className="text-teal-ink">@{slug}</span>
           </p>
         </div>
 
         {/* Grid de Portfólio */}
         {portfolio.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 bg-[#0B171C] border border-[#243337] rounded-[18px] text-center">
-            <div className="w-14 h-14 rounded-2xl bg-[#050B12] border border-[#243337] flex items-center justify-center mb-4">
-              <ImageIcon size={22} className="text-[#243337]" />
+          <div className="flex flex-col items-center justify-center py-20 bg-ink-bg border border-mist-line rounded-[18px] text-center">
+            <div className="w-14 h-14 rounded-2xl bg-ink-night border border-mist-line flex items-center justify-center mb-4">
+              <ImageIcon size={22} className="text-mist-line" />
             </div>
-            <p className="text-sm font-medium text-[#87938F]">Nenhum trabalho publicado ainda</p>
-            <p className="text-xs text-[#87938F]/60 mt-1">Volte em breve para acompanhar as novidades</p>
+            <p className="text-sm font-medium text-text-subtle">Nenhum trabalho publicado ainda</p>
+            <p className="text-xs text-text-subtle/60 mt-1">Volte em breve para acompanhar as novidades</p>
           </div>
         ) : (
           /* Masonry: cada arte aparece na proporção original, como numa galeria —
@@ -110,7 +110,7 @@ export default function PortfolioPublicoPage() {
               <div
                 key={item.id}
                 onClick={() => setActiveItem(item)}
-                className="group relative mb-4 break-inside-avoid rounded-[14px] overflow-hidden bg-[#0B171C] border border-[#243337] cursor-pointer hover:border-[#2F9285]/50 hover:shadow-[0_10px_36px_rgba(0,0,0,0.5)] transition-all duration-300"
+                className="group relative mb-4 break-inside-avoid rounded-[14px] overflow-hidden bg-ink-bg border border-mist-line cursor-pointer hover:border-teal-ink/50 hover:shadow-[0_10px_36px_rgba(0,0,0,0.5)] transition-all duration-300"
               >
                 <img
                   src={`${API_URL}/api/v1/public/${slug}/portfolio/${item.id}/imagem`}
@@ -121,7 +121,7 @@ export default function PortfolioPublicoPage() {
                 
                 {/* Badge de Estilo se houver */}
                 {item.estilo && (
-                  <span className="absolute top-3 right-3 text-[9px] font-bold bg-[#2F9285]/80 text-[#050B12] rounded-full px-2 py-0.5 shadow-sm">
+                  <span className="absolute top-3 right-3 text-[9px] font-bold bg-teal-ink/80 text-ink-night rounded-full px-2 py-0.5 shadow-sm">
                     {item.estilo}
                   </span>
                 )}
@@ -130,7 +130,7 @@ export default function PortfolioPublicoPage() {
                 {(item.titulo || item.parte_corpo) && (
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-200 flex flex-col justify-end p-4">
                     {item.titulo && <p className="text-xs font-bold text-white line-clamp-1">{item.titulo}</p>}
-                    {item.parte_corpo && <p className="text-[10px] text-[#87938F] mt-0.5">{item.parte_corpo}</p>}
+                    {item.parte_corpo && <p className="text-[10px] text-text-subtle mt-0.5">{item.parte_corpo}</p>}
                   </div>
                 )}
               </div>
@@ -145,14 +145,14 @@ export default function PortfolioPublicoPage() {
           {/* Botão de Fechar */}
           <button
             onClick={() => setActiveItem(null)}
-            className="absolute top-4 right-4 p-2 text-[#87938F] hover:text-[#F0EADD] bg-black/60 rounded-full transition-colors border border-[#243337]"
+            className="absolute top-4 right-4 p-2 text-text-subtle hover:text-porcelain-ink bg-black/60 rounded-full transition-colors border border-mist-line"
           >
             <X size={20} />
           </button>
 
-          <div className="bg-[#0B171C] border border-[#243337] w-full max-w-lg rounded-[20px] overflow-hidden shadow-2xl flex flex-col">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-lg rounded-[20px] overflow-hidden shadow-2xl flex flex-col">
             {/* Imagem */}
-            <div className="relative aspect-square w-full bg-[#050B12] flex items-center justify-center border-b border-[#243337]">
+            <div className="relative aspect-square w-full bg-ink-night flex items-center justify-center border-b border-mist-line">
               <img
                 src={`${API_URL}/api/v1/public/${slug}/portfolio/${activeItem.id}/imagem`}
                 alt={activeItem.titulo ?? "Trabalho"}
@@ -165,19 +165,19 @@ export default function PortfolioPublicoPage() {
               <div>
                 <div className="flex items-center gap-2 flex-wrap mb-1.5">
                   {activeItem.estilo && (
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#2F9285]/15 text-[#2F9285] border border-[#2F9285]/25">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-teal-ink/15 text-teal-ink border border-teal-ink/25">
                       {activeItem.estilo}
                     </span>
                   )}
                   {activeItem.parte_corpo && (
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#102128] text-[#87938F] border border-[#243337]">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-surface-raised text-text-subtle border border-mist-line">
                       {activeItem.parte_corpo}
                     </span>
                   )}
                 </div>
-                <h3 className="text-base font-bold text-[#F0EADD]">{activeItem.titulo || "Trabalho de Portfólio"}</h3>
+                <h3 className="text-base font-bold text-porcelain-ink">{activeItem.titulo || "Trabalho de Portfólio"}</h3>
                 {activeItem.descricao && (
-                  <p className="text-sm text-[#87938F] mt-1.5 leading-relaxed">{activeItem.descricao}</p>
+                  <p className="text-sm text-text-subtle mt-1.5 leading-relaxed">{activeItem.descricao}</p>
                 )}
               </div>
 
@@ -187,7 +187,7 @@ export default function PortfolioPublicoPage() {
                   const refText = `Gostaria de um orçamento baseado no item do portfólio "${activeItem.titulo || 'Sem título'}" (ID: ${activeItem.id})`;
                   router.push(`/${slug}/orcamento?descricao=${encodeURIComponent(refText)}`);
                 }}
-                className="w-full flex items-center justify-center gap-2 h-11 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-bold text-sm transition-all"
+                className="w-full flex items-center justify-center gap-2 h-11 rounded-[14px] bg-teal-ink hover:bg-ink-gold text-ink-night font-bold text-sm transition-all"
               >
                 <MessageCircle size={16} />
                 Quero uma tattoo parecida

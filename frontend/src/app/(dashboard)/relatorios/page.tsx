@@ -49,12 +49,12 @@ function formatBRL(v: number) {
 }
 
 function VariacaoChip({ v }: { v: number | null }) {
-  if (v === null) return <span className="text-xs text-[#87938F]">—</span>;
+  if (v === null) return <span className="text-xs text-text-subtle">—</span>;
   const positivo = v >= 0;
   return (
     <div className={cn(
       "flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-[6px]",
-      positivo ? "bg-[#2F9285]/10 text-[#2F9285]" : "bg-[#E35D5B]/10 text-[#E35D5B]"
+      positivo ? "bg-teal-ink/10 text-teal-ink" : "bg-error-red/10 text-error-red"
     )}>
       {positivo ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
       {Math.abs(v).toFixed(1)}%
@@ -98,11 +98,11 @@ export default function RelatoriosPage() {
   if (loadRole) {
     return (
       <div className="p-6 max-w-5xl mx-auto space-y-6 animate-pulse">
-        <div className="h-8 w-48 bg-[#102128] rounded mb-2" />
-        <div className="h-4 w-72 bg-[#102128] rounded mb-6" />
+        <div className="h-8 w-48 bg-surface-raised rounded mb-2" />
+        <div className="h-4 w-72 bg-surface-raised rounded mb-6" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-28 bg-[#0B171C] border border-[#243337] rounded-[18px]" />
+            <div key={i} className="h-28 bg-ink-bg border border-mist-line rounded-[18px]" />
           ))}
         </div>
       </div>
@@ -125,11 +125,11 @@ export default function RelatoriosPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#F0EADD]">Relatórios</h1>
-          <p className="text-sm text-[#87938F] mt-1">Métricas financeiras e operacionais</p>
+          <h1 className="text-2xl font-bold text-porcelain-ink">Relatórios</h1>
+          <p className="text-sm text-text-subtle mt-1">Métricas financeiras e operacionais</p>
         </div>
         {/* Selector de período */}
-        <div className="flex items-center gap-1 bg-[#0B171C] border border-[#243337] rounded-[12px] p-1">
+        <div className="flex items-center gap-1 bg-ink-bg border border-mist-line rounded-[12px] p-1">
           {PERIODOS.map(p => (
             <button
               key={p.value}
@@ -137,8 +137,8 @@ export default function RelatoriosPage() {
               className={cn(
                 "px-3 py-1.5 rounded-[8px] text-xs font-medium transition-all",
                 periodo === p.value
-                  ? "bg-[#2F9285] text-[#050B12]"
-                  : "text-[#87938F] hover:text-[#F0EADD]"
+                  ? "bg-teal-ink text-ink-night"
+                  : "text-text-subtle hover:text-porcelain-ink"
               )}
             >
               {p.label}
@@ -150,66 +150,66 @@ export default function RelatoriosPage() {
       {/* Cards de métricas principais */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Receita no período */}
-        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-4">
+        <div className="bg-ink-bg border border-mist-line rounded-[18px] p-4">
           <div className="flex items-center justify-between mb-3">
-            <div className="p-2 bg-[#2F9285]/10 rounded-[10px]">
-              <DollarSign size={16} className="text-[#2F9285]" />
+            <div className="p-2 bg-teal-ink/10 rounded-[10px]">
+              <DollarSign size={16} className="text-teal-ink" />
             </div>
             {!loadResumo && <VariacaoChip v={resumo?.variacao_percentual ?? null} />}
           </div>
-          <p className="text-2xl font-bold text-[#F0EADD]">
+          <p className="text-2xl font-bold text-porcelain-ink">
             {loadResumo ? "—" : formatBRL(resumo?.receita_periodo ?? 0)}
           </p>
-          <p className="text-xs text-[#87938F] mt-1">Receita nos últimos {periodo} dias</p>
+          <p className="text-xs text-text-subtle mt-1">Receita nos últimos {periodo} dias</p>
         </div>
 
         {/* Receita total */}
-        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-4">
+        <div className="bg-ink-bg border border-mist-line rounded-[18px] p-4">
           <div className="flex items-center justify-between mb-3">
-            <div className="p-2 bg-[#C36B3F]/10 rounded-[10px]">
-              <TrendingUp size={16} className="text-[#C36B3F]" />
+            <div className="p-2 bg-copper-needle/10 rounded-[10px]">
+              <TrendingUp size={16} className="text-copper-needle" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-[#F0EADD]">
+          <p className="text-2xl font-bold text-porcelain-ink">
             {loadResumo ? "—" : formatBRL(resumo?.receita_total ?? 0)}
           </p>
-          <p className="text-xs text-[#87938F] mt-1">Receita total histórica</p>
+          <p className="text-xs text-text-subtle mt-1">Receita total histórica</p>
         </div>
 
         {/* Ticket médio */}
-        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-4">
+        <div className="bg-ink-bg border border-mist-line rounded-[18px] p-4">
           <div className="flex items-center justify-between mb-3">
-            <div className="p-2 bg-[#87938F]/10 rounded-[10px]">
-              <BarChart size={16} className="text-[#87938F]" />
+            <div className="p-2 bg-text-subtle/10 rounded-[10px]">
+              <BarChart size={16} className="text-text-subtle" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-[#F0EADD]">
+          <p className="text-2xl font-bold text-porcelain-ink">
             {loadResumo ? "—" : resumo?.ticket_medio ? formatBRL(resumo.ticket_medio) : "—"}
           </p>
-          <p className="text-xs text-[#87938F] mt-1">Ticket médio (finalizados)</p>
+          <p className="text-xs text-text-subtle mt-1">Ticket médio (finalizados)</p>
         </div>
 
         {/* Total de atendimentos */}
-        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-4">
+        <div className="bg-ink-bg border border-mist-line rounded-[18px] p-4">
           <div className="flex items-center justify-between mb-3">
-            <div className="p-2 bg-[#2F9285]/10 rounded-[10px]">
-              <ClipboardList size={16} className="text-[#2F9285]" />
+            <div className="p-2 bg-teal-ink/10 rounded-[10px]">
+              <ClipboardList size={16} className="text-teal-ink" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-[#F0EADD]">
+          <p className="text-2xl font-bold text-porcelain-ink">
             {loadResumo ? "—" : resumo?.total_atendimentos ?? 0}
           </p>
-          <p className="text-xs text-[#87938F] mt-1">Atendimentos totais</p>
+          <p className="text-xs text-text-subtle mt-1">Atendimentos totais</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Status dos atendimentos (gráfico de barras CSS) */}
-        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5">
+        <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-sm font-semibold text-[#F0EADD]">Atendimentos por Status</h2>
+            <h2 className="text-sm font-semibold text-porcelain-ink">Atendimentos por Status</h2>
             {porStatus && (
-              <span className="text-xs text-[#87938F] bg-[#050B12] border border-[#243337] px-2 py-0.5 rounded-[6px]">
+              <span className="text-xs text-text-subtle bg-ink-night border border-mist-line px-2 py-0.5 rounded-[6px]">
                 {porStatus.total_ativos} ativos
               </span>
             )}
@@ -218,7 +218,7 @@ export default function RelatoriosPage() {
           {loadStatus ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-8 bg-[#102128] rounded-[8px] animate-pulse" />
+                <div key={i} className="h-8 bg-surface-raised rounded-[8px] animate-pulse" />
               ))}
             </div>
           ) : (
@@ -228,10 +228,10 @@ export default function RelatoriosPage() {
                 return (
                   <div key={s.status}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-[#87938F]">{s.label}</span>
-                      <span className="text-xs font-medium text-[#F0EADD]">{s.total}</span>
+                      <span className="text-xs text-text-subtle">{s.label}</span>
+                      <span className="text-xs font-medium text-porcelain-ink">{s.total}</span>
                     </div>
-                    <div className="h-2 bg-[#050B12] rounded-full overflow-hidden">
+                    <div className="h-2 bg-ink-night rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-500"
                         style={{ width: `${pct}%`, backgroundColor: s.cor }}
@@ -241,19 +241,19 @@ export default function RelatoriosPage() {
                 );
               })}
               {!porStatus?.por_status.length && (
-                <p className="text-xs text-[#87938F] text-center py-4">Nenhum atendimento encontrado</p>
+                <p className="text-xs text-text-subtle text-center py-4">Nenhum atendimento encontrado</p>
               )}
             </div>
           )}
         </div>
 
         {/* Resumo operacional */}
-        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5">
-          <h2 className="text-sm font-semibold text-[#F0EADD] mb-5">Resumo Operacional</h2>
+        <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5">
+          <h2 className="text-sm font-semibold text-porcelain-ink mb-5">Resumo Operacional</h2>
 
           {loadResumo ? (
             <div className="space-y-3">
-              {[...Array(5)].map((_, i) => <div key={i} className="h-10 bg-[#102128] rounded-[8px] animate-pulse" />)}
+              {[...Array(5)].map((_, i) => <div key={i} className="h-10 bg-surface-raised rounded-[8px] animate-pulse" />)}
             </div>
           ) : (
             <div className="space-y-3">
@@ -262,8 +262,8 @@ export default function RelatoriosPage() {
                   label: "Confirmados",
                   valor: resumo?.atendimentos_confirmados ?? 0,
                   icon: CheckCircle,
-                  cor: "text-[#2F9285]",
-                  bg: "bg-[#2F9285]/10",
+                  cor: "text-teal-ink",
+                  bg: "bg-teal-ink/10",
                 },
                 {
                   label: "Finalizados",
@@ -276,25 +276,25 @@ export default function RelatoriosPage() {
                   label: "Sinais recebidos",
                   valor: formatBRL(resumo?.sinais_recebidos ?? 0),
                   icon: DollarSign,
-                  cor: "text-[#C36B3F]",
-                  bg: "bg-[#C36B3F]/10",
+                  cor: "text-copper-needle",
+                  bg: "bg-copper-needle/10",
                 },
                 {
                   label: "Total de atendimentos",
                   valor: resumo?.total_atendimentos ?? 0,
                   icon: ClipboardList,
-                  cor: "text-[#87938F]",
-                  bg: "bg-[#87938F]/10",
+                  cor: "text-text-subtle",
+                  bg: "bg-text-subtle/10",
                 },
               ].map(item => {
                 const Icon = item.icon;
                 return (
-                  <div key={item.label} className="flex items-center gap-3 p-3 bg-[#050B12] border border-[#243337] rounded-[10px]">
+                  <div key={item.label} className="flex items-center gap-3 p-3 bg-ink-night border border-mist-line rounded-[10px]">
                     <div className={cn("p-2 rounded-[8px] shrink-0", item.bg)}>
                       <Icon size={14} className={item.cor} />
                     </div>
-                    <span className="text-sm text-[#87938F] flex-1">{item.label}</span>
-                    <span className="text-sm font-semibold text-[#F0EADD]">{item.valor}</span>
+                    <span className="text-sm text-text-subtle flex-1">{item.label}</span>
+                    <span className="text-sm font-semibold text-porcelain-ink">{item.valor}</span>
                   </div>
                 );
               })}
@@ -308,11 +308,11 @@ export default function RelatoriosPage() {
         <div className={cn(
           "mt-5 flex items-center gap-3 p-4 rounded-[14px] border text-sm",
           resumo.variacao_percentual >= 0
-            ? "bg-[#2F9285]/5 border-[#2F9285]/20 text-[#2F9285]"
-            : "bg-[#E35D5B]/5 border-[#E35D5B]/20 text-[#E35D5B]"
+            ? "bg-teal-ink/5 border-teal-ink/20 text-teal-ink"
+            : "bg-error-red/5 border-error-red/20 text-error-red"
         )}>
           {resumo.variacao_percentual >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-          <span className="text-[#F0EADD]">
+          <span className="text-porcelain-ink">
             Receita {resumo.variacao_percentual >= 0 ? "aumentou" : "caiu"}{" "}
             <strong>{Math.abs(resumo.variacao_percentual).toFixed(1)}%</strong>{" "}
             em relação ao período anterior de {periodo} dias.

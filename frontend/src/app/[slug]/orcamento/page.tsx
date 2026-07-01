@@ -90,12 +90,12 @@ interface ImagemReferencia {
 }
 
 const inputClass =
-  "w-full h-11 px-3.5 rounded-[14px] bg-[#050B12] border border-[#243337] text-[#F0EADD] text-sm placeholder-[#87938F]/70 focus:outline-none focus:border-[#2F9285]/60 transition-colors";
+  "w-full h-11 px-3.5 rounded-[14px] bg-ink-night border border-mist-line text-porcelain-ink text-sm placeholder-text-subtle/70 focus:outline-none focus:border-teal-ink/60 transition-colors";
 
 const selectClass =
-  "w-full h-11 px-3.5 rounded-[14px] bg-[#050B12] border border-[#243337] text-[#F0EADD] text-sm focus:outline-none focus:border-[#2F9285]/60 transition-colors appearance-none cursor-pointer";
+  "w-full h-11 px-3.5 rounded-[14px] bg-ink-night border border-mist-line text-porcelain-ink text-sm focus:outline-none focus:border-teal-ink/60 transition-colors appearance-none cursor-pointer";
 
-const labelClass = "block text-sm font-medium text-[#B8C2BF] mb-1.5";
+const labelClass = "block text-sm font-medium text-smoke-text mb-1.5";
 
 export default function OrcamentoPage() {
   const params = useParams();
@@ -358,21 +358,21 @@ export default function OrcamentoPage() {
 
   if (resultado) {
     return (
-      <div className="min-h-screen bg-[#050B12] flex items-center justify-center p-6">
+      <div className="min-h-screen bg-ink-night flex items-center justify-center p-6">
         <div className="max-w-sm w-full text-center">
-          <div className="w-16 h-16 rounded-full bg-[#2F9285]/15 flex items-center justify-center mx-auto mb-5 shadow-[0_0_30px_rgba(47,146,133,0.25)]">
-            <CheckCircle size={30} className="text-[#2F9285]" />
+          <div className="w-16 h-16 rounded-full bg-teal-ink/15 flex items-center justify-center mx-auto mb-5 shadow-[0_0_30px_rgba(47,146,133,0.25)]">
+            <CheckCircle size={30} className="text-teal-ink" />
           </div>
-          <h1 className="text-2xl font-bold text-[#F0EADD] mb-2">Orçamento enviado!</h1>
-          <p className="text-sm text-[#87938F] mb-6 leading-relaxed">{resultado.mensagem}</p>
-          <div className="bg-[#0B171C] border border-[#243337] rounded-[16px] p-5 mb-7">
-            <p className="text-xs text-[#87938F] mb-1.5 uppercase tracking-wider">Protocolo</p>
-            <p className="font-mono font-bold text-[#2F9285] text-2xl tracking-widest">{resultado.protocolo}</p>
-            <p className="text-[10px] text-[#87938F]/60 mt-2">Guarde este número para acompanhar seu pedido</p>
+          <h1 className="text-2xl font-bold text-porcelain-ink mb-2">Orçamento enviado!</h1>
+          <p className="text-sm text-text-subtle mb-6 leading-relaxed">{resultado.mensagem}</p>
+          <div className="bg-ink-bg border border-mist-line rounded-[16px] p-5 mb-7">
+            <p className="text-xs text-text-subtle mb-1.5 uppercase tracking-wider">Protocolo</p>
+            <p className="font-mono font-bold text-teal-ink text-2xl tracking-widest">{resultado.protocolo}</p>
+            <p className="text-[10px] text-text-subtle/60 mt-2">Guarde este número para acompanhar seu pedido</p>
           </div>
           <a
             href={`/${slug}`}
-            className="inline-flex items-center gap-1.5 text-sm text-[#2F9285] hover:text-[#3AA99A] transition-colors"
+            className="inline-flex items-center gap-1.5 text-sm text-teal-ink hover:text-ink-gold transition-colors"
           >
             <ArrowLeft size={14} /> Voltar ao perfil do estúdio
           </a>
@@ -382,41 +382,41 @@ export default function OrcamentoPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#050B12] px-4 py-10">
+    <div className="min-h-screen bg-ink-night px-4 py-10">
       <div className="max-w-lg mx-auto">
         
         {/* Header */}
         <div className="mb-6">
           <a
             href={`/${slug}`}
-            className="inline-flex items-center gap-1.5 text-sm text-[#87938F] hover:text-[#F0EADD] transition-colors mb-4"
+            className="inline-flex items-center gap-1.5 text-sm text-text-subtle hover:text-porcelain-ink transition-colors mb-4"
           >
             <ArrowLeft size={14} /> Voltar ao perfil
           </a>
-          <h1 className="text-2xl font-extrabold text-[#F0EADD]">
+          <h1 className="text-2xl font-extrabold text-porcelain-ink">
             {flashTitulo ? "Solicitar esta Flash Art" : "Solicitar Orçamento"}
           </h1>
-          <p className="text-sm text-[#87938F] mt-1">
-            Estúdio <span className="text-[#2F9285]">@{slug}</span>
+          <p className="text-sm text-text-subtle mt-1">
+            Estúdio <span className="text-teal-ink">@{slug}</span>
           </p>
         </div>
 
         {/* Banner da flash art selecionada */}
         {flashTitulo && (
-          <div className="flex items-center gap-3 mb-6 p-3 rounded-[16px] bg-[#C36B3F]/10 border border-[#C36B3F]/25">
+          <div className="flex items-center gap-3 mb-6 p-3 rounded-[16px] bg-copper-needle/10 border border-copper-needle/25">
             {flashId && (
               <img
                 src={`/api/v1/public/${slug}/flash-arts/${flashId}/imagem`}
                 alt={flashTitulo}
-                className="w-16 h-16 rounded-[12px] object-cover border border-[#243337] shrink-0"
+                className="w-16 h-16 rounded-[12px] object-cover border border-mist-line shrink-0"
               />
             )}
             <div className="min-w-0">
-              <p className="text-[11px] uppercase tracking-wider text-[#C36B3F] font-semibold">
+              <p className="text-[11px] uppercase tracking-wider text-copper-needle font-semibold">
                 Flash art selecionada
               </p>
-              <p className="text-sm font-semibold text-[#F0EADD] truncate">{flashTitulo}</p>
-              <p className="text-xs text-[#87938F]">
+              <p className="text-sm font-semibold text-porcelain-ink truncate">{flashTitulo}</p>
+              <p className="text-xs text-text-subtle">
                 É só preencher seus dados — o estúdio já saberá qual arte você quer.
               </p>
             </div>
@@ -424,15 +424,15 @@ export default function OrcamentoPage() {
         )}
 
         {/* Progress bar */}
-        <div className="flex items-center gap-2 mb-8 bg-[#0B171C] border border-[#243337] p-3 rounded-[16px]">
+        <div className="flex items-center gap-2 mb-8 bg-ink-bg border border-mist-line p-3 rounded-[16px]">
           {[1, 2, 3, 4, 5].map((s) => (
             <div key={s} className="flex-1 flex items-center gap-1.5">
               <div
                 className={cn(
                   "w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center transition-colors shrink-0",
                   step >= s
-                    ? "bg-[#2F9285] text-[#050B12]"
-                    : "bg-[#050B12] border border-[#243337] text-[#87938F]"
+                    ? "bg-teal-ink text-ink-night"
+                    : "bg-ink-night border border-mist-line text-text-subtle"
                 )}
               >
                 {s}
@@ -440,7 +440,7 @@ export default function OrcamentoPage() {
               <div
                 className={cn(
                   "h-1 rounded transition-colors flex-1 hidden sm:block",
-                  step > s ? "bg-[#2F9285]" : "bg-[#243337]"
+                  step > s ? "bg-teal-ink" : "bg-mist-line"
                 )}
               />
             </div>
@@ -470,10 +470,10 @@ export default function OrcamentoPage() {
 
           {/* PASSO 1: Identificação */}
           {step === 1 && (
-            <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4">
-              <h2 className="text-sm font-semibold text-[#87938F] uppercase tracking-wider">Identificação</h2>
+            <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 space-y-4">
+              <h2 className="text-sm font-semibold text-text-subtle uppercase tracking-wider">Identificação</h2>
               <div>
-                <label className={labelClass}>Nome completo <span className="text-[#C36B3F]">*</span></label>
+                <label className={labelClass}>Nome completo <span className="text-copper-needle">*</span></label>
                 <input
                   type="text"
                   value={form.nome}
@@ -484,7 +484,7 @@ export default function OrcamentoPage() {
                 />
               </div>
               <div>
-                <label className={labelClass}>WhatsApp <span className="text-[#C36B3F]">*</span></label>
+                <label className={labelClass}>WhatsApp <span className="text-copper-needle">*</span></label>
                 <input
                   type="tel"
                   value={form.whatsapp}
@@ -495,7 +495,7 @@ export default function OrcamentoPage() {
                 />
               </div>
               <div>
-                <label className={labelClass}>E-mail <span className="text-[#87938F] font-normal">(opcional)</span></label>
+                <label className={labelClass}>E-mail <span className="text-text-subtle font-normal">(opcional)</span></label>
                 <input
                   type="email"
                   value={form.email}
@@ -506,7 +506,7 @@ export default function OrcamentoPage() {
                 />
               </div>
               <div>
-                <label className={labelClass}>Instagram <span className="text-[#87938F] font-normal">(opcional)</span></label>
+                <label className={labelClass}>Instagram <span className="text-text-subtle font-normal">(opcional)</span></label>
                 <input
                   type="text"
                   value={form.instagram}
@@ -520,17 +520,17 @@ export default function OrcamentoPage() {
 
           {/* PASSO 2: A Tattoo */}
           {step === 2 && (
-            <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4">
-              <h2 className="text-sm font-semibold text-[#87938F] uppercase tracking-wider">A Tattoo</h2>
+            <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 space-y-4">
+              <h2 className="text-sm font-semibold text-text-subtle uppercase tracking-wider">A Tattoo</h2>
               <div>
-                <label className={labelClass}>Descrição da ideia <span className="text-[#C36B3F]">*</span></label>
+                <label className={labelClass}>Descrição da ideia <span className="text-copper-needle">*</span></label>
                 <textarea
                   value={form.descricao}
                   onChange={(e) => set("descricao", e.target.value)}
                   placeholder="Descreva o que quer tatuar, tamanho aproximado, referências..."
                   rows={4}
                   required
-                  className="w-full px-3.5 py-2.5 rounded-[14px] bg-[#050B12] border border-[#243337] text-[#F0EADD] text-sm placeholder-[#87938F]/70 focus:outline-none focus:border-[#2F9285]/60 resize-none transition-colors"
+                  className="w-full px-3.5 py-2.5 rounded-[14px] bg-ink-night border border-mist-line text-porcelain-ink text-sm placeholder-text-subtle/70 focus:outline-none focus:border-teal-ink/60 resize-none transition-colors"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -575,16 +575,16 @@ export default function OrcamentoPage() {
 
           {/* PASSO 3: Fotos de Referência */}
           {step === 3 && (
-            <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4">
+            <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 space-y-4">
               <div className="flex justify-between items-center">
-                <h2 className="text-sm font-semibold text-[#87938F] uppercase tracking-wider">Fotos de referência</h2>
-                <span className="text-xs text-[#87938F]">opcional</span>
+                <h2 className="text-sm font-semibold text-text-subtle uppercase tracking-wider">Fotos de referência</h2>
+                <span className="text-xs text-text-subtle">opcional</span>
               </div>
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[#243337] hover:border-[#2F9285]/50 bg-[#050B12] rounded-[14px] cursor-pointer transition-colors group">
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-mist-line hover:border-teal-ink/50 bg-ink-night rounded-[14px] cursor-pointer transition-colors group">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <Upload className="w-8 h-8 text-[#87938F] group-hover:text-[#2F9285] transition-colors mb-2" />
-                  <p className="text-sm text-[#F0EADD] font-medium mb-1">Carregar referências</p>
-                  <p className="text-xs text-[#87938F]">Envie até 5 imagens (JPG, PNG, WEBP)</p>
+                  <Upload className="w-8 h-8 text-text-subtle group-hover:text-teal-ink transition-colors mb-2" />
+                  <p className="text-sm text-porcelain-ink font-medium mb-1">Carregar referências</p>
+                  <p className="text-xs text-text-subtle">Envie até 5 imagens (JPG, PNG, WEBP)</p>
                 </div>
                 <input
                   type="file"
@@ -597,7 +597,7 @@ export default function OrcamentoPage() {
               {imagens.length > 0 && (
                 <div className="grid grid-cols-3 gap-3 mt-4">
                   {imagens.map((img, index) => (
-                    <div key={index} className="relative aspect-square rounded-[12px] overflow-hidden border border-[#243337]">
+                    <div key={index} className="relative aspect-square rounded-[12px] overflow-hidden border border-mist-line">
                       <img src={img.preview} alt="preview" className="w-full h-full object-cover" />
                       <button
                         type="button"
@@ -615,12 +615,12 @@ export default function OrcamentoPage() {
 
           {/* PASSO 4: Datas de preferência */}
           {step === 4 && (
-            <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4">
+            <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 space-y-4">
               <div className="flex justify-between items-center">
-                <h2 className="text-sm font-semibold text-[#87938F] uppercase tracking-wider">Quando você pode?</h2>
-                <span className="text-xs text-[#87938F]">opcional · até 3 datas</span>
+                <h2 className="text-sm font-semibold text-text-subtle uppercase tracking-wider">Quando você pode?</h2>
+                <span className="text-xs text-text-subtle">opcional · até 3 datas</span>
               </div>
-              <p className="text-xs text-[#87938F] leading-relaxed">
+              <p className="text-xs text-text-subtle leading-relaxed">
                 Sugira datas e períodos em que você tem disponibilidade — isso agiliza
                 o agendamento com o estúdio. Dias fora do horário de funcionamento
                 aparecem desabilitados.
@@ -638,20 +638,20 @@ export default function OrcamentoPage() {
                       className={cn(
                         "rounded-[12px] border p-2 text-center transition-colors",
                         !aberto
-                          ? "border-[#243337]/50 bg-[#050B12]/50 opacity-40"
+                          ? "border-mist-line/50 bg-ink-night/50 opacity-40"
                           : selecionada
-                            ? "border-[#2F9285] bg-[#2F9285]/10"
-                            : "border-[#243337] bg-[#050B12]"
+                            ? "border-teal-ink bg-teal-ink/10"
+                            : "border-mist-line bg-ink-night"
                       )}
                     >
-                      <p className="text-[10px] uppercase tracking-wider text-[#87938F]">
+                      <p className="text-[10px] uppercase tracking-wider text-text-subtle">
                         {DIAS_SEMANA_CURTO[diaBackend(d)]}
                       </p>
-                      <p className="text-sm font-bold text-[#F0EADD]">
+                      <p className="text-sm font-bold text-porcelain-ink">
                         {d.getDate()}/{d.getMonth() + 1}
                       </p>
                       {ocupacao > 0 && aberto && (
-                        <p className="text-[9px] text-[#C36B3F] mt-0.5">
+                        <p className="text-[9px] text-copper-needle mt-0.5">
                           {ocupacao} {ocupacao === 1 ? "sessão" : "sessões"}
                         </p>
                       )}
@@ -665,8 +665,8 @@ export default function OrcamentoPage() {
                               className={cn(
                                 "text-[10px] font-semibold rounded-[8px] py-1 min-h-[28px] transition-colors",
                                 selecionada?.periodo === p.value
-                                  ? "bg-[#2F9285] text-[#050B12]"
-                                  : "bg-[#0B171C] border border-[#243337] text-[#87938F] hover:text-[#F0EADD] hover:border-[#2F9285]/50"
+                                  ? "bg-teal-ink text-ink-night"
+                                  : "bg-ink-bg border border-mist-line text-text-subtle hover:text-porcelain-ink hover:border-teal-ink/50"
                               )}
                             >
                               {p.label}
@@ -674,7 +674,7 @@ export default function OrcamentoPage() {
                           ))}
                         </div>
                       ) : (
-                        <p className="text-[9px] text-[#87938F] mt-1.5">fechado</p>
+                        <p className="text-[9px] text-text-subtle mt-1.5">fechado</p>
                       )}
                     </div>
                   );
@@ -689,7 +689,7 @@ export default function OrcamentoPage() {
                     return (
                       <span
                         key={p.data}
-                        className="inline-flex items-center gap-1.5 text-xs text-[#2F9285] bg-[#2F9285]/10 border border-[#2F9285]/25 rounded-full px-3 py-1.5"
+                        className="inline-flex items-center gap-1.5 text-xs text-teal-ink bg-teal-ink/10 border border-teal-ink/25 rounded-full px-3 py-1.5"
                       >
                         {dia}/{m} · {label}
                         <button
@@ -700,7 +700,7 @@ export default function OrcamentoPage() {
                             )
                           }
                           aria-label="Remover data"
-                          className="hover:text-[#F0EADD]"
+                          className="hover:text-porcelain-ink"
                         >
                           <X size={12} />
                         </button>
@@ -710,11 +710,11 @@ export default function OrcamentoPage() {
                 </div>
               )}
 
-              <div className="border-t border-[#243337] pt-3">
+              <div className="border-t border-mist-line pt-3">
                 <button
                   type="button"
                   onClick={() => setMostrarHorarioCustom((v) => !v)}
-                  className="text-xs font-semibold text-[#C36B3F] hover:text-[#D87E52] transition-colors min-h-[44px] text-left"
+                  className="text-xs font-semibold text-copper-needle hover:text-[#D87E52] transition-colors min-h-[44px] text-left"
                 >
                   {mostrarHorarioCustom
                     ? "Esconder horário personalizado"
@@ -727,7 +727,7 @@ export default function OrcamentoPage() {
                     placeholder="Ex: só consigo após as 20h, ou aos domingos de manhã..."
                     rows={2}
                     maxLength={300}
-                    className="mt-2 w-full px-3.5 py-2.5 rounded-[14px] bg-[#050B12] border border-[#243337] text-[#F0EADD] text-sm placeholder-[#87938F]/70 focus:outline-none focus:border-[#2F9285]/60 resize-none transition-colors"
+                    className="mt-2 w-full px-3.5 py-2.5 rounded-[14px] bg-ink-night border border-mist-line text-porcelain-ink text-sm placeholder-text-subtle/70 focus:outline-none focus:border-teal-ink/60 resize-none transition-colors"
                   />
                 )}
               </div>
@@ -736,11 +736,11 @@ export default function OrcamentoPage() {
 
           {/* PASSO 5: Envio & Privacidade */}
           {step === 5 && (
-            <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-5 space-y-4">
-              <h2 className="text-sm font-semibold text-[#87938F] uppercase tracking-wider">Termos & Envio</h2>
-              <div className="flex items-start gap-2.5 p-3.5 rounded-[12px] bg-[#2F9285]/5 border border-[#2F9285]/15">
-                <Shield size={14} className="text-[#2F9285] mt-0.5 shrink-0" />
-                <p className="text-xs text-[#87938F] leading-relaxed">
+            <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 space-y-4">
+              <h2 className="text-sm font-semibold text-text-subtle uppercase tracking-wider">Termos & Envio</h2>
+              <div className="flex items-start gap-2.5 p-3.5 rounded-[12px] bg-teal-ink/5 border border-teal-ink/15">
+                <Shield size={14} className="text-teal-ink mt-0.5 shrink-0" />
+                <p className="text-xs text-text-subtle leading-relaxed">
                   Seus dados são protegidos e serão utilizados exclusivamente para retornar o contato sobre o seu pedido.
                 </p>
               </div>
@@ -762,16 +762,16 @@ export default function OrcamentoPage() {
                     onChange={(e) => set(key, e.target.checked)}
                     className="mt-1"
                   />
-                  <span className="text-sm text-[#87938F] group-hover:text-[#B8C2BF] transition-colors">{label}</span>
+                  <span className="text-sm text-text-subtle group-hover:text-smoke-text transition-colors">{label}</span>
                 </label>
               ))}
             </div>
           )}
 
           {erro && (
-            <div className="flex items-start gap-2.5 p-3.5 rounded-[12px] bg-[#C36B3F]/10 border border-[#C36B3F]/25">
-              <AlertCircle size={15} className="text-[#C36B3F] mt-0.5 shrink-0" />
-              <p className="text-sm text-[#C36B3F]">{erro}</p>
+            <div className="flex items-start gap-2.5 p-3.5 rounded-[12px] bg-copper-needle/10 border border-copper-needle/25">
+              <AlertCircle size={15} className="text-copper-needle mt-0.5 shrink-0" />
+              <p className="text-sm text-copper-needle">{erro}</p>
             </div>
           )}
 
@@ -781,7 +781,7 @@ export default function OrcamentoPage() {
               <button
                 type="button"
                 onClick={prevStep}
-                className="flex-1 h-12 rounded-[14px] border border-[#243337] bg-[#050B12] hover:bg-[#102128] text-[#87938F] hover:text-[#F0EADD] text-sm font-semibold transition-all"
+                className="flex-1 h-12 rounded-[14px] border border-mist-line bg-ink-night hover:bg-surface-raised text-text-subtle hover:text-porcelain-ink text-sm font-semibold transition-all"
               >
                 Voltar
               </button>
@@ -791,7 +791,7 @@ export default function OrcamentoPage() {
               <button
                 type="button"
                 onClick={nextStep}
-                className="flex-1 h-12 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] text-sm font-bold transition-all flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(47,146,133,0.15)]"
+                className="flex-1 h-12 rounded-[14px] bg-teal-ink hover:bg-ink-gold text-ink-night text-sm font-bold transition-all flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(47,146,133,0.15)]"
               >
                 Avançar <ChevronRight size={15} />
               </button>
@@ -799,7 +799,7 @@ export default function OrcamentoPage() {
               <button
                 type="submit"
                 disabled={!canSubmit || enviando}
-                className="flex-1 h-12 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] disabled:opacity-40 text-[#050B12] font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-[0_0_24px_rgba(47,146,133,0.25)]"
+                className="flex-1 h-12 rounded-[14px] bg-teal-ink hover:bg-ink-gold disabled:opacity-40 text-ink-night font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-[0_0_24px_rgba(47,146,133,0.25)]"
               >
                 {enviando ? (
                   <><Loader2 size={16} className="animate-spin" /> Enviando...</>

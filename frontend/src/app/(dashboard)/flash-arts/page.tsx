@@ -23,11 +23,11 @@ interface FlashArtItem {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
-  DISPONIVEL:    { label: "Disponível",    cls: "bg-[#54B88D]/15 text-[#54B88D] border-[#54B88D]/30" },
-  EM_NEGOCIACAO: { label: "Em Negociação", cls: "bg-[#D99A3D]/15 text-[#D99A3D] border-[#D99A3D]/30" },
-  RESERVADA:     { label: "Reservada",     cls: "bg-[#5E9ED6]/15 text-[#5E9ED6] border-[#5E9ED6]/30" },
-  SINAL_PAGO:    { label: "Sinal Pago",    cls: "bg-[#8B7CF6]/15 text-[#8B7CF6] border-[#8B7CF6]/30" },
-  VENDIDA:       { label: "Vendida",       cls: "bg-[#87938F]/15 text-[#87938F] border-[#87938F]/30" },
+  DISPONIVEL:    { label: "Disponível",    cls: "bg-success/15 text-success border-success/30" },
+  EM_NEGOCIACAO: { label: "Em Negociação", cls: "bg-warning/15 text-warning border-warning/30" },
+  RESERVADA:     { label: "Reservada",     cls: "bg-info/15 text-info border-info/30" },
+  SINAL_PAGO:    { label: "Sinal Pago",    cls: "bg-status-finalizado/15 text-status-finalizado border-status-finalizado/30" },
+  VENDIDA:       { label: "Vendida",       cls: "bg-text-subtle/15 text-text-subtle border-text-subtle/30" },
 };
 
 export default function FlashArtsPage() {
@@ -164,14 +164,14 @@ export default function FlashArtsPage() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#F0EADD]">Flash Arts</h1>
-          <p className="text-sm text-[#87938F] mt-1">
+          <h1 className="text-2xl font-bold text-porcelain-ink">Flash Arts</h1>
+          <p className="text-sm text-text-subtle mt-1">
             {isLoading ? "Carregando..." : `${flashArts.length} arte${flashArts.length !== 1 ? "s" : ""} cadastrada${flashArts.length !== 1 ? "s" : ""}`}
           </p>
         </div>
         <button
           onClick={handleOpenModal}
-          className="flex items-center gap-2 h-10 px-4 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm transition-all shrink-0"
+          className="flex items-center gap-2 h-10 px-4 rounded-[14px] bg-teal-ink hover:bg-ink-gold text-ink-night font-semibold text-sm transition-all shrink-0"
         >
           <Plus size={16} />
           Nova Flash Art
@@ -191,21 +191,21 @@ export default function FlashArtsPage() {
       {isLoading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-[#0B171C] border border-[#243337] rounded-[18px] h-72 animate-pulse" />
+            <div key={i} className="bg-ink-bg border border-mist-line rounded-[18px] h-72 animate-pulse" />
           ))}
         </div>
       )}
 
       {/* Empty State */}
       {!isLoading && flashArts.length === 0 && (
-        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px]">
+        <div className="bg-ink-bg border border-mist-line rounded-[18px]">
           <EmptyState
             title="Sua vitrine de flash arts está vazia"
             description="Publique suas artes disponíveis e deixe clientes reservarem direto pelo portal público — sua loja aberta 24h."
             action={
               <button
                 onClick={handleOpenModal}
-                className="flex items-center gap-2 h-11 px-5 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm transition-colors"
+                className="flex items-center gap-2 h-11 px-5 rounded-[14px] bg-teal-ink hover:bg-ink-gold text-ink-night font-semibold text-sm transition-colors"
               >
                 <Plus size={16} />
                 Cadastrar primeira flash art
@@ -221,10 +221,10 @@ export default function FlashArtsPage() {
           {flashArts.map((item) => (
             <div
               key={item.id}
-              className="bg-[#0B171C] border border-[#243337] rounded-[18px] overflow-hidden flex flex-col group hover:border-[#2F9285]/40 transition-all relative"
+              className="bg-ink-bg border border-mist-line rounded-[18px] overflow-hidden flex flex-col group hover:border-teal-ink/40 transition-all relative"
             >
               {/* Image Container */}
-              <div className="relative aspect-square w-full bg-[#050B12] border-b border-[#243337] overflow-hidden">
+              <div className="relative aspect-square w-full bg-ink-night border-b border-mist-line overflow-hidden">
                 {item.imagem_path ? (
                   <img
                     src={`${API}/api/v1/flash-arts/${item.id}/imagem`}
@@ -233,7 +233,7 @@ export default function FlashArtsPage() {
                     loading="lazy"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-[#243337]">
+                  <div className="w-full h-full flex items-center justify-center text-mist-line">
                     <Zap size={48} />
                   </div>
                 )}
@@ -245,7 +245,7 @@ export default function FlashArtsPage() {
                         deleteMutation.mutate(item.id);
                       }
                     }}
-                    className="p-2 rounded-full bg-[#050B12]/80 hover:bg-[#E35D5B]/20 hover:text-[#E35D5B] text-[#87938F] border border-[#243337] transition-all"
+                    className="p-2 rounded-full bg-ink-night/80 hover:bg-error-red/20 hover:text-error-red text-text-subtle border border-mist-line transition-all"
                   >
                     <Trash2 size={12} />
                   </button>
@@ -256,7 +256,7 @@ export default function FlashArtsPage() {
                   <select
                     value={item.status}
                     onChange={(e) => updateStatusMutation.mutate({ id: item.id, status: e.target.value })}
-                    className="w-full text-xs font-semibold bg-[#050B12]/95 border border-[#243337] text-[#F0EADD] rounded-lg px-2 py-1 outline-none cursor-pointer focus:border-[#2F9285]/60"
+                    className="w-full text-xs font-semibold bg-ink-night/95 border border-mist-line text-porcelain-ink rounded-lg px-2 py-1 outline-none cursor-pointer focus:border-teal-ink/60"
                   >
                     <option value="DISPONIVEL">Disponível</option>
                     <option value="EM_NEGOCIACAO">Em Negociação</option>
@@ -271,28 +271,28 @@ export default function FlashArtsPage() {
               {/* Details */}
               <div className="p-4 flex-1 flex flex-col justify-between">
                 <div>
-                  <h3 className="font-semibold text-sm text-[#F0EADD] line-clamp-1">{item.titulo}</h3>
-                  <p className="text-xs text-[#87938F] mt-1 line-clamp-2 min-h-[32px]">
+                  <h3 className="font-semibold text-sm text-porcelain-ink line-clamp-1">{item.titulo}</h3>
+                  <p className="text-xs text-text-subtle mt-1 line-clamp-2 min-h-[32px]">
                     {item.descricao || "Sem descrição adicional."}
                   </p>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-[#243337] flex flex-col gap-1.5">
+                <div className="mt-4 pt-3 border-t border-mist-line flex flex-col gap-1.5">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#87938F] flex items-center gap-1"><DollarSign size={12} /> Preço</span>
-                    <span className="font-bold text-[#F0EADD]">{formatCurrency(item.preco)}</span>
+                    <span className="text-text-subtle flex items-center gap-1"><DollarSign size={12} /> Preço</span>
+                    <span className="font-bold text-porcelain-ink">{formatCurrency(item.preco)}</span>
                   </div>
 
                   {item.tamanho_sugerido && (
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-[#87938F] flex items-center gap-1"><Maximize2 size={12} /> Tamanho</span>
+                      <span className="text-text-subtle flex items-center gap-1"><Maximize2 size={12} /> Tamanho</span>
                       <span className="text-[#smoke-text]">{item.tamanho_sugerido}</span>
                     </div>
                   )}
 
                   {item.local_recomendado && (
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-[#87938F] flex items-center gap-1"><MapPin size={12} /> Região</span>
+                      <span className="text-text-subtle flex items-center gap-1"><MapPin size={12} /> Região</span>
                       <span className="text-[#smoke-text] truncate max-w-[120px]">{item.local_recomendado}</span>
                     </div>
                   )}
@@ -306,14 +306,14 @@ export default function FlashArtsPage() {
       {/* Modal dialog for creating Flash Art */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#0B171C] border border-[#243337] w-full max-w-lg rounded-[18px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-lg rounded-[18px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#243337]">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-mist-line">
               <div className="flex items-center gap-2">
-                <Zap size={18} className="text-[#2F9285]" />
-                <h2 className="text-[#F0EADD] font-bold text-base">Nova Flash Art</h2>
+                <Zap size={18} className="text-teal-ink" />
+                <h2 className="text-porcelain-ink font-bold text-base">Nova Flash Art</h2>
               </div>
-              <button onClick={() => setIsModalOpen(false)} className="text-[#87938F] hover:text-[#F0EADD]">
+              <button onClick={() => setIsModalOpen(false)} className="text-text-subtle hover:text-porcelain-ink">
                 <X size={18} />
               </button>
             </div>
@@ -321,7 +321,7 @@ export default function FlashArtsPage() {
             {/* Modal Form */}
             <form onSubmit={handleSubmit} className="p-5 flex-1 overflow-y-auto space-y-4">
               {errorText && (
-                <div className="p-3 bg-[#E35D5B]/10 border border-[#E35D5B]/20 text-[#E35D5B] text-xs rounded-lg flex items-center justify-between">
+                <div className="p-3 bg-error-red/10 border border-error-red/20 text-error-red text-xs rounded-lg flex items-center justify-between">
                   <span>{errorText}</span>
                   <button type="button" onClick={() => setErrorText(null)}><X size={14} /></button>
                 </div>
@@ -329,18 +329,18 @@ export default function FlashArtsPage() {
 
               {/* Upload area */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-[#87938F]">Imagem da Arte *</label>
+                <label className="text-xs font-semibold text-text-subtle">Imagem da Arte *</label>
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="border border-dashed border-[#243337] hover:border-[#2F9285]/40 bg-[#050B12] rounded-[14px] p-6 text-center cursor-pointer transition-all relative overflow-hidden aspect-video flex flex-col items-center justify-center"
+                  className="border border-dashed border-mist-line hover:border-teal-ink/40 bg-ink-night rounded-[14px] p-6 text-center cursor-pointer transition-all relative overflow-hidden aspect-video flex flex-col items-center justify-center"
                 >
                   {previewUrl ? (
                     <img src={previewUrl} alt="Preview" className="absolute inset-0 w-full h-full object-contain" />
                   ) : (
                     <>
-                      <Zap size={24} className="text-[#243337] mb-2" />
-                      <p className="text-xs text-[#F0EADD] font-medium">Clique para selecionar imagem</p>
-                      <p className="text-[10px] text-[#87938F] mt-1">JPEG, PNG ou WebP até 15MB</p>
+                      <Zap size={24} className="text-mist-line mb-2" />
+                      <p className="text-xs text-porcelain-ink font-medium">Clique para selecionar imagem</p>
+                      <p className="text-[10px] text-text-subtle mt-1">JPEG, PNG ou WebP até 15MB</p>
                     </>
                   )}
                 </div>
@@ -355,78 +355,78 @@ export default function FlashArtsPage() {
 
               {/* Input: Título */}
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-[#87938F] flex items-center gap-1"><Tag size={12} /> Título *</label>
+                <label className="text-xs font-semibold text-text-subtle flex items-center gap-1"><Tag size={12} /> Título *</label>
                 <input
                   type="text"
                   required
                   placeholder="Ex: Caveira Old School"
                   value={titulo}
                   onChange={(e) => setTitulo(e.target.value)}
-                  className="w-full h-10 px-3 rounded-[10px] bg-[#050B12] border border-[#243337] text-sm text-[#F0EADD] focus:border-[#2F9285]/60 outline-none transition-all"
+                  className="w-full h-10 px-3 rounded-[10px] bg-ink-night border border-mist-line text-sm text-porcelain-ink focus:border-teal-ink/60 outline-none transition-all"
                 />
               </div>
 
               {/* Input: Descrição */}
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-[#87938F] flex items-center gap-1"><FileText size={12} /> Descrição</label>
+                <label className="text-xs font-semibold text-text-subtle flex items-center gap-1"><FileText size={12} /> Descrição</label>
                 <textarea
                   placeholder="Detalhes sobre a arte, conceito ou modificações possíveis..."
                   value={descricao}
                   onChange={(e) => setDescricao(e.target.value)}
-                  className="w-full h-16 p-3 rounded-[10px] bg-[#050B12] border border-[#243337] text-sm text-[#F0EADD] focus:border-[#2F9285]/60 outline-none transition-all resize-none"
+                  className="w-full h-16 p-3 rounded-[10px] bg-ink-night border border-mist-line text-sm text-porcelain-ink focus:border-teal-ink/60 outline-none transition-all resize-none"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Input: Preço */}
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-[#87938F] flex items-center gap-1"><DollarSign size={12} /> Preço (R$)</label>
+                  <label className="text-xs font-semibold text-text-subtle flex items-center gap-1"><DollarSign size={12} /> Preço (R$)</label>
                   <CurrencyInput
                     placeholder="Ex: 450,00"
                     value={preco}
                     onValueChange={setPreco}
-                    className="w-full h-10 px-3 rounded-[10px] bg-[#050B12] border border-[#243337] text-sm text-[#F0EADD] focus:border-[#2F9285]/60 outline-none transition-all"
+                    className="w-full h-10 px-3 rounded-[10px] bg-ink-night border border-mist-line text-sm text-porcelain-ink focus:border-teal-ink/60 outline-none transition-all"
                   />
                 </div>
 
                 {/* Input: Tamanho */}
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-[#87938F] flex items-center gap-1"><Maximize2 size={12} /> Tamanho sugerido</label>
+                  <label className="text-xs font-semibold text-text-subtle flex items-center gap-1"><Maximize2 size={12} /> Tamanho sugerido</label>
                   <input
                     type="text"
                     placeholder="Ex: 12 a 15 cm"
                     value={tamanho}
                     onChange={(e) => setTamanho(e.target.value)}
-                    className="w-full h-10 px-3 rounded-[10px] bg-[#050B12] border border-[#243337] text-sm text-[#F0EADD] focus:border-[#2F9285]/60 outline-none transition-all"
+                    className="w-full h-10 px-3 rounded-[10px] bg-ink-night border border-mist-line text-sm text-porcelain-ink focus:border-teal-ink/60 outline-none transition-all"
                   />
                 </div>
               </div>
 
               {/* Input: Local Recomendado */}
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-[#87938F] flex items-center gap-1"><MapPin size={12} /> Local recomendado</label>
+                <label className="text-xs font-semibold text-text-subtle flex items-center gap-1"><MapPin size={12} /> Local recomendado</label>
                 <input
                   type="text"
                   placeholder="Ex: Antebraço, panturrilha"
                   value={local}
                   onChange={(e) => setLocal(e.target.value)}
-                  className="w-full h-10 px-3 rounded-[10px] bg-[#050B12] border border-[#243337] text-sm text-[#F0EADD] focus:border-[#2F9285]/60 outline-none transition-all"
+                  className="w-full h-10 px-3 rounded-[10px] bg-ink-night border border-mist-line text-sm text-porcelain-ink focus:border-teal-ink/60 outline-none transition-all"
                 />
               </div>
 
               {/* Form Actions */}
-              <div className="flex gap-3 pt-4 border-t border-[#243337]">
+              <div className="flex gap-3 pt-4 border-t border-mist-line">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 h-10 rounded-[12px] border border-[#243337] hover:bg-[#102128] text-[#F0EADD] font-semibold text-sm transition-all"
+                  className="flex-1 h-10 rounded-[12px] border border-mist-line hover:bg-surface-raised text-porcelain-ink font-semibold text-sm transition-all"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 h-10 rounded-[12px] bg-[#2F9285] hover:bg-[#3AA99A] disabled:opacity-60 text-[#050B12] font-semibold text-sm transition-all flex items-center justify-center gap-2"
+                  className="flex-1 h-10 rounded-[12px] bg-teal-ink hover:bg-ink-gold disabled:opacity-60 text-ink-night font-semibold text-sm transition-all flex items-center justify-center gap-2"
                 >
                   {loading && <Loader2 size={16} className="animate-spin" />}
                   {loading ? "Salvando..." : "Salvar Arte"}

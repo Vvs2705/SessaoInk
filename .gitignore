@@ -88,3 +88,22 @@ backend/tests/**/__pycache__/
 
 # Scratch local (uploads de execuções/ensaios locais — nunca versionar)
 backend/.tmp/
+
+# Planos/passo-a-passo de agente TAMBÉM sob docs/ (fecha o furo que deixou
+# docs/PLANO_* e docs/GO_LIVE_* subirem). Padrões específicos para NÃO capturar
+# docs técnicos legítimos (api/architecture/runbook/security/openapi/evidencias).
+docs/PLANO_*.md
+docs/GO_LIVE_*.md
+docs/*HANDOFF*.md
+docs/CONTINUACAO_*.md
+docs/*PASSO_A_PASSO*.md
+docs/AUDITORIA_*.md
+docs/internal/
+
+# Notas/planejamento de agente na raiz (reforço)
+AJUSTES-*.md
+AJUSTES_*.md
+NOTAS_*.md
+TODO_*.md
+CONTEXTO_*.md
+PROMPT_*.md

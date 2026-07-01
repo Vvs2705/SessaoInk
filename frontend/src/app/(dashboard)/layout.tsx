@@ -7,7 +7,7 @@ import { PageGuide } from "@/components/PageGuide";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-app bg-[#050B12] text-[#F0EADD] lg:flex">
+    <div className="min-h-app bg-ink-night text-porcelain-ink lg:flex">
       <Sidebar />
 
       <div className="flex min-h-app min-w-0 flex-1 flex-col">

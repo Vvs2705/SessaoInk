@@ -93,10 +93,10 @@ interface Convite {
 }
 
 const CONVITE_STATUS_BADGE: Record<string, string> = {
-  PENDENTE: "bg-[#D99A3D]/15 text-[#D99A3D]",
-  ACEITO: "bg-[#2F9285]/15 text-[#2F9285]",
-  EXPIRADO: "bg-[#87938F]/15 text-[#87938F]",
-  REVOGADO: "bg-[#E35D5B]/15 text-[#E35D5B]",
+  PENDENTE: "bg-warning/15 text-warning",
+  ACEITO: "bg-teal-ink/15 text-teal-ink",
+  EXPIRADO: "bg-text-subtle/15 text-text-subtle",
+  REVOGADO: "bg-error-red/15 text-error-red",
 };
 
 const CONVITE_STATUS_LABEL: Record<string, string> = {
@@ -126,8 +126,8 @@ function Toast({
       className={cn(
         "fixed bottom-6 right-6 flex items-center gap-3 px-4 py-3 rounded-[14px] border shadow-xl z-50 animate-in slide-in-from-bottom-4",
         tipo === "sucesso"
-          ? "bg-[#0B171C] border-[#2F9285]/40 text-[#2F9285]"
-          : "bg-[#0B171C] border-[#E35D5B]/40 text-[#E35D5B]"
+          ? "bg-ink-bg border-teal-ink/40 text-teal-ink"
+          : "bg-ink-bg border-error-red/40 text-error-red"
       )}
     >
       {tipo === "sucesso" ? (
@@ -135,7 +135,7 @@ function Toast({
       ) : (
         <AlertCircle size={16} />
       )}
-      <span className="text-sm font-medium text-[#F0EADD]">{mensagem}</span>
+      <span className="text-sm font-medium text-porcelain-ink">{mensagem}</span>
       <button onClick={onClose} className="ml-2 opacity-60 hover:opacity-100">
         <X size={14} />
       </button>
@@ -144,9 +144,9 @@ function Toast({
 }
 
 const TIPO_BADGE: Record<string, string> = {
-  ADMIN: "bg-[#2F9285]/15 text-[#2F9285]",
-  ARTISTA: "bg-[#C36B3F]/15 text-[#C36B3F]",
-  RECEPCIONISTA: "bg-[#87938F]/15 text-[#87938F]",
+  ADMIN: "bg-teal-ink/15 text-teal-ink",
+  ARTISTA: "bg-copper-needle/15 text-copper-needle",
+  RECEPCIONISTA: "bg-text-subtle/15 text-text-subtle",
 };
 
 const TIPO_LABEL: Record<string, string> = {
@@ -831,12 +831,12 @@ export default function ConfiguracoesPage() {
     <div className="p-4 sm:p-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
-        <div className="p-2 bg-[#0B171C] rounded-[10px] border border-[#243337]">
-          <Settings size={20} className="text-[#2F9285]" />
+        <div className="p-2 bg-ink-bg rounded-[10px] border border-mist-line">
+          <Settings size={20} className="text-teal-ink" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-[#F0EADD]">Configurações</h1>
-          <p className="text-sm text-[#87938F]">Gerencie seu estúdio e conta</p>
+          <h1 className="text-2xl font-bold text-porcelain-ink">Configurações</h1>
+          <p className="text-sm text-text-subtle">Gerencie seu estúdio e conta</p>
         </div>
       </div>
 
@@ -850,8 +850,8 @@ export default function ConfiguracoesPage() {
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-medium transition-all text-left shrink-0 w-auto md:w-full",
                 aba === id
-                  ? "bg-[#2F9285]/10 text-[#2F9285] border border-[#2F9285]/20"
-                  : "text-[#87938F] hover:bg-[#0B171C] hover:text-[#F0EADD] border border-transparent"
+                  ? "bg-teal-ink/10 text-teal-ink border border-teal-ink/20"
+                  : "text-text-subtle hover:bg-ink-bg hover:text-porcelain-ink border border-transparent"
               )}
             >
               <Icon size={16} />
@@ -868,18 +868,18 @@ export default function ConfiguracoesPage() {
             <div className="space-y-6">
               {loadingEstudio ? (
                 <>
-                  <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6 space-y-4">
-                    <div className="h-6 bg-[#102128] rounded-[6px] w-48 animate-pulse" />
+                  <div className="bg-ink-bg border border-mist-line rounded-[18px] p-6 space-y-4">
+                    <div className="h-6 bg-surface-raised rounded-[6px] w-48 animate-pulse" />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="h-28 bg-[#102128] rounded-[14px] animate-pulse" />
-                      <div className="h-28 bg-[#102128] rounded-[24px] animate-pulse" />
+                      <div className="h-28 bg-surface-raised rounded-[14px] animate-pulse" />
+                      <div className="h-28 bg-surface-raised rounded-[24px] animate-pulse" />
                     </div>
                   </div>
-                  <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6 space-y-3">
+                  <div className="bg-ink-bg border border-mist-line rounded-[18px] p-6 space-y-3">
                     {[...Array(5)].map((_, i) => (
                       <div
                         key={i}
-                        className="h-10 bg-[#102128] rounded-[10px] animate-pulse"
+                        className="h-10 bg-surface-raised rounded-[10px] animate-pulse"
                       />
                     ))}
                   </div>
@@ -887,18 +887,18 @@ export default function ConfiguracoesPage() {
               ) : (
                 <>
                   {/* Card Identidade Visual */}
-                  <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6 space-y-6">
+                  <div className="bg-ink-bg border border-mist-line rounded-[18px] p-6 space-y-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h2 className="text-base font-semibold text-[#F0EADD]">
+                        <h2 className="text-base font-semibold text-porcelain-ink">
                           Identidade Visual
                         </h2>
-                        <p className="text-xs text-[#87938F]">
+                        <p className="text-xs text-text-subtle">
                           Personalize a marca e a foto de perfil do seu estúdio no portal
                         </p>
                       </div>
                       {!isAdmin && (
-                        <span className="text-[10px] bg-[#C36B3F]/10 border border-[#C36B3F]/20 text-[#C36B3F] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <span className="text-[10px] bg-copper-needle/10 border border-copper-needle/20 text-copper-needle font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
                           <Lock size={10} /> Apenas Admin
                         </span>
                       )}
@@ -907,11 +907,11 @@ export default function ConfiguracoesPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* LOGO */}
                       <div className="space-y-3">
-                        <label className="text-xs font-semibold text-[#87938F] block">
+                        <label className="text-xs font-semibold text-text-subtle block">
                           Logo do Estúdio
                         </label>
                         <div className="flex items-center gap-4">
-                          <div className="relative w-28 h-28 bg-[#050B12] border border-[#243337] rounded-[14px] overflow-hidden flex items-center justify-center group shrink-0">
+                          <div className="relative w-28 h-28 bg-ink-night border border-mist-line rounded-[14px] overflow-hidden flex items-center justify-center group shrink-0">
                             {estudio?.has_logo ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
@@ -921,13 +921,13 @@ export default function ConfiguracoesPage() {
                               />
                             ) : (
                               <div className="text-center p-2">
-                                <ImageIcon size={24} className="text-[#243337] mx-auto mb-1" />
-                                <span className="text-[10px] text-[#87938F]">Sem logo</span>
+                                <ImageIcon size={24} className="text-mist-line mx-auto mb-1" />
+                                <span className="text-[10px] text-text-subtle">Sem logo</span>
                               </div>
                             )}
                             {logoUploading && (
                               <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                <Loader2 className="w-5 h-5 text-[#2F9285] animate-spin" />
+                                <Loader2 className="w-5 h-5 text-teal-ink animate-spin" />
                               </div>
                             )}
                           </div>
@@ -938,7 +938,7 @@ export default function ConfiguracoesPage() {
                                 type="button"
                                 onClick={() => logoInputRef.current?.click()}
                                 disabled={!isAdmin || logoUploading}
-                                className="px-3 py-1.5 rounded-[8px] bg-[#2F9285]/10 border border-[#2F9285]/30 hover:bg-[#2F9285] hover:text-[#050B12] text-[#2F9285] disabled:opacity-50 disabled:hover:bg-[#2F9285]/10 disabled:hover:text-[#2F9285] text-xs font-medium transition-all"
+                                className="px-3 py-1.5 rounded-[8px] bg-teal-ink/10 border border-teal-ink/30 hover:bg-teal-ink hover:text-ink-night text-teal-ink disabled:opacity-50 disabled:hover:bg-teal-ink/10 disabled:hover:text-teal-ink text-xs font-medium transition-all"
                               >
                                 Alterar Logo
                               </button>
@@ -947,17 +947,17 @@ export default function ConfiguracoesPage() {
                                   type="button"
                                   onClick={handleRemoveLogo}
                                   disabled={!isAdmin || logoUploading}
-                                  className="px-3 py-1.5 rounded-[8px] bg-transparent border border-[#E35D5B]/30 hover:bg-[#E35D5B] hover:text-[#F0EADD] text-[#E35D5B] disabled:opacity-50 text-xs font-medium transition-all"
+                                  className="px-3 py-1.5 rounded-[8px] bg-transparent border border-error-red/30 hover:bg-error-red hover:text-porcelain-ink text-error-red disabled:opacity-50 text-xs font-medium transition-all"
                                 >
                                   Remover
                                 </button>
                               )}
                             </div>
-                            <p className="text-[10px] text-[#87938F]">
+                            <p className="text-[10px] text-text-subtle">
                               JPEG, PNG ou WebP. Máx 15MB.
                             </p>
                             {logoError && (
-                              <p className="text-[10px] text-[#E35D5B] font-medium">
+                              <p className="text-[10px] text-error-red font-medium">
                                 {logoError}
                               </p>
                             )}
@@ -978,11 +978,11 @@ export default function ConfiguracoesPage() {
 
                       {/* FOTO */}
                       <div className="space-y-3">
-                        <label className="text-xs font-semibold text-[#87938F] block">
+                        <label className="text-xs font-semibold text-text-subtle block">
                           Foto / Avatar do Estúdio
                         </label>
                         <div className="flex items-center gap-4">
-                          <div className="relative w-28 h-28 bg-[#050B12] border border-[#243337] rounded-[24px] overflow-hidden flex items-center justify-center group shrink-0">
+                          <div className="relative w-28 h-28 bg-ink-night border border-mist-line rounded-[24px] overflow-hidden flex items-center justify-center group shrink-0">
                             {estudio?.has_foto ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
@@ -992,13 +992,13 @@ export default function ConfiguracoesPage() {
                               />
                             ) : (
                               <div className="text-center p-2">
-                                <User size={24} className="text-[#243337] mx-auto mb-1" />
-                                <span className="text-[10px] text-[#87938F]">Sem foto</span>
+                                <User size={24} className="text-mist-line mx-auto mb-1" />
+                                <span className="text-[10px] text-text-subtle">Sem foto</span>
                               </div>
                             )}
                             {fotoUploading && (
                               <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                <Loader2 className="w-5 h-5 text-[#2F9285] animate-spin" />
+                                <Loader2 className="w-5 h-5 text-teal-ink animate-spin" />
                               </div>
                             )}
                           </div>
@@ -1009,7 +1009,7 @@ export default function ConfiguracoesPage() {
                                 type="button"
                                 onClick={() => fotoInputRef.current?.click()}
                                 disabled={!isAdmin || fotoUploading}
-                                className="px-3 py-1.5 rounded-[8px] bg-[#2F9285]/10 border border-[#2F9285]/30 hover:bg-[#2F9285] hover:text-[#050B12] text-[#2F9285] disabled:opacity-50 disabled:hover:bg-[#2F9285]/10 disabled:hover:text-[#2F9285] text-xs font-medium transition-all"
+                                className="px-3 py-1.5 rounded-[8px] bg-teal-ink/10 border border-teal-ink/30 hover:bg-teal-ink hover:text-ink-night text-teal-ink disabled:opacity-50 disabled:hover:bg-teal-ink/10 disabled:hover:text-teal-ink text-xs font-medium transition-all"
                               >
                                 Alterar Foto
                               </button>
@@ -1018,17 +1018,17 @@ export default function ConfiguracoesPage() {
                                   type="button"
                                   onClick={handleRemoveFoto}
                                   disabled={!isAdmin || fotoUploading}
-                                  className="px-3 py-1.5 rounded-[8px] bg-transparent border border-[#E35D5B]/30 hover:bg-[#E35D5B] hover:text-[#F0EADD] text-[#E35D5B] disabled:opacity-50 text-xs font-medium transition-all"
+                                  className="px-3 py-1.5 rounded-[8px] bg-transparent border border-error-red/30 hover:bg-error-red hover:text-porcelain-ink text-error-red disabled:opacity-50 text-xs font-medium transition-all"
                                 >
                                   Remover
                                 </button>
                               )}
                             </div>
-                            <p className="text-[10px] text-[#87938F]">
+                            <p className="text-[10px] text-text-subtle">
                               JPEG, PNG ou WebP. Máx 15MB.
                             </p>
                             {fotoError && (
-                              <p className="text-[10px] text-[#E35D5B] font-medium">
+                              <p className="text-[10px] text-error-red font-medium">
                                 {fotoError}
                               </p>
                             )}
@@ -1050,40 +1050,40 @@ export default function ConfiguracoesPage() {
                   </div>
 
                   {/* Informações do Estúdio */}
-                  <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6">
-                    <h2 className="text-base font-semibold text-[#F0EADD] mb-5">
+                  <div className="bg-ink-bg border border-mist-line rounded-[18px] p-6">
+                    <h2 className="text-base font-semibold text-porcelain-ink mb-5">
                       Informações do Estúdio
                     </h2>
 
                     <div className="space-y-4">
                       <div>
-                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                        <label className="text-xs font-medium text-text-subtle mb-1.5 block">
                           Nome do estúdio *
                         </label>
                         <input
                           value={val("nome")}
                           onChange={(e) => handleCampoEstudio("nome", e.target.value)}
-                          className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                          className="w-full bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors"
                           placeholder="Nome do seu estúdio"
                         />
                       </div>
 
                       <div>
-                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                        <label className="text-xs font-medium text-text-subtle mb-1.5 block">
                           Bio / Apresentação
                         </label>
                         <textarea
                           value={val("bio")}
                           onChange={(e) => handleCampoEstudio("bio", e.target.value)}
                           rows={3}
-                          className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors resize-none"
+                          className="w-full bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors resize-none"
                           placeholder="Apresentação do estúdio para o portal público..."
                         />
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                          <label className="text-xs font-medium text-text-subtle mb-1.5 block">
                             Cidade
                           </label>
                           <input
@@ -1091,12 +1091,12 @@ export default function ConfiguracoesPage() {
                             onChange={(e) =>
                               handleCampoEstudio("cidade", e.target.value)
                             }
-                            className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                            className="w-full bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors"
                             placeholder="São Paulo"
                           />
                         </div>
                         <div>
-                          <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                          <label className="text-xs font-medium text-text-subtle mb-1.5 block">
                             UF
                           </label>
                           <input
@@ -1105,14 +1105,14 @@ export default function ConfiguracoesPage() {
                               handleCampoEstudio("uf", e.target.value.toUpperCase().slice(0, 2))
                             }
                             maxLength={2}
-                            className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                            className="w-full bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors"
                             placeholder="SP"
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                        <label className="text-xs font-medium text-text-subtle mb-1.5 block">
                           WhatsApp / Telefone
                         </label>
                         <input
@@ -1120,17 +1120,17 @@ export default function ConfiguracoesPage() {
                           onChange={(e) =>
                             handleCampoEstudio("telefone", e.target.value)
                           }
-                          className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                          className="w-full bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors"
                           placeholder="(11) 99999-9999"
                         />
                       </div>
 
                       <div>
-                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                        <label className="text-xs font-medium text-text-subtle mb-1.5 block">
                           Instagram
                         </label>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-[#87938F]">@</span>
+                          <span className="text-sm text-text-subtle">@</span>
                           <input
                             value={val("instagram")}
                             onChange={(e) =>
@@ -1139,7 +1139,7 @@ export default function ConfiguracoesPage() {
                                 e.target.value.replace("@", "")
                               )
                             }
-                            className="flex-1 bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                            className="flex-1 bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors"
                             placeholder="seu.estudio"
                           />
                         </div>
@@ -1153,8 +1153,8 @@ export default function ConfiguracoesPage() {
                           className={cn(
                             "flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm font-medium transition-all",
                             formEditado
-                              ? "bg-[#2F9285] text-[#050B12] hover:bg-[#2F9285]/90"
-                              : "bg-[#243337] text-[#87938F] cursor-not-allowed"
+                              ? "bg-teal-ink text-ink-night hover:bg-teal-ink/90"
+                              : "bg-mist-line text-text-subtle cursor-not-allowed"
                           )}
                         >
                           <Save size={14} />
@@ -1165,91 +1165,91 @@ export default function ConfiguracoesPage() {
                   </div>
 
                   {/* Endereço do Estúdio */}
-                  <div className="rounded-[18px] border border-[#243337] bg-[#0B171C] p-6 space-y-6">
+                  <div className="rounded-[18px] border border-mist-line bg-ink-bg p-6 space-y-6">
                     <div>
-                      <h2 className="text-base font-semibold text-[#F0EADD]">
+                      <h2 className="text-base font-semibold text-porcelain-ink">
                         Endereço do Estúdio
                       </h2>
-                      <p className="text-xs text-[#87938F]">
+                      <p className="text-xs text-text-subtle">
                         Essas informações aparecem no portal público para o cliente saber como chegar.
                       </p>
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div>
-                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                        <label className="text-xs font-medium text-text-subtle mb-1.5 block">
                           CEP
                         </label>
                         <input
                           value={val("endereco_cep")}
                           onChange={(event) => handleCampoEstudio("endereco_cep", event.target.value)}
-                          className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                          className="w-full bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors"
                           placeholder="00000-000"
                         />
                       </div>
 
                       <div>
-                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                        <label className="text-xs font-medium text-text-subtle mb-1.5 block">
                           Bairro
                         </label>
                         <input
                           value={val("endereco_bairro")}
                           onChange={(event) => handleCampoEstudio("endereco_bairro", event.target.value)}
-                          className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                          className="w-full bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors"
                           placeholder="Centro"
                         />
                       </div>
 
                       <div className="sm:col-span-2">
-                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                        <label className="text-xs font-medium text-text-subtle mb-1.5 block">
                           Rua / Logradouro
                         </label>
                         <input
                           value={val("endereco_logradouro")}
                           onChange={(event) => handleCampoEstudio("endereco_logradouro", event.target.value)}
-                          className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                          className="w-full bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors"
                           placeholder="Rua Exemplo"
                         />
                       </div>
 
                       <div>
-                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                        <label className="text-xs font-medium text-text-subtle mb-1.5 block">
                           Número
                         </label>
                         <input
                           value={val("endereco_numero")}
                           onChange={(event) => handleCampoEstudio("endereco_numero", event.target.value)}
-                          className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                          className="w-full bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors"
                           placeholder="123"
                         />
                       </div>
 
                       <div>
-                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                        <label className="text-xs font-medium text-text-subtle mb-1.5 block">
                           Complemento
                         </label>
                         <input
                           value={val("endereco_complemento")}
                           onChange={(event) => handleCampoEstudio("endereco_complemento", event.target.value)}
-                          className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                          className="w-full bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors"
                           placeholder="Sala 2, fundos, etc."
                         />
                       </div>
 
                       <div>
-                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                        <label className="text-xs font-medium text-text-subtle mb-1.5 block">
                           Cidade
                         </label>
                         <input
                           value={val("endereco_cidade")}
                           onChange={(event) => handleCampoEstudio("endereco_cidade", event.target.value)}
-                          className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                          className="w-full bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors"
                           placeholder="São Paulo"
                         />
                       </div>
 
                       <div>
-                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                        <label className="text-xs font-medium text-text-subtle mb-1.5 block">
                           UF
                         </label>
                         <input
@@ -1258,22 +1258,22 @@ export default function ConfiguracoesPage() {
                             handleCampoEstudio("endereco_uf", event.target.value.toUpperCase().slice(0, 2))
                           }
                           maxLength={2}
-                          className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm uppercase text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                          className="w-full bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 text-sm uppercase text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors"
                           placeholder="SP"
                         />
                       </div>
 
                       <div className="sm:col-span-2">
-                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                        <label className="text-xs font-medium text-text-subtle mb-1.5 block">
                           Link do Google Negócios / Google Maps
                         </label>
                         <input
                           value={val("google_negocio_url")}
                           onChange={(event) => handleCampoEstudio("google_negocio_url", event.target.value)}
-                          className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                          className="w-full bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors"
                           placeholder="https://maps.app.goo.gl/..."
                         />
-                        <p className="text-[10px] text-[#87938F] mt-1">
+                        <p className="text-[10px] text-text-subtle mt-1">
                           Esse link será usado no botão “Como chegar” do portal público.
                         </p>
                       </div>
@@ -1285,7 +1285,7 @@ export default function ConfiguracoesPage() {
                           href={estudio.como_chegar_url}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[#2F9285]/30 bg-[#2F9285]/10 px-4 text-xs font-semibold text-[#2F9285] hover:bg-[#2F9285] hover:text-[#050B12] transition-colors"
+                          className="inline-flex h-9 items-center justify-center rounded-[10px] border border-teal-ink/30 bg-teal-ink/10 px-4 text-xs font-semibold text-teal-ink hover:bg-teal-ink hover:text-ink-night transition-colors"
                         >
                           Testar como chegar
                         </a>
@@ -1300,8 +1300,8 @@ export default function ConfiguracoesPage() {
                         className={cn(
                           "flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm font-medium transition-all",
                           formEditado
-                            ? "bg-[#2F9285] text-[#050B12] hover:bg-[#2F9285]/90"
-                            : "bg-[#243337] text-[#87938F] cursor-not-allowed"
+                            ? "bg-teal-ink text-ink-night hover:bg-teal-ink/90"
+                            : "bg-mist-line text-text-subtle cursor-not-allowed"
                         )}
                       >
                         <Save size={14} />
@@ -1318,8 +1318,8 @@ export default function ConfiguracoesPage() {
           {aba === "portal" && (
             <div className="space-y-4">
               {/* Card do link */}
-              <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6 space-y-4">
-                <h2 className="text-base font-semibold text-[#F0EADD]">
+              <div className="bg-ink-bg border border-mist-line rounded-[18px] p-6 space-y-4">
+                <h2 className="text-base font-semibold text-porcelain-ink">
                   Link do seu portal
                 </h2>
 
@@ -1330,13 +1330,13 @@ export default function ConfiguracoesPage() {
                     <>
                       {/* URL com botões */}
                       <div>
-                        <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                        <label className="text-xs font-medium text-text-subtle mb-1.5 block">
                           URL pública atual — compartilhe com seus clientes
                         </label>
                         <div className="flex items-center gap-2">
-                          <div className="flex-1 flex items-center gap-0 bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 min-w-0">
-                            <span className="text-sm text-[#87938F] shrink-0">sessao-ink.vercel.app/</span>
-                            <span className="text-sm text-[#2F9285] font-bold truncate">{estudio?.slug ?? "..."}</span>
+                          <div className="flex-1 flex items-center gap-0 bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 min-w-0">
+                            <span className="text-sm text-text-subtle shrink-0">sessao-ink.vercel.app/</span>
+                            <span className="text-sm text-teal-ink font-bold truncate">{estudio?.slug ?? "..."}</span>
                           </div>
                           <button
                             type="button"
@@ -1345,7 +1345,7 @@ export default function ConfiguracoesPage() {
                               showToast("sucesso", "Link copiado para a área de transferência!");
                             }}
                             title="Copiar link"
-                            className="shrink-0 h-10 w-10 flex items-center justify-center rounded-[10px] bg-[#2F9285]/10 border border-[#2F9285]/30 hover:bg-[#2F9285] hover:text-[#050B12] text-[#2F9285] transition-all"
+                            className="shrink-0 h-10 w-10 flex items-center justify-center rounded-[10px] bg-teal-ink/10 border border-teal-ink/30 hover:bg-teal-ink hover:text-ink-night text-teal-ink transition-all"
                           >
                             <Copy size={15} />
                           </button>
@@ -1354,7 +1354,7 @@ export default function ConfiguracoesPage() {
                             target="_blank"
                             rel="noreferrer"
                             title="Abrir portal"
-                            className="shrink-0 h-10 w-10 flex items-center justify-center rounded-[10px] bg-[#0B171C] border border-[#243337] hover:bg-[#102128] text-[#87938F] hover:text-[#F0EADD] transition-all"
+                            className="shrink-0 h-10 w-10 flex items-center justify-center rounded-[10px] bg-ink-bg border border-mist-line hover:bg-surface-raised text-text-subtle hover:text-porcelain-ink transition-all"
                           >
                             <ExternalLink size={15} />
                           </a>
@@ -1363,19 +1363,19 @@ export default function ConfiguracoesPage() {
 
                       {/* Input de edição do link (apenas Admin) */}
                       {isAdmin ? (
-                        <div className="space-y-3 pt-4 border-t border-[#243337]">
-                          <label className="text-xs font-medium text-[#87938F] block">
+                        <div className="space-y-3 pt-4 border-t border-mist-line">
+                          <label className="text-xs font-medium text-text-subtle block">
                             Alterar link personalizado (slug)
                           </label>
                           <div className="flex items-center gap-2">
-                            <div className="flex-1 flex items-center gap-0 bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 min-w-0">
-                              <span className="text-sm text-[#87938F] shrink-0">sessao-ink.vercel.app/</span>
+                            <div className="flex-1 flex items-center gap-0 bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 min-w-0">
+                              <span className="text-sm text-text-subtle shrink-0">sessao-ink.vercel.app/</span>
                               <input
                                 type="text"
                                 value={novoSlug}
                                 onChange={(e) => setNovoSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
                                 disabled={atualizarSlug.isPending}
-                                className="w-full bg-transparent text-sm text-[#2F9285] font-bold focus:outline-none placeholder-gray-600"
+                                className="w-full bg-transparent text-sm text-teal-ink font-bold focus:outline-none placeholder-gray-600"
                                 placeholder="link-do-seu-estudio"
                               />
                             </div>
@@ -1386,8 +1386,8 @@ export default function ConfiguracoesPage() {
                               className={cn(
                                 "shrink-0 h-10 px-4 flex items-center justify-center rounded-[10px] text-xs font-semibold transition-all",
                                 slugDisponivel && novoSlug !== estudio?.slug
-                                  ? "bg-[#2F9285] text-[#050B12] hover:bg-[#3AA99A]"
-                                  : "bg-[#243337] text-[#87938F] cursor-not-allowed"
+                                  ? "bg-teal-ink text-ink-night hover:bg-ink-gold"
+                                  : "bg-mist-line text-text-subtle cursor-not-allowed"
                               )}
                             >
                               {atualizarSlug.isPending ? (
@@ -1403,48 +1403,48 @@ export default function ConfiguracoesPage() {
                             <div className="flex items-center gap-1.5 text-xs mt-1">
                               {validandoSlug ? (
                                 <>
-                                  <Loader2 size={13} className="text-[#87938F] animate-spin" />
-                                  <span className="text-[#87938F]">Verificando disponibilidade...</span>
+                                  <Loader2 size={13} className="text-text-subtle animate-spin" />
+                                  <span className="text-text-subtle">Verificando disponibilidade...</span>
                                 </>
                               ) : slugDisponivel ? (
                                 <>
-                                  <CheckCircle size={13} className="text-[#2F9285]" />
-                                  <span className="text-[#2F9285]">Endereço disponível!</span>
+                                  <CheckCircle size={13} className="text-teal-ink" />
+                                  <span className="text-teal-ink">Endereço disponível!</span>
                                 </>
                               ) : (
                                 <>
-                                  <AlertCircle size={13} className="text-[#E35D5B]" />
-                                  <span className="text-[#E35D5B]">{motivoSlug ?? "Link indisponível."}</span>
+                                  <AlertCircle size={13} className="text-error-red" />
+                                  <span className="text-error-red">{motivoSlug ?? "Link indisponível."}</span>
                                 </>
                               )}
                             </div>
                           )}
 
-                          <p className="text-[10px] text-[#87938F]">
+                          <p className="text-[10px] text-text-subtle">
                             Regras do link: 3 a 50 caracteres, apenas letras minúsculas (sem acentos), números e hífens.
                           </p>
                         </div>
                       ) : (
-                        <div className="pt-4 border-t border-[#243337] flex items-start gap-2 text-xs text-[#87938F]">
-                          <Lock size={14} className="text-[#C36B3F] shrink-0 mt-0.5" />
+                        <div className="pt-4 border-t border-mist-line flex items-start gap-2 text-xs text-text-subtle">
+                          <Lock size={14} className="text-copper-needle shrink-0 mt-0.5" />
                           <span>Apenas administradores podem alterar o endereço do portal.</span>
                         </div>
                       )}
 
                       {/* O que o cliente vê */}
-                      <div className="bg-[#050B12] border border-[#243337] rounded-[14px] p-4 space-y-2">
-                        <p className="text-xs font-semibold text-[#87938F] uppercase tracking-wider">O que seu cliente vê no portal</p>
-                        <div className="flex flex-col gap-1.5 text-xs text-[#87938F]">
-                          <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#2F9285] shrink-0" />Perfil do estúdio com foto, bio e localização</div>
-                          <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#2F9285] shrink-0" />Portfólio público de trabalhos</div>
-                          <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#2F9285] shrink-0" />Flash arts disponíveis para agendamento</div>
-                          <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#2F9285] shrink-0" />Formulário de pedido de orçamento</div>
+                      <div className="bg-ink-night border border-mist-line rounded-[14px] p-4 space-y-2">
+                        <p className="text-xs font-semibold text-text-subtle uppercase tracking-wider">O que seu cliente vê no portal</p>
+                        <div className="flex flex-col gap-1.5 text-xs text-text-subtle">
+                          <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-teal-ink shrink-0" />Perfil do estúdio com foto, bio e localização</div>
+                          <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-teal-ink shrink-0" />Portfólio público de trabalhos</div>
+                          <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-teal-ink shrink-0" />Flash arts disponíveis para agendamento</div>
+                          <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-teal-ink shrink-0" />Formulário de pedido de orçamento</div>
                         </div>
                       </div>
 
-                      <div className="bg-[#2F9285]/5 border border-[#2F9285]/15 rounded-[12px] p-3">
-                        <p className="text-xs text-[#87938F]">
-                          <span className="text-[#2F9285] font-medium">Como compartilhar:</span> Cole o link na bio do Instagram, envie pelo WhatsApp ou crie um QR Code em qr-code-generator.com. O cliente preenche o formulário e o pedido aparece automaticamente em Atendimentos.
+                      <div className="bg-teal-ink/5 border border-teal-ink/15 rounded-[12px] p-3">
+                        <p className="text-xs text-text-subtle">
+                          <span className="text-teal-ink font-medium">Como compartilhar:</span> Cole o link na bio do Instagram, envie pelo WhatsApp ou crie um QR Code em qr-code-generator.com. O cliente preenche o formulário e o pedido aparece automaticamente em Atendimentos.
                         </p>
                       </div>
                     </>
@@ -1453,19 +1453,19 @@ export default function ConfiguracoesPage() {
               </div>
 
               {/* Card de notificação por email */}
-              <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6 space-y-4">
+              <div className="bg-ink-bg border border-mist-line rounded-[18px] p-6 space-y-4">
                 <div className="flex items-center gap-2">
-                  <Bell size={16} className="text-[#2F9285]" />
-                  <h2 className="text-base font-semibold text-[#F0EADD]">
+                  <Bell size={16} className="text-teal-ink" />
+                  <h2 className="text-base font-semibold text-porcelain-ink">
                     Notificações por e-mail
                   </h2>
                 </div>
-                <p className="text-sm text-[#87938F]">
+                <p className="text-sm text-text-subtle">
                   Cadastre um e-mail para receber uma notificação toda vez que um cliente preencher o formulário de orçamento.
                 </p>
 
                 <div>
-                  <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                  <label className="text-xs font-medium text-text-subtle mb-1.5 block">
                     E-mail para receber orçamentos
                   </label>
                   <input
@@ -1473,9 +1473,9 @@ export default function ConfiguracoesPage() {
                     value={val("email_notificacao")}
                     onChange={(e) => handleCampoEstudio("email_notificacao", e.target.value)}
                     placeholder="seuemail@exemplo.com"
-                    className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                    className="w-full bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors"
                   />
-                  <p className="text-xs text-[#87938F] mt-1.5">
+                  <p className="text-xs text-text-subtle mt-1.5">
                     Deixe em branco para desativar as notificações.
                   </p>
                 </div>
@@ -1487,8 +1487,8 @@ export default function ConfiguracoesPage() {
                     className={cn(
                       "flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm font-medium transition-all",
                       formEditado
-                        ? "bg-[#2F9285] text-[#050B12] hover:bg-[#2F9285]/90"
-                        : "bg-[#243337] text-[#87938F] cursor-not-allowed"
+                        ? "bg-teal-ink text-ink-night hover:bg-teal-ink/90"
+                        : "bg-mist-line text-text-subtle cursor-not-allowed"
                     )}
                   >
                     <Save size={14} />
@@ -1496,22 +1496,22 @@ export default function ConfiguracoesPage() {
                   </button>
                 </div>
 
-                <div className="bg-[#2F9285]/5 border border-[#2F9285]/20 rounded-[12px] p-3">
-                  <p className="text-xs text-[#87938F]">
-                    <span className="text-[#2F9285] font-medium">✓ Serviço de email ativo.</span> Os emails são enviados automaticamente via Resend assim que um cliente preencher o formulário do portal. Basta salvar seu e-mail acima.
+                <div className="bg-teal-ink/5 border border-teal-ink/20 rounded-[12px] p-3">
+                  <p className="text-xs text-text-subtle">
+                    <span className="text-teal-ink font-medium">✓ Serviço de email ativo.</span> Os emails são enviados automaticamente via Resend assim que um cliente preencher o formulário do portal. Basta salvar seu e-mail acima.
                   </p>
                 </div>
               </div>
 
               {/* Card de horário de funcionamento */}
-              <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6 space-y-4">
+              <div className="bg-ink-bg border border-mist-line rounded-[18px] p-6 space-y-4">
                 <div className="flex items-center gap-2">
-                  <Clock size={16} className="text-[#2F9285]" />
-                  <h2 className="text-base font-semibold text-[#F0EADD]">
+                  <Clock size={16} className="text-teal-ink" />
+                  <h2 className="text-base font-semibold text-porcelain-ink">
                     Horário de funcionamento
                   </h2>
                 </div>
-                <p className="text-sm text-[#87938F]">
+                <p className="text-sm text-text-subtle">
                   Define quais dias o cliente pode sugerir no formulário de orçamento.
                   Dias fechados aparecem desabilitados para ele — e pedidos fora do
                   padrão chegam marcados como &quot;horário personalizado&quot;.
@@ -1524,7 +1524,7 @@ export default function ConfiguracoesPage() {
                     return (
                       <div
                         key={dia}
-                        className="flex flex-wrap items-center gap-3 p-2.5 bg-[#050B12] border border-[#243337] rounded-[10px]"
+                        className="flex flex-wrap items-center gap-3 p-2.5 bg-ink-night border border-mist-line rounded-[10px]"
                       >
                         <label className="flex items-center gap-2.5 cursor-pointer min-w-[120px]">
                           <input
@@ -1536,34 +1536,34 @@ export default function ConfiguracoesPage() {
                           <span
                             className={cn(
                               "text-sm font-medium",
-                              faixa ? "text-[#F0EADD]" : "text-[#87938F]"
+                              faixa ? "text-porcelain-ink" : "text-text-subtle"
                             )}
                           >
                             {nome}
                           </span>
                         </label>
                         {faixa ? (
-                          <div className="flex items-center gap-2 text-sm text-[#F0EADD]">
+                          <div className="flex items-center gap-2 text-sm text-porcelain-ink">
                             <input
                               type="time"
                               value={faixa.abre}
                               onChange={(e) => setHoraDia(dia, "abre", e.target.value)}
                               disabled={!isAdmin}
                               aria-label={`Abertura ${nome}`}
-                              className="bg-[#0B171C] border border-[#243337] rounded-[8px] px-2 py-1.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50"
+                              className="bg-ink-bg border border-mist-line rounded-[8px] px-2 py-1.5 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50"
                             />
-                            <span className="text-[#87938F] text-xs">às</span>
+                            <span className="text-text-subtle text-xs">às</span>
                             <input
                               type="time"
                               value={faixa.fecha}
                               onChange={(e) => setHoraDia(dia, "fecha", e.target.value)}
                               disabled={!isAdmin}
                               aria-label={`Fechamento ${nome}`}
-                              className="bg-[#0B171C] border border-[#243337] rounded-[8px] px-2 py-1.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50"
+                              className="bg-ink-bg border border-mist-line rounded-[8px] px-2 py-1.5 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50"
                             />
                           </div>
                         ) : (
-                          <span className="text-xs text-[#87938F] italic">Fechado</span>
+                          <span className="text-xs text-text-subtle italic">Fechado</span>
                         )}
                       </div>
                     );
@@ -1578,8 +1578,8 @@ export default function ConfiguracoesPage() {
                       className={cn(
                         "flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm font-medium transition-all",
                         horarioEditado
-                          ? "bg-[#2F9285] text-[#050B12] hover:bg-[#2F9285]/90"
-                          : "bg-[#243337] text-[#87938F] cursor-not-allowed"
+                          ? "bg-teal-ink text-ink-night hover:bg-teal-ink/90"
+                          : "bg-mist-line text-text-subtle cursor-not-allowed"
                       )}
                     >
                       {salvarHorario.isPending ? (
@@ -1594,14 +1594,14 @@ export default function ConfiguracoesPage() {
               </div>
 
               {/* Card de sincronização com Google Agenda (feed iCalendar) */}
-              <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6 space-y-4">
+              <div className="bg-ink-bg border border-mist-line rounded-[18px] p-6 space-y-4">
                 <div className="flex items-center gap-2">
-                  <CalendarDays size={16} className="text-[#2F9285]" />
-                  <h2 className="text-base font-semibold text-[#F0EADD]">
+                  <CalendarDays size={16} className="text-teal-ink" />
+                  <h2 className="text-base font-semibold text-porcelain-ink">
                     Sincronizar agenda com o celular
                   </h2>
                 </div>
-                <p className="text-sm text-[#87938F]">
+                <p className="text-sm text-text-subtle">
                   Gere um link privado da sua agenda e adicione no Google Agenda, Apple
                   Calendar ou Outlook. Suas sessões aparecem automaticamente no
                   calendário do celular, com notificações — sem precisar de conta Google
@@ -1616,7 +1616,7 @@ export default function ConfiguracoesPage() {
                         readOnly
                         value={estudio.agenda_ics_url}
                         aria-label="Link privado da agenda"
-                        className="flex-1 bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-xs text-[#87938F] font-mono focus:outline-none min-w-0"
+                        className="flex-1 bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 text-xs text-text-subtle font-mono focus:outline-none min-w-0"
                       />
                       <button
                         type="button"
@@ -1625,16 +1625,16 @@ export default function ConfiguracoesPage() {
                           setIcsCopiado(true);
                           setTimeout(() => setIcsCopiado(false), 2000);
                         }}
-                        className="shrink-0 h-10 px-3 flex items-center gap-1.5 rounded-[10px] bg-[#2F9285] text-[#050B12] text-xs font-semibold hover:bg-[#3AA99A] transition-all"
+                        className="shrink-0 h-10 px-3 flex items-center gap-1.5 rounded-[10px] bg-teal-ink text-ink-night text-xs font-semibold hover:bg-ink-gold transition-all"
                       >
                         {icsCopiado ? <CheckCircle size={14} /> : <Copy size={14} />}
                         {icsCopiado ? "Copiado!" : "Copiar"}
                       </button>
                     </div>
 
-                    <div className="bg-[#2F9285]/5 border border-[#2F9285]/15 rounded-[12px] p-3">
-                      <p className="text-xs text-[#87938F] leading-relaxed">
-                        <span className="text-[#2F9285] font-medium">Como adicionar no Google Agenda:</span>{" "}
+                    <div className="bg-teal-ink/5 border border-teal-ink/15 rounded-[12px] p-3">
+                      <p className="text-xs text-text-subtle leading-relaxed">
+                        <span className="text-teal-ink font-medium">Como adicionar no Google Agenda:</span>{" "}
                         abra calendar.google.com → no menu lateral, clique em &quot;+&quot; ao lado de
                         &quot;Outras agendas&quot; → &quot;A partir do URL&quot; → cole o link acima.
                         No celular, a agenda sincroniza sozinha depois disso.
@@ -1647,7 +1647,7 @@ export default function ConfiguracoesPage() {
                           type="button"
                           onClick={() => gerarLinkIcs.mutate()}
                           disabled={gerarLinkIcs.isPending}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-medium border border-[#243337] text-[#87938F] hover:text-[#F0EADD] hover:bg-[#102128] transition-all"
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-medium border border-mist-line text-text-subtle hover:text-porcelain-ink hover:bg-surface-raised transition-all"
                         >
                           <RefreshCw size={13} className={gerarLinkIcs.isPending ? "animate-spin" : ""} />
                           Gerar novo link
@@ -1656,14 +1656,14 @@ export default function ConfiguracoesPage() {
                           type="button"
                           onClick={() => revogarLinkIcs.mutate()}
                           disabled={revogarLinkIcs.isPending}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-medium border border-[#E35D5B]/30 text-[#E35D5B] hover:bg-[#E35D5B]/10 transition-all"
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-medium border border-error-red/30 text-error-red hover:bg-error-red/10 transition-all"
                         >
                           <X size={13} />
                           Revogar link
                         </button>
                       </div>
                     )}
-                    <p className="text-[10px] text-[#87938F]">
+                    <p className="text-[10px] text-text-subtle">
                       Atenção: este link dá acesso de leitura à sua agenda. Não compartilhe.
                       Gerar um novo link invalida o anterior.
                     </p>
@@ -1673,7 +1673,7 @@ export default function ConfiguracoesPage() {
                     type="button"
                     onClick={() => gerarLinkIcs.mutate()}
                     disabled={gerarLinkIcs.isPending}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-[10px] bg-[#2F9285] text-[#050B12] text-sm font-semibold hover:bg-[#3AA99A] transition-all disabled:opacity-60"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-[10px] bg-teal-ink text-ink-night text-sm font-semibold hover:bg-ink-gold transition-all disabled:opacity-60"
                   >
                     {gerarLinkIcs.isPending ? (
                       <Loader2 size={15} className="animate-spin" />
@@ -1683,8 +1683,8 @@ export default function ConfiguracoesPage() {
                     Gerar link da agenda
                   </button>
                 ) : (
-                  <div className="flex items-start gap-2 text-xs text-[#87938F]">
-                    <Lock size={14} className="text-[#C36B3F] shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-2 text-xs text-text-subtle">
+                    <Lock size={14} className="text-copper-needle shrink-0 mt-0.5" />
                     <span>Peça a um administrador para gerar o link da agenda.</span>
                   </div>
                 )}
@@ -1694,12 +1694,12 @@ export default function ConfiguracoesPage() {
 
           {/* ---- ABA: EQUIPE ---- */}
           {aba === "equipe" && (
-            <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6">
+            <div className="bg-ink-bg border border-mist-line rounded-[18px] p-6">
               <div className="flex items-center justify-between mb-5">
-                <h2 className="text-base font-semibold text-[#F0EADD]">
+                <h2 className="text-base font-semibold text-porcelain-ink">
                   Equipe e Artistas
                 </h2>
-                <span className="text-xs text-[#87938F] bg-[#050B12] border border-[#243337] px-2 py-1 rounded-[6px]">
+                <span className="text-xs text-text-subtle bg-ink-night border border-mist-line px-2 py-1 rounded-[6px]">
                   {equipe?.length ?? 0} membro{equipe?.length !== 1 ? "s" : ""}
                 </span>
               </div>
@@ -1709,7 +1709,7 @@ export default function ConfiguracoesPage() {
                   {[...Array(3)].map((_, i) => (
                     <div
                       key={i}
-                      className="h-14 bg-[#102128] rounded-[10px] animate-pulse"
+                      className="h-14 bg-surface-raised rounded-[10px] animate-pulse"
                     />
                   ))}
                 </div>
@@ -1718,16 +1718,16 @@ export default function ConfiguracoesPage() {
                   {(equipe ?? []).map((m) => (
                     <div
                       key={m.id}
-                      className="flex items-center gap-3 p-3 bg-[#050B12] border border-[#243337] rounded-[10px]"
+                      className="flex items-center gap-3 p-3 bg-ink-night border border-mist-line rounded-[10px]"
                     >
-                      <div className="w-9 h-9 rounded-full bg-[#2F9285]/20 flex items-center justify-center text-sm font-bold text-[#2F9285] shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-teal-ink/20 flex items-center justify-center text-sm font-bold text-teal-ink shrink-0">
                         {m.nome.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#F0EADD] truncate">
+                        <p className="text-sm font-medium text-porcelain-ink truncate">
                           {m.nome}
                         </p>
-                        <p className="text-xs text-[#87938F] truncate">{m.email}</p>
+                        <p className="text-xs text-text-subtle truncate">{m.email}</p>
                       </div>
                       <span
                         className={cn(
@@ -1744,10 +1744,10 @@ export default function ConfiguracoesPage() {
 
               {/* Convidar novo membro (ADMIN) */}
               {isAdmin ? (
-                <div className="mt-5 pt-5 border-t border-[#243337] space-y-4">
+                <div className="mt-5 pt-5 border-t border-mist-line space-y-4">
                   <div>
-                    <h3 className="text-sm font-semibold text-[#F0EADD]">Convidar membro</h3>
-                    <p className="text-xs text-[#87938F] mt-0.5">
+                    <h3 className="text-sm font-semibold text-porcelain-ink">Convidar membro</h3>
+                    <p className="text-xs text-text-subtle mt-0.5">
                       Envie um convite por e-mail ou compartilhe o link gerado. O convite expira em 7 dias.
                     </p>
                   </div>
@@ -1758,12 +1758,12 @@ export default function ConfiguracoesPage() {
                       value={conviteEmail}
                       onChange={(e) => setConviteEmail(e.target.value)}
                       placeholder="email@dapessoa.com"
-                      className="flex-1 h-11 bg-[#050B12] border border-[#243337] rounded-[12px] px-3.5 text-sm text-[#F0EADD] placeholder-[#87938F] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                      className="flex-1 h-11 bg-ink-night border border-mist-line rounded-[12px] px-3.5 text-sm text-porcelain-ink placeholder-text-subtle focus:outline-none focus:border-teal-ink/50 transition-colors"
                     />
                     <select
                       value={conviteRole}
                       onChange={(e) => setConviteRole(e.target.value as "ARTISTA" | "RECEPCIONISTA")}
-                      className="h-11 bg-[#050B12] border border-[#243337] rounded-[12px] px-3 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors cursor-pointer"
+                      className="h-11 bg-ink-night border border-mist-line rounded-[12px] px-3 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors cursor-pointer"
                     >
                       <option value="ARTISTA">Artista</option>
                       <option value="RECEPCIONISTA">Recepção</option>
@@ -1779,7 +1779,7 @@ export default function ConfiguracoesPage() {
                         criarConvite.mutate({ email, role: conviteRole });
                       }}
                       disabled={criarConvite.isPending}
-                      className="h-11 px-5 rounded-[12px] bg-[#2F9285] hover:bg-[#3AA99A] disabled:opacity-60 text-[#050B12] font-semibold text-sm flex items-center justify-center gap-2 transition-colors shrink-0"
+                      className="h-11 px-5 rounded-[12px] bg-teal-ink hover:bg-ink-gold disabled:opacity-60 text-ink-night font-semibold text-sm flex items-center justify-center gap-2 transition-colors shrink-0"
                     >
                       {criarConvite.isPending ? (
                         <Loader2 size={15} className="animate-spin" />
@@ -1792,9 +1792,9 @@ export default function ConfiguracoesPage() {
 
                   {/* Link recém-gerado — copiável */}
                   {conviteCriado?.convite_url && (
-                    <div className="bg-[#2F9285]/5 border border-[#2F9285]/20 rounded-[12px] p-3 space-y-2">
-                      <p className="text-xs text-[#87938F]">
-                        Convite para <strong className="text-[#F0EADD]">{conviteCriado.email}</strong> criado.
+                    <div className="bg-teal-ink/5 border border-teal-ink/20 rounded-[12px] p-3 space-y-2">
+                      <p className="text-xs text-text-subtle">
+                        Convite para <strong className="text-porcelain-ink">{conviteCriado.email}</strong> criado.
                         Compartilhe o link abaixo (também enviamos por e-mail):
                       </p>
                       <div className="flex items-center gap-2">
@@ -1803,7 +1803,7 @@ export default function ConfiguracoesPage() {
                           readOnly
                           value={conviteCriado.convite_url}
                           aria-label="Link do convite"
-                          className="flex-1 bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2 text-xs text-[#87938F] font-mono focus:outline-none min-w-0"
+                          className="flex-1 bg-ink-night border border-mist-line rounded-[10px] px-3 py-2 text-xs text-text-subtle font-mono focus:outline-none min-w-0"
                         />
                         <button
                           type="button"
@@ -1812,7 +1812,7 @@ export default function ConfiguracoesPage() {
                             setLinkConviteCopiado(true);
                             setTimeout(() => setLinkConviteCopiado(false), 2000);
                           }}
-                          className="shrink-0 h-9 px-3 flex items-center gap-1.5 rounded-[10px] bg-[#2F9285] text-[#050B12] text-xs font-semibold hover:bg-[#3AA99A] transition-colors"
+                          className="shrink-0 h-9 px-3 flex items-center gap-1.5 rounded-[10px] bg-teal-ink text-ink-night text-xs font-semibold hover:bg-ink-gold transition-colors"
                         >
                           {linkConviteCopiado ? <CheckCircle size={13} /> : <Copy size={13} />}
                           {linkConviteCopiado ? "Copiado!" : "Copiar"}
@@ -1824,15 +1824,15 @@ export default function ConfiguracoesPage() {
                   {/* Lista de convites */}
                   {(convites ?? []).length > 0 && (
                     <div className="space-y-2">
-                      <p className="text-xs font-medium text-[#87938F] uppercase tracking-wider">Convites</p>
+                      <p className="text-xs font-medium text-text-subtle uppercase tracking-wider">Convites</p>
                       {(convites ?? []).map((c) => (
                         <div
                           key={c.id}
-                          className="flex items-center gap-3 p-3 bg-[#050B12] border border-[#243337] rounded-[10px]"
+                          className="flex items-center gap-3 p-3 bg-ink-night border border-mist-line rounded-[10px]"
                         >
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-[#F0EADD] truncate">{c.email}</p>
-                            <p className="text-xs text-[#87938F]">
+                            <p className="text-sm font-medium text-porcelain-ink truncate">{c.email}</p>
+                            <p className="text-xs text-text-subtle">
                               {TIPO_LABEL[c.role]} ·{" "}
                               {c.status === "PENDENTE"
                                 ? `expira ${new Date(c.expira_em).toLocaleDateString("pt-BR")}`
@@ -1854,7 +1854,7 @@ export default function ConfiguracoesPage() {
                               disabled={revogarConvite.isPending}
                               title="Revogar convite"
                               aria-label="Revogar convite"
-                              className="shrink-0 p-1.5 rounded-[8px] text-[#87938F] hover:text-[#E35D5B] hover:bg-[#E35D5B]/10 transition-colors"
+                              className="shrink-0 p-1.5 rounded-[8px] text-text-subtle hover:text-error-red hover:bg-error-red/10 transition-colors"
                             >
                               <X size={15} />
                             </button>
@@ -1865,8 +1865,8 @@ export default function ConfiguracoesPage() {
                   )}
                 </div>
               ) : (
-                <div className="mt-4 pt-4 border-t border-[#243337]">
-                  <p className="text-xs text-[#87938F]">
+                <div className="mt-4 pt-4 border-t border-mist-line">
+                  <p className="text-xs text-text-subtle">
                     Apenas administradores podem convidar novos membros para a equipe.
                   </p>
                 </div>
@@ -1878,14 +1878,14 @@ export default function ConfiguracoesPage() {
           {aba === "seguranca" && (
             <div className="space-y-4">
               {/* Alterar senha */}
-              <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6">
-                <h2 className="text-base font-semibold text-[#F0EADD] mb-5">
+              <div className="bg-ink-bg border border-mist-line rounded-[18px] p-6">
+                <h2 className="text-base font-semibold text-porcelain-ink mb-5">
                   Alterar Senha
                 </h2>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                    <label className="text-xs font-medium text-text-subtle mb-1.5 block">
                       Senha atual
                     </label>
                     <div className="relative">
@@ -1893,13 +1893,13 @@ export default function ConfiguracoesPage() {
                         type={mostrarSenhas ? "text" : "password"}
                         value={senhaAtual}
                         onChange={(e) => setSenhaAtual(e.target.value)}
-                        className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 pr-10 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                        className="w-full bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 pr-10 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors"
                         placeholder="••••••••"
                       />
                       <button
                         type="button"
                         onClick={() => setMostrarSenhas(!mostrarSenhas)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#87938F] hover:text-[#F0EADD]"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-text-subtle hover:text-porcelain-ink"
                       >
                         {mostrarSenhas ? <EyeOff size={14} /> : <Eye size={14} />}
                       </button>
@@ -1907,20 +1907,20 @@ export default function ConfiguracoesPage() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                    <label className="text-xs font-medium text-text-subtle mb-1.5 block">
                       Nova senha
                     </label>
                     <input
                       type={mostrarSenhas ? "text" : "password"}
                       value={senhaNova}
                       onChange={(e) => setSenhaNova(e.target.value)}
-                      className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                      className="w-full bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors"
                       placeholder="Mínimo 8 caracteres"
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-medium text-[#87938F] mb-1.5 block">
+                    <label className="text-xs font-medium text-text-subtle mb-1.5 block">
                       Confirmar nova senha
                     </label>
                     <input
@@ -1928,15 +1928,15 @@ export default function ConfiguracoesPage() {
                       value={senhaConfirm}
                       onChange={(e) => setSenhaConfirm(e.target.value)}
                       className={cn(
-                        "w-full bg-[#050B12] border rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none transition-colors",
+                        "w-full bg-ink-night border rounded-[10px] px-3 py-2.5 text-sm text-porcelain-ink focus:outline-none transition-colors",
                         senhaConfirm && senhaNova !== senhaConfirm
-                          ? "border-[#E35D5B]/50 focus:border-[#E35D5B]"
-                          : "border-[#243337] focus:border-[#2F9285]/50"
+                          ? "border-error-red/50 focus:border-error-red"
+                          : "border-mist-line focus:border-teal-ink/50"
                       )}
                       placeholder="Repita a nova senha"
                     />
                     {senhaConfirm && senhaNova !== senhaConfirm && (
-                      <p className="text-xs text-[#E35D5B] mt-1">
+                      <p className="text-xs text-error-red mt-1">
                         As senhas não coincidem
                       </p>
                     )}
@@ -1951,7 +1951,7 @@ export default function ConfiguracoesPage() {
                         senhaNova !== senhaConfirm ||
                         alterarSenha.isPending
                       }
-                      className="flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm font-medium bg-[#2F9285] text-[#050B12] hover:bg-[#2F9285]/90 disabled:bg-[#243337] disabled:text-[#87938F] disabled:cursor-not-allowed transition-all"
+                      className="flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm font-medium bg-teal-ink text-ink-night hover:bg-teal-ink/90 disabled:bg-mist-line disabled:text-text-subtle disabled:cursor-not-allowed transition-all"
                     >
                       <Lock size={14} />
                       {alterarSenha.isPending ? "Alterando..." : "Alterar senha"}
@@ -1961,35 +1961,35 @@ export default function ConfiguracoesPage() {
               </div>
 
               {/* Autenticação de Dois Fatores (MFA) */}
-              <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6 space-y-6">
+              <div className="bg-ink-bg border border-mist-line rounded-[18px] p-6 space-y-6">
                 <div>
-                  <h2 className="text-base font-semibold text-[#F0EADD]">
+                  <h2 className="text-base font-semibold text-porcelain-ink">
                     Autenticação de Dois Fatores (MFA)
                   </h2>
-                  <p className="text-xs text-[#87938F] mt-1">
+                  <p className="text-xs text-text-subtle mt-1">
                     Adicione uma camada extra de segurança à sua conta exigindo um código de verificação ao fazer login.
                   </p>
                 </div>
 
-                <div className="divide-y divide-[#243337] space-y-4">
+                <div className="divide-y divide-mist-line space-y-4">
                   {/* TOTP Option */}
                   <div className="flex items-center justify-between pt-4 first:pt-0">
                     <div className="space-y-1 pr-4">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-[#F0EADD]">
+                        <span className="text-sm font-medium text-porcelain-ink">
                           Aplicativo Autenticador (TOTP)
                         </span>
                         {usuario?.mfa_totp_ativo ? (
-                          <span className="text-[10px] bg-[#2F9285]/15 text-[#2F9285] font-semibold px-2 py-0.5 rounded-full border border-[#2F9285]/20">
+                          <span className="text-[10px] bg-teal-ink/15 text-teal-ink font-semibold px-2 py-0.5 rounded-full border border-teal-ink/20">
                             Ativo
                           </span>
                         ) : (
-                          <span className="text-[10px] bg-[#87938F]/15 text-[#87938F] font-semibold px-2 py-0.5 rounded-full border border-[#87938F]/10">
+                          <span className="text-[10px] bg-text-subtle/15 text-text-subtle font-semibold px-2 py-0.5 rounded-full border border-text-subtle/10">
                             Inativo
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-[#87938F]">
+                      <p className="text-xs text-text-subtle">
                         Use aplicativos como Google Authenticator, Microsoft Authenticator ou Authy para gerar códigos de segurança de uso único.
                       </p>
                     </div>
@@ -1998,7 +1998,7 @@ export default function ConfiguracoesPage() {
                         <button
                           type="button"
                           onClick={() => setShowMfaDisableModal({ type: "totp" })}
-                          className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] px-4 py-2.5 text-xs font-semibold rounded-[10px] border border-[#E35D5B]/30 hover:bg-[#E35D5B] hover:text-[#F0EADD] text-[#E35D5B] transition-all shrink-0"
+                          className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] px-4 py-2.5 text-xs font-semibold rounded-[10px] border border-error-red/30 hover:bg-error-red hover:text-porcelain-ink text-error-red transition-all shrink-0"
                         >
                           Desativar
                         </button>
@@ -2008,7 +2008,7 @@ export default function ConfiguracoesPage() {
                           onClick={handleStartTotpSetup}
                           disabled={totpSetupPending}
                           aria-busy={totpSetupPending}
-                          className="min-h-[44px] min-w-[44px] px-4 py-2.5 text-xs font-semibold rounded-[10px] bg-[#2F9285]/10 border border-[#2F9285]/30 hover:bg-[#2F9285] hover:text-[#050B12] text-[#2F9285] transition-all inline-flex items-center justify-center gap-1.5 shrink-0"
+                          className="min-h-[44px] min-w-[44px] px-4 py-2.5 text-xs font-semibold rounded-[10px] bg-teal-ink/10 border border-teal-ink/30 hover:bg-teal-ink hover:text-ink-night text-teal-ink transition-all inline-flex items-center justify-center gap-1.5 shrink-0"
                         >
                           {totpSetupPending && <Loader2 size={12} className="animate-spin" />}
                           Ativar
@@ -2021,20 +2021,20 @@ export default function ConfiguracoesPage() {
                   <div className="flex items-center justify-between pt-4">
                     <div className="space-y-1 pr-4">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-[#F0EADD]">
+                        <span className="text-sm font-medium text-porcelain-ink">
                           Código por E-mail (OTP)
                         </span>
                         {usuario?.mfa_email_ativo ? (
-                          <span className="text-[10px] bg-[#2F9285]/15 text-[#2F9285] font-semibold px-2 py-0.5 rounded-full border border-[#2F9285]/20">
+                          <span className="text-[10px] bg-teal-ink/15 text-teal-ink font-semibold px-2 py-0.5 rounded-full border border-teal-ink/20">
                             Ativo
                           </span>
                         ) : (
-                          <span className="text-[10px] bg-[#87938F]/15 text-[#87938F] font-semibold px-2 py-0.5 rounded-full border border-[#87938F]/10">
+                          <span className="text-[10px] bg-text-subtle/15 text-text-subtle font-semibold px-2 py-0.5 rounded-full border border-text-subtle/10">
                             Inativo
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-[#87938F]">
+                      <p className="text-xs text-text-subtle">
                         Receba um código numérico temporário diretamente no seu e-mail cadastrado a cada tentativa de login.
                       </p>
                     </div>
@@ -2043,7 +2043,7 @@ export default function ConfiguracoesPage() {
                         <button
                           type="button"
                           onClick={() => setShowMfaDisableModal({ type: "email" })}
-                          className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] px-4 py-2.5 text-xs font-semibold rounded-[10px] border border-[#E35D5B]/30 hover:bg-[#E35D5B] hover:text-[#F0EADD] text-[#E35D5B] transition-all shrink-0"
+                          className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] px-4 py-2.5 text-xs font-semibold rounded-[10px] border border-error-red/30 hover:bg-error-red hover:text-porcelain-ink text-error-red transition-all shrink-0"
                         >
                           Desativar
                         </button>
@@ -2053,7 +2053,7 @@ export default function ConfiguracoesPage() {
                           onClick={handleActivateEmailMfa}
                           disabled={mfaEmailActivating}
                           aria-busy={mfaEmailActivating}
-                          className="min-h-[44px] min-w-[44px] px-4 py-2.5 text-xs font-semibold rounded-[10px] bg-[#2F9285]/10 border border-[#2F9285]/30 hover:bg-[#2F9285] hover:text-[#050B12] text-[#2F9285] transition-all inline-flex items-center justify-center gap-1.5 shrink-0"
+                          className="min-h-[44px] min-w-[44px] px-4 py-2.5 text-xs font-semibold rounded-[10px] bg-teal-ink/10 border border-teal-ink/30 hover:bg-teal-ink hover:text-ink-night text-teal-ink transition-all inline-flex items-center justify-center gap-1.5 shrink-0"
                         >
                           {mfaEmailActivating && <Loader2 size={12} className="animate-spin" />}
                           Ativar
@@ -2065,8 +2065,8 @@ export default function ConfiguracoesPage() {
               </div>
 
               {/* Informações de sessão */}
-              <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6">
-                <h2 className="text-base font-semibold text-[#F0EADD] mb-4">
+              <div className="bg-ink-bg border border-mist-line rounded-[18px] p-6">
+                <h2 className="text-base font-semibold text-porcelain-ink mb-4">
                   Sessão e Segurança
                 </h2>
                 <div className="space-y-3">
@@ -2099,12 +2099,12 @@ export default function ConfiguracoesPage() {
                   ].map((item) => (
                     <div
                       key={item.label}
-                      className="flex items-center justify-between py-2 border-b border-[#243337] last:border-0"
+                      className="flex items-center justify-between py-2 border-b border-mist-line last:border-0"
                     >
-                      <span className="text-sm text-[#87938F]">{item.label}</span>
+                      <span className="text-sm text-text-subtle">{item.label}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-[#F0EADD]">{item.valor}</span>
-                        <CheckCircle size={13} className="text-[#2F9285]" />
+                        <span className="text-xs text-porcelain-ink">{item.valor}</span>
+                        <CheckCircle size={13} className="text-teal-ink" />
                       </div>
                     </div>
                   ))}
@@ -2116,22 +2116,22 @@ export default function ConfiguracoesPage() {
           {/* ---- ABA: ASSINATURA ---- */}
           {aba === "assinatura" && isAdmin && (
             <div className="space-y-6">
-              <div className="bg-[#0B171C] border border-[#243337] rounded-[18px] p-6 space-y-6">
+              <div className="bg-ink-bg border border-mist-line rounded-[18px] p-6 space-y-6">
                 <div>
-                  <h2 className="text-base font-semibold text-[#F0EADD]">
+                  <h2 className="text-base font-semibold text-porcelain-ink">
                     Assinatura do Estúdio
                   </h2>
-                  <p className="text-xs text-[#87938F] mt-1">
+                  <p className="text-xs text-text-subtle mt-1">
                     Gerencie seu plano e ciclo de faturamento com segurança através do Mercado Pago.
                   </p>
                 </div>
 
                 {loadingPlanos || loadingGatewayConfig ? (
                   <div className="space-y-4">
-                    <div className="h-24 bg-[#102128] rounded-[14px] animate-pulse" />
+                    <div className="h-24 bg-surface-raised rounded-[14px] animate-pulse" />
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {[...Array(3)].map((_, i) => (
-                        <div key={i} className="h-48 bg-[#102128] rounded-[14px] animate-pulse" />
+                        <div key={i} className="h-48 bg-surface-raised rounded-[14px] animate-pulse" />
                       ))}
                     </div>
                   </div>
@@ -2141,7 +2141,7 @@ export default function ConfiguracoesPage() {
                         Sem dados fake — enquanto carrega mostra skeleton; sem
                         assinatura mostra um aviso neutro. */}
                     {loadingAssinatura ? (
-                      <div className="h-20 bg-[#102128] rounded-[14px] animate-pulse" />
+                      <div className="h-20 bg-surface-raised rounded-[14px] animate-pulse" />
                     ) : assinaturaResumo ? (
                       (() => {
                         const r = assinaturaResumo;
@@ -2149,16 +2149,16 @@ export default function ConfiguracoesPage() {
                         const ativa = r.status === "ATIVA";
                         const dias = r.dias_restantes_trial;
                         const tom = ativa
-                          ? "bg-[#2F9285]/10 border-[#2F9285]/25 text-[#2F9285]"
+                          ? "bg-teal-ink/10 border-teal-ink/25 text-teal-ink"
                           : emTrial
-                            ? "bg-[#102128] border-[#243337] text-[#F0EADD]"
-                            : "bg-[#C36B3F]/10 border-[#C36B3F]/25 text-[#C36B3F]";
+                            ? "bg-surface-raised border-mist-line text-porcelain-ink"
+                            : "bg-copper-needle/10 border-copper-needle/25 text-copper-needle";
                         return (
                           <div className={cn("p-4 rounded-[14px] border flex items-start gap-3", tom)}>
                             {ativa ? (
                               <CheckCircle size={18} className="shrink-0 mt-0.5" />
                             ) : emTrial ? (
-                              <Clock size={18} className="shrink-0 mt-0.5 text-[#2F9285]" />
+                              <Clock size={18} className="shrink-0 mt-0.5 text-teal-ink" />
                             ) : (
                               <AlertCircle size={18} className="shrink-0 mt-0.5" />
                             )}
@@ -2168,7 +2168,7 @@ export default function ConfiguracoesPage() {
                                   <p className="text-sm font-semibold">
                                     Plano ativo{r.plano_nome ? `: ${r.plano_nome}` : ""}
                                   </p>
-                                  <p className="text-xs text-[#87938F] mt-0.5">
+                                  <p className="text-xs text-text-subtle mt-0.5">
                                     Sua assinatura está em dia. Obrigado por usar o SessãoInk!
                                   </p>
                                 </>
@@ -2180,7 +2180,7 @@ export default function ConfiguracoesPage() {
                                       : "Período de avaliação ativo"}
                                     {r.plano_nome ? ` — ${r.plano_nome}` : ""}
                                   </p>
-                                  <p className="text-xs text-[#87938F] mt-0.5">
+                                  <p className="text-xs text-text-subtle mt-0.5">
                                     Aproveite o período de avaliação. Escolha um plano abaixo para
                                     continuar sem interrupções.
                                   </p>
@@ -2192,7 +2192,7 @@ export default function ConfiguracoesPage() {
                                       ? "Nenhuma assinatura ativa"
                                       : "Sua assinatura precisa de atenção"}
                                   </p>
-                                  <p className="text-xs text-[#87938F] mt-0.5">
+                                  <p className="text-xs text-text-subtle mt-0.5">
                                     Escolha um plano abaixo para liberar todos os recursos do
                                     estúdio.
                                   </p>
@@ -2205,7 +2205,7 @@ export default function ConfiguracoesPage() {
                                 onClick={() => verificarPagamento(true)}
                                 disabled={reconciliarMutation.isPending}
                                 title="Já paguei — verificar no Mercado Pago"
-                                className="shrink-0 self-center h-9 px-3 rounded-[10px] border border-[#2F9285]/40 text-[#2F9285] text-xs font-semibold hover:bg-[#2F9285]/10 disabled:opacity-50 inline-flex items-center gap-1.5"
+                                className="shrink-0 self-center h-9 px-3 rounded-[10px] border border-teal-ink/40 text-teal-ink text-xs font-semibold hover:bg-teal-ink/10 disabled:opacity-50 inline-flex items-center gap-1.5"
                               >
                                 {reconciliarMutation.isPending ? (
                                   <><Loader2 size={13} className="animate-spin" /> Verificando…</>
@@ -2221,7 +2221,7 @@ export default function ConfiguracoesPage() {
 
                     {/* Status do Gateway */}
                     {gatewayConfig && !gatewayConfig.go_live && (
-                      <div className="p-3 bg-[#C36B3F]/10 border border-[#C36B3F]/20 text-[#C36B3F] text-xs rounded-[10px] flex items-start gap-2.5">
+                      <div className="p-3 bg-copper-needle/10 border border-copper-needle/20 text-copper-needle text-xs rounded-[10px] flex items-start gap-2.5">
                         <AlertCircle size={16} className="shrink-0 mt-0.5" />
                         <div>
                           <p className="font-semibold">Ambiente de Testes (go_live desligado)</p>
@@ -2232,7 +2232,7 @@ export default function ConfiguracoesPage() {
 
                     {/* Catálogo de Planos */}
                     <div className="space-y-4">
-                      <label className="text-xs font-semibold text-[#87938F] uppercase tracking-wider block">
+                      <label className="text-xs font-semibold text-text-subtle uppercase tracking-wider block">
                         1. Selecione o Plano
                       </label>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -2256,37 +2256,37 @@ export default function ConfiguracoesPage() {
                               className={cn(
                                 "flex flex-col text-left p-5 rounded-[16px] border transition-all relative overflow-hidden group",
                                 isSelected
-                                  ? "bg-[#102128] border-[#2F9285] shadow-[0_4px_20px_rgba(47,146,133,0.15)]"
-                                  : "bg-[#050B12] border-[#243337] hover:border-[#87938F]/30"
+                                  ? "bg-surface-raised border-teal-ink shadow-[0_4px_20px_rgba(47,146,133,0.15)]"
+                                  : "bg-ink-night border-mist-line hover:border-text-subtle/30"
                               )}
                             >
                               {isPopular && (
-                                <div className="absolute top-0 right-0 bg-[#2F9285] text-[#050B12] text-[9px] font-bold px-2 py-0.5 rounded-bl-[10px]">
+                                <div className="absolute top-0 right-0 bg-teal-ink text-ink-night text-[9px] font-bold px-2 py-0.5 rounded-bl-[10px]">
                                   {plano.badge || "Recomendado"}
                                 </div>
                               )}
-                              <h3 className="text-[#F0EADD] font-bold text-sm">{plano.nome}</h3>
-                              <p className="text-[10px] text-[#87938F] mt-1 line-clamp-2">
+                              <h3 className="text-porcelain-ink font-bold text-sm">{plano.nome}</h3>
+                              <p className="text-[10px] text-text-subtle mt-1 line-clamp-2">
                                 {plano.descricao}
                               </p>
                               
                               <div className="mt-4 flex items-baseline gap-1">
-                                <span className="text-base font-bold text-[#F0EADD]">
+                                <span className="text-base font-bold text-porcelain-ink">
                                   R$ {plano.preco_mensal.toFixed(0)}
                                 </span>
-                                <span className="text-[10px] text-[#87938F]">/mês</span>
+                                <span className="text-[10px] text-text-subtle">/mês</span>
                               </div>
 
                               {plano.promocao && (
-                                <p className="text-[9px] text-[#2F9285] mt-1 font-medium bg-[#2F9285]/10 px-1.5 py-0.5 rounded">
+                                <p className="text-[9px] text-teal-ink mt-1 font-medium bg-teal-ink/10 px-1.5 py-0.5 rounded">
                                   {plano.promocao.descricao}
                                 </p>
                               )}
 
-                              <div className="mt-4 pt-3 border-t border-[#243337]/50 w-full space-y-1.5">
+                              <div className="mt-4 pt-3 border-t border-mist-line/50 w-full space-y-1.5">
                                 {plano.recursos?.slice(0, 4).map((rec: any, idx: number) => (
-                                  <div key={idx} className="flex items-center gap-1.5 text-[10px] text-[#B8C2BF]">
-                                    <CheckCircle size={10} className="text-[#2F9285] shrink-0" />
+                                  <div key={idx} className="flex items-center gap-1.5 text-[10px] text-smoke-text">
+                                    <CheckCircle size={10} className="text-teal-ink shrink-0" />
                                     <span className="truncate">{rec.label}</span>
                                   </div>
                                 ))}
@@ -2299,7 +2299,7 @@ export default function ConfiguracoesPage() {
 
                     {/* Ciclos de Cobrança */}
                     <div className="space-y-3 pt-2">
-                      <label className="text-xs font-semibold text-[#87938F] uppercase tracking-wider block">
+                      <label className="text-xs font-semibold text-text-subtle uppercase tracking-wider block">
                         2. Escolha o Ciclo de Faturamento
                       </label>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -2314,33 +2314,33 @@ export default function ConfiguracoesPage() {
                               className={cn(
                                 "flex items-start text-left p-4 rounded-[14px] border transition-all",
                                 isSelected
-                                  ? "bg-[#102128] border-[#2F9285]"
-                                  : "bg-[#050B12] border-[#243337] hover:border-[#87938F]/30"
+                                  ? "bg-surface-raised border-teal-ink"
+                                  : "bg-ink-night border-mist-line hover:border-text-subtle/30"
                               )}
                             >
                               <div className="flex-1 min-w-0 pr-2">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xs font-bold text-[#F0EADD]">{preco.label}</span>
+                                  <span className="text-xs font-bold text-porcelain-ink">{preco.label}</span>
                                   {preco.desconto_pix_pct > 0 && (
-                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#2F9285]/15 text-[#2F9285]">
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-teal-ink/15 text-teal-ink">
                                       -{preco.desconto_pix_pct}% no Pix
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-[10px] text-[#87938F] mt-1">{preco.obs}</p>
+                                <p className="text-[10px] text-text-subtle mt-1">{preco.obs}</p>
                               </div>
                               <div className="text-right shrink-0">
                                 {preco.ciclo === "mensal" ? (
                                   <>
-                                    <p className="text-xs font-bold text-[#F0EADD]">R$ {preco.preco_cheio}/mês</p>
-                                    <p className="text-[9px] text-[#87938F]">recorrente</p>
+                                    <p className="text-xs font-bold text-porcelain-ink">R$ {preco.preco_cheio}/mês</p>
+                                    <p className="text-[9px] text-text-subtle">recorrente</p>
                                   </>
                                 ) : (
                                   <>
-                                    <p className="text-xs font-bold text-[#F0EADD]">R$ {preco.pix_total}</p>
-                                    <p className="text-[9px] text-[#87938F] line-through">R$ {preco.preco_cheio}</p>
+                                    <p className="text-xs font-bold text-porcelain-ink">R$ {preco.pix_total}</p>
+                                    <p className="text-[9px] text-text-subtle line-through">R$ {preco.preco_cheio}</p>
                                     {preco.cartao_modo === "parcelado" && (
-                                      <p className="text-[9px] text-[#2F9285]">
+                                      <p className="text-[9px] text-teal-ink">
                                         Ou {preco.cartao_max_parcelas}x de R$ {preco.cartao_parcela}
                                       </p>
                                     )}
@@ -2363,11 +2363,11 @@ export default function ConfiguracoesPage() {
                         ? !gatewayConfig.go_live
                         : false;
                       return (
-                        <div className="pt-4 border-t border-[#243337] space-y-3">
+                        <div className="pt-4 border-t border-mist-line space-y-3">
                           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                             <div>
-                              <p className="text-xs text-[#87938F]">Plano e ciclo selecionados:</p>
-                              <p className="text-sm font-bold text-[#F0EADD]">
+                              <p className="text-xs text-text-subtle">Plano e ciclo selecionados:</p>
+                              <p className="text-sm font-bold text-porcelain-ink">
                                 {selectedPlan?.nome} — {selectedPlan?.tabela_precos?.find((p: any) => p.ciclo === selectedCycle)?.label}
                               </p>
                             </div>
@@ -2382,7 +2382,7 @@ export default function ConfiguracoesPage() {
                                   ? "A cobrança ainda não está habilitada neste estúdio. Em breve você poderá assinar por aqui."
                                   : undefined
                               }
-                              className="w-full md:w-auto px-6 h-11 bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm rounded-[12px] flex items-center justify-center gap-2 transition-all shadow-[0_4px_12px_rgba(47,146,133,0.2)] disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none"
+                              className="w-full md:w-auto px-6 h-11 bg-teal-ink hover:bg-ink-gold text-ink-night font-semibold text-sm rounded-[12px] flex items-center justify-center gap-2 transition-all shadow-[0_4px_12px_rgba(47,146,133,0.2)] disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none"
                             >
                               {checkoutPending ? (
                                 <>
@@ -2404,8 +2404,8 @@ export default function ConfiguracoesPage() {
                           </div>
 
                           {pagamentosIndisponiveis && (
-                            <p className="text-[11px] text-[#87938F] flex items-start gap-1.5">
-                              <AlertCircle size={13} className="shrink-0 mt-0.5 text-[#C36B3F]" />
+                            <p className="text-[11px] text-text-subtle flex items-start gap-1.5">
+                              <AlertCircle size={13} className="shrink-0 mt-0.5 text-copper-needle" />
                               A assinatura paga ainda não está disponível neste estúdio. Estamos
                               finalizando a configuração da cobrança — você será avisado assim
                               que puder assinar.
@@ -2425,40 +2425,40 @@ export default function ConfiguracoesPage() {
       {/* Modal TOTP Setup */}
       {showTotpSetupModal && totpSetupData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#0B171C] border border-[#243337] w-full max-w-md rounded-[18px] shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#243337]">
-              <h2 className="text-[#F0EADD] font-bold text-sm">Configurar App Autenticador</h2>
+          <div className="bg-ink-bg border border-mist-line w-full max-w-md rounded-[18px] shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-mist-line">
+              <h2 className="text-porcelain-ink font-bold text-sm">Configurar App Autenticador</h2>
               <button
                 onClick={() => {
                   setShowTotpSetupModal(false);
                   setTotpSetupData(null);
                   setTotpVerificationCode("");
                 }}
-                className="text-[#87938F] hover:text-[#F0EADD]"
+                className="text-text-subtle hover:text-porcelain-ink"
               >
                 <X size={16} />
               </button>
             </div>
             <div className="p-5 space-y-4">
-              <p className="text-xs text-[#87938F] leading-relaxed">
+              <p className="text-xs text-text-subtle leading-relaxed">
                 1. Escaneie o QR Code abaixo com seu aplicativo autenticador (ex: Google Authenticator, Authy):
               </p>
               
-              <div className="flex justify-center p-3 bg-white rounded-xl w-48 h-48 mx-auto border border-[#243337]">
+              <div className="flex justify-center p-3 bg-white rounded-xl w-48 h-48 mx-auto border border-mist-line">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={totpSetupData.qr_code} alt="QR Code MFA" className="w-full h-full object-contain" />
               </div>
 
               <div className="space-y-1">
-                <p className="text-xs text-[#87938F]">
+                <p className="text-xs text-text-subtle">
                   Ou insira a chave manual no aplicativo:
                 </p>
-                <div className="flex items-center gap-2 bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2 text-xs font-mono text-[#F0EADD]">
+                <div className="flex items-center gap-2 bg-ink-night border border-mist-line rounded-[10px] px-3 py-2 text-xs font-mono text-porcelain-ink">
                   <span className="flex-1 truncate">{totpSetupData.secret}</span>
                   <button
                     type="button"
                     onClick={handleCopySecret}
-                    className="text-[#2F9285] hover:text-[#3AA99A] shrink-0"
+                    className="text-teal-ink hover:text-ink-gold shrink-0"
                   >
                     {copiedSecret ? "Copiado!" : <Copy size={14} />}
                   </button>
@@ -2466,7 +2466,7 @@ export default function ConfiguracoesPage() {
               </div>
 
               <div className="space-y-2 pt-2">
-                <label htmlFor="verify-totp-code" className="text-xs font-medium text-[#87938F] block">
+                <label htmlFor="verify-totp-code" className="text-xs font-medium text-text-subtle block">
                   2. Digite o código de 6 dígitos gerado pelo aplicativo para confirmar:
                 </label>
                 <input
@@ -2479,7 +2479,7 @@ export default function ConfiguracoesPage() {
                   placeholder="000000"
                   value={totpVerificationCode}
                   onChange={(e) => setTotpVerificationCode(e.target.value.replace(/\D/g, ""))}
-                  className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2 text-center text-sm font-mono tracking-[0.2em] text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                  className="w-full bg-ink-night border border-mist-line rounded-[10px] px-3 py-2 text-center text-sm font-mono tracking-[0.2em] text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors"
                 />
               </div>
 
@@ -2491,7 +2491,7 @@ export default function ConfiguracoesPage() {
                     setTotpSetupData(null);
                     setTotpVerificationCode("");
                   }}
-                  className="flex-1 h-10 rounded-[12px] border border-[#243337] hover:bg-[#102128] text-[#F0EADD] font-semibold text-sm transition-all"
+                  className="flex-1 h-10 rounded-[12px] border border-mist-line hover:bg-surface-raised text-porcelain-ink font-semibold text-sm transition-all"
                 >
                   Cancelar
                 </button>
@@ -2499,7 +2499,7 @@ export default function ConfiguracoesPage() {
                   type="button"
                   disabled={totpSetupPending || totpVerificationCode.length < 6}
                   onClick={handleActivateTotp}
-                  className="flex-1 h-10 rounded-[12px] bg-[#2F9285] hover:bg-[#3AA99A] disabled:opacity-50 disabled:cursor-not-allowed text-[#050B12] font-semibold text-sm transition-all flex items-center justify-center gap-2"
+                  className="flex-1 h-10 rounded-[12px] bg-teal-ink hover:bg-ink-gold disabled:opacity-50 disabled:cursor-not-allowed text-ink-night font-semibold text-sm transition-all flex items-center justify-center gap-2"
                 >
                   {totpSetupPending && <Loader2 size={14} className="animate-spin" />}
                   Confirmar e Ativar
@@ -2513,9 +2513,9 @@ export default function ConfiguracoesPage() {
       {/* Modal Desativar MFA */}
       {showMfaDisableModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#0B171C] border border-[#243337] w-full max-w-md rounded-[18px] shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#243337]">
-              <h2 className="text-[#F0EADD] font-bold text-sm">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-md rounded-[18px] shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-mist-line">
+              <h2 className="text-porcelain-ink font-bold text-sm">
                 Desativar {showMfaDisableModal.type === "totp" ? "App Autenticador" : "Código por E-mail"}
               </h2>
               <button
@@ -2523,18 +2523,18 @@ export default function ConfiguracoesPage() {
                   setShowMfaDisableModal(null);
                   setMfaDisablePassword("");
                 }}
-                className="text-[#87938F] hover:text-[#F0EADD]"
+                className="text-text-subtle hover:text-porcelain-ink"
               >
                 <X size={16} />
               </button>
             </div>
             <div className="p-5 space-y-4">
-              <p className="text-xs text-[#87938F] leading-relaxed">
+              <p className="text-xs text-text-subtle leading-relaxed">
                 Por motivos de segurança, digite sua senha atual para confirmar a desativação da autenticação de dois fatores.
               </p>
 
               <div className="space-y-1.5">
-                <label htmlFor="disable-mfa-pass" className="text-xs font-medium text-[#87938F] block">
+                <label htmlFor="disable-mfa-pass" className="text-xs font-medium text-text-subtle block">
                   Sua senha
                 </label>
                 <input
@@ -2544,7 +2544,7 @@ export default function ConfiguracoesPage() {
                   value={mfaDisablePassword}
                   onChange={(e) => setMfaDisablePassword(e.target.value)}
                   placeholder="Digite sua senha"
-                  className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+                  className="w-full bg-ink-night border border-mist-line rounded-[10px] px-3 py-2 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors"
                 />
               </div>
 
@@ -2555,7 +2555,7 @@ export default function ConfiguracoesPage() {
                     setShowMfaDisableModal(null);
                     setMfaDisablePassword("");
                   }}
-                  className="flex-1 h-10 rounded-[12px] border border-[#243337] hover:bg-[#102128] text-[#F0EADD] font-semibold text-sm transition-all"
+                  className="flex-1 h-10 rounded-[12px] border border-mist-line hover:bg-surface-raised text-porcelain-ink font-semibold text-sm transition-all"
                 >
                   Cancelar
                 </button>
@@ -2563,7 +2563,7 @@ export default function ConfiguracoesPage() {
                   type="button"
                   disabled={mfaDisablePending || !mfaDisablePassword}
                   onClick={handleDisableMfa}
-                  className="flex-1 h-10 rounded-[12px] bg-[#E35D5B] hover:bg-[#c94d4b] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm transition-all flex items-center justify-center gap-2"
+                  className="flex-1 h-10 rounded-[12px] bg-error-red hover:bg-[#c94d4b] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm transition-all flex items-center justify-center gap-2"
                 >
                   {mfaDisablePending && <Loader2 size={14} className="animate-spin" />}
                   Confirmar e Desativar
@@ -2577,23 +2577,23 @@ export default function ConfiguracoesPage() {
       {/* Modal de confirmação do slug */}
       {showModalSlug && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#0B171C] border border-[#243337] w-full max-w-md rounded-[18px] shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#243337]">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-md rounded-[18px] shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-mist-line">
               <div className="flex items-center gap-2">
-                <AlertCircle size={18} className="text-[#C36B3F]" />
-                <h2 className="text-[#F0EADD] font-bold text-sm">Alterar link do portal?</h2>
+                <AlertCircle size={18} className="text-copper-needle" />
+                <h2 className="text-porcelain-ink font-bold text-sm">Alterar link do portal?</h2>
               </div>
-              <button onClick={() => setShowModalSlug(false)} className="text-[#87938F] hover:text-[#F0EADD]">
+              <button onClick={() => setShowModalSlug(false)} className="text-text-subtle hover:text-porcelain-ink">
                 <X size={16} />
               </button>
             </div>
             <div className="p-5 space-y-4">
-              <p className="text-sm text-[#87938F] leading-relaxed">
+              <p className="text-sm text-text-subtle leading-relaxed">
                 Tem certeza que deseja alterar o endereço do seu estúdio de{" "}
-                <strong className="text-[#F0EADD]">sessao-ink.vercel.app/{estudio?.slug}</strong> para{" "}
-                <strong className="text-[#2F9285]">sessao-ink.vercel.app/{novoSlug}</strong>?
+                <strong className="text-porcelain-ink">sessao-ink.vercel.app/{estudio?.slug}</strong> para{" "}
+                <strong className="text-teal-ink">sessao-ink.vercel.app/{novoSlug}</strong>?
               </p>
-              <div className="p-3 bg-[#E35D5B]/5 border border-[#E35D5B]/20 text-[#E35D5B] text-xs rounded-[10px] space-y-1">
+              <div className="p-3 bg-error-red/5 border border-error-red/20 text-error-red text-xs rounded-[10px] space-y-1">
                 <p className="font-semibold">Atenção:</p>
                 <p>O link antigo deixará de funcionar imediatamente. Seus clientes que usam o link antigo não conseguirão mais acessar a página.</p>
               </div>
@@ -2601,7 +2601,7 @@ export default function ConfiguracoesPage() {
                 <button
                   type="button"
                   onClick={() => setShowModalSlug(false)}
-                  className="flex-1 h-10 rounded-[12px] border border-[#243337] hover:bg-[#102128] text-[#F0EADD] font-semibold text-sm transition-all"
+                  className="flex-1 h-10 rounded-[12px] border border-mist-line hover:bg-surface-raised text-porcelain-ink font-semibold text-sm transition-all"
                 >
                   Cancelar
                 </button>
@@ -2609,7 +2609,7 @@ export default function ConfiguracoesPage() {
                   type="button"
                   disabled={atualizarSlug.isPending}
                   onClick={() => atualizarSlug.mutate(novoSlug)}
-                  className="flex-1 h-10 rounded-[12px] bg-[#E35D5B] hover:bg-[#c94d4b] disabled:opacity-60 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2"
+                  className="flex-1 h-10 rounded-[12px] bg-error-red hover:bg-[#c94d4b] disabled:opacity-60 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2"
                 >
                   {atualizarSlug.isPending && <Loader2 size={14} className="animate-spin" />}
                   Confirmar e Mudar
@@ -2629,8 +2629,8 @@ export default function ConfiguracoesPage() {
         />
       )}
 
-      <div className="mt-8 pt-6 border-t border-[#243337]">
-        <p className="text-xs text-[#87938F] text-center">
+      <div className="mt-8 pt-6 border-t border-mist-line">
+        <p className="text-xs text-text-subtle text-center">
           SessãoInk v1.0 · Ambiente local · Backend em localhost:8001
         </p>
       </div>

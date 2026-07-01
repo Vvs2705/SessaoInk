@@ -53,7 +53,7 @@ export function MobileTopBar() {
 
   return (
     <>
-      <header className="safe-top sticky top-0 z-40 border-b border-[#243337] bg-[#0B171C]/95 backdrop-blur-xl lg:hidden">
+      <header className="safe-top sticky top-0 z-40 border-b border-mist-line bg-ink-bg/95 backdrop-blur-xl lg:hidden">
         <div className="flex h-14 items-center justify-between gap-3 px-4">
           <Link
             href="/"
@@ -66,7 +66,7 @@ export function MobileTopBar() {
               scaling={false}
               className="shrink-0"
             />
-            <span className="truncate text-sm font-semibold text-[#F0EADD]">
+            <span className="truncate text-sm font-semibold text-porcelain-ink">
               SessãoInk
             </span>
           </Link>
@@ -78,7 +78,7 @@ export function MobileTopBar() {
                 onClick={handleInstall}
                 className={cn(
                   "grid h-10 w-10 place-items-center rounded-full",
-                  "border border-[#2F9285]/40 bg-[#102128] text-[#2F9285]",
+                  "border border-teal-ink/40 bg-surface-raised text-teal-ink",
                   "active:scale-95",
                 )}
                 aria-label="Instalar aplicativo"
@@ -92,7 +92,7 @@ export function MobileTopBar() {
               onClick={() => setBuscaAberta(true)}
               className={cn(
                 "grid h-10 w-10 place-items-center rounded-full",
-                "border border-[#243337] bg-[#102128] text-[#87938F]",
+                "border border-mist-line bg-surface-raised text-text-subtle",
                 "active:scale-95",
               )}
               aria-label="Abrir busca"
@@ -104,7 +104,7 @@ export function MobileTopBar() {
               href="/configuracoes"
               className={cn(
                 "grid h-10 w-10 place-items-center rounded-full",
-                "border border-[#243337] bg-[#102128] text-[#87938F]",
+                "border border-mist-line bg-surface-raised text-text-subtle",
                 "active:scale-95",
               )}
               aria-label="Abrir configurações"
@@ -114,7 +114,7 @@ export function MobileTopBar() {
 
             <Link
               href="/configuracoes"
-              className="grid h-10 w-10 place-items-center rounded-full border border-[#2F9285]/50 bg-[#102128] text-[#2F9285] active:scale-95"
+              className="grid h-10 w-10 place-items-center rounded-full border border-teal-ink/50 bg-surface-raised text-teal-ink active:scale-95"
               aria-label="Perfil"
             >
               <UserCircle size={22} />

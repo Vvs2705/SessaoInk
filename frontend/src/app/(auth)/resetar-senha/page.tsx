@@ -54,10 +54,10 @@ export default function ResetarSenhaPage() {
 
   return (
     <section className="flex min-h-app items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md rounded-[2rem] border border-[#243337] bg-[#0B171C] p-6 shadow-2xl shadow-black/30 sm:p-8">
+      <div className="w-full max-w-md rounded-[2rem] border border-mist-line bg-ink-bg p-6 shadow-2xl shadow-black/30 sm:p-8">
         <Link
           href="/login"
-          className="mb-6 inline-flex items-center gap-2 text-sm text-[#87938F] hover:text-[#F0EADD]"
+          className="mb-6 inline-flex items-center gap-2 text-sm text-text-subtle hover:text-porcelain-ink"
         >
           <ArrowLeft size={16} />
           Voltar ao login
@@ -65,26 +65,26 @@ export default function ResetarSenhaPage() {
 
         {sucesso ? (
           <div>
-            <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-[#2F9285]/10 text-[#2F9285]">
+            <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-teal-ink/10 text-teal-ink">
               <CheckCircle size={24} />
             </div>
 
-            <h1 className="text-2xl font-bold text-[#F0EADD]">Senha alterada</h1>
-            <p className="mt-2 text-sm leading-6 text-[#87938F]">
+            <h1 className="text-2xl font-bold text-porcelain-ink">Senha alterada</h1>
+            <p className="mt-2 text-sm leading-6 text-text-subtle">
               Sua senha foi redefinida com sucesso. Entre novamente para acessar o painel.
             </p>
 
             <Link
               href="/login"
-              className="mt-6 flex h-12 w-full items-center justify-center rounded-2xl bg-[#2F9285] px-4 font-bold text-[#050B12] transition hover:bg-[#3AA99A]"
+              className="mt-6 flex h-12 w-full items-center justify-center rounded-2xl bg-teal-ink px-4 font-bold text-ink-night transition hover:bg-ink-gold"
             >
               Ir para login
             </Link>
           </div>
         ) : (
           <>
-            <h1 className="text-2xl font-bold text-[#F0EADD]">Criar nova senha</h1>
-            <p className="mt-2 text-sm leading-6 text-[#87938F]">
+            <h1 className="text-2xl font-bold text-porcelain-ink">Criar nova senha</h1>
+            <p className="mt-2 text-sm leading-6 text-text-subtle">
               Escolha uma senha segura para acessar sua conta.
             </p>
 
@@ -92,7 +92,7 @@ export default function ResetarSenhaPage() {
               <div>
                 <label
                   htmlFor="senha"
-                  className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#87938F]"
+                  className="mb-2 block text-xs font-semibold uppercase tracking-wide text-text-subtle"
                 >
                   Nova senha
                 </label>
@@ -103,14 +103,14 @@ export default function ResetarSenhaPage() {
                   required
                   value={senha}
                   onChange={(event) => setSenha(event.target.value)}
-                  className="h-12 w-full rounded-2xl border border-[#243337] bg-[#102128] px-4 text-base text-[#F0EADD] outline-none transition focus:border-[#2F9285] focus:ring-2 focus:ring-[#2F9285]/20"
+                  className="h-12 w-full rounded-2xl border border-mist-line bg-surface-raised px-4 text-base text-porcelain-ink outline-none transition focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="confirmacao"
-                  className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#87938F]"
+                  className="mb-2 block text-xs font-semibold uppercase tracking-wide text-text-subtle"
                 >
                   Confirmar senha
                 </label>
@@ -121,12 +121,12 @@ export default function ResetarSenhaPage() {
                   required
                   value={confirmacao}
                   onChange={(event) => setConfirmacao(event.target.value)}
-                  className="h-12 w-full rounded-2xl border border-[#243337] bg-[#102128] px-4 text-base text-[#F0EADD] outline-none transition focus:border-[#2F9285] focus:ring-2 focus:ring-[#2F9285]/20"
+                  className="h-12 w-full rounded-2xl border border-mist-line bg-surface-raised px-4 text-base text-porcelain-ink outline-none transition focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
                 />
               </div>
 
               {erro && (
-                <p className="rounded-2xl border border-[#E35D5B]/30 bg-[#E35D5B]/10 p-3 text-sm text-[#E35D5B]">
+                <p className="rounded-2xl border border-error-red/30 bg-error-red/10 p-3 text-sm text-error-red">
                   {erro}
                 </p>
               )}
@@ -134,7 +134,7 @@ export default function ResetarSenhaPage() {
               <button
                 type="submit"
                 disabled={carregando}
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#2F9285] px-4 font-bold text-[#050B12] transition hover:bg-[#3AA99A] disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-teal-ink px-4 font-bold text-ink-night transition hover:bg-ink-gold disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {carregando && <Loader2 size={18} className="animate-spin" />}
                 Salvar nova senha

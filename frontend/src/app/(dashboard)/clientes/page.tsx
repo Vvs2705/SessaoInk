@@ -99,26 +99,26 @@ function ClienteModal({ cliente, onClose }: ClienteModalProps) {
   };
 
   const inputCls =
-    "w-full h-10 px-3 rounded-[12px] bg-[#050B12] border border-[#243337] text-[#F0EADD] text-sm placeholder-[#87938F] focus:border-[#2F9285]/60 outline-none transition-colors";
-  const labelCls = "block text-xs font-medium text-[#87938F] mb-1.5";
+    "w-full h-10 px-3 rounded-[12px] bg-ink-night border border-mist-line text-porcelain-ink text-sm placeholder-text-subtle focus:border-teal-ink/60 outline-none transition-colors";
+  const labelCls = "block text-xs font-medium text-text-subtle mb-1.5";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="relative w-full max-w-md bg-[#0B171C] border border-[#243337] rounded-[18px] shadow-2xl">
+      <div className="relative w-full max-w-md bg-ink-bg border border-mist-line rounded-[18px] shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#243337]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-mist-line">
           <div>
-            <h2 className="text-base font-bold text-[#F0EADD]">
+            <h2 className="text-base font-bold text-porcelain-ink">
               {isEdit ? "Editar Cliente" : "Novo Cliente"}
             </h2>
-            <p className="text-xs text-[#87938F] mt-0.5">
+            <p className="text-xs text-text-subtle mt-0.5">
               {isEdit ? `Editando ${cliente!.nome}` : "Preencha os dados do cliente"}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-[10px] text-[#87938F] hover:text-[#F0EADD] hover:bg-[#102128] transition-all"
+            className="p-2 rounded-[10px] text-text-subtle hover:text-porcelain-ink hover:bg-surface-raised transition-all"
           >
             <X size={18} />
           </button>
@@ -130,7 +130,7 @@ function ClienteModal({ cliente, onClose }: ClienteModalProps) {
             {/* Nome */}
             <div>
               <label className={labelCls}>
-                Nome <span className="text-[#E35D5B]">*</span>
+                Nome <span className="text-error-red">*</span>
               </label>
               <input
                 value={form.nome}
@@ -210,36 +210,36 @@ function ClienteModal({ cliente, onClose }: ClienteModalProps) {
                 onChange={setField("notas")}
                 placeholder="Observações sobre o cliente, preferências, histórico..."
                 rows={3}
-                className="w-full px-3 py-2.5 rounded-[12px] bg-[#050B12] border border-[#243337] text-[#F0EADD] text-sm placeholder-[#87938F] focus:border-[#2F9285]/60 outline-none transition-colors resize-none"
+                className="w-full px-3 py-2.5 rounded-[12px] bg-ink-night border border-mist-line text-porcelain-ink text-sm placeholder-text-subtle focus:border-teal-ink/60 outline-none transition-colors resize-none"
               />
             </div>
 
             {/* Erro */}
             {erro && (
-              <div className="px-3 py-2.5 rounded-[10px] bg-[#E35D5B]/10 border border-[#E35D5B]/30 text-sm text-[#E35D5B]">
+              <div className="px-3 py-2.5 rounded-[10px] bg-error-red/10 border border-error-red/30 text-sm text-error-red">
                 {erro}
               </div>
             )}
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#243337]">
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-mist-line">
             <button
               type="button"
               onClick={onClose}
               disabled={mutation.isPending}
-              className="h-9 px-4 rounded-[12px] text-sm text-[#87938F] hover:text-[#F0EADD] hover:bg-[#102128] border border-[#243337] transition-all disabled:opacity-50"
+              className="h-9 px-4 rounded-[12px] text-sm text-text-subtle hover:text-porcelain-ink hover:bg-surface-raised border border-mist-line transition-all disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="h-9 px-5 rounded-[12px] text-sm font-semibold bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] transition-all disabled:opacity-50 flex items-center gap-2"
+              className="h-9 px-5 rounded-[12px] text-sm font-semibold bg-teal-ink hover:bg-ink-gold text-ink-night transition-all disabled:opacity-50 flex items-center gap-2"
             >
               {mutation.isPending ? (
                 <>
-                  <span className="w-4 h-4 border-2 border-[#050B12]/30 border-t-[#050B12] rounded-full animate-spin" />
+                  <span className="w-4 h-4 border-2 border-ink-night/30 border-t-ink-night rounded-full animate-spin" />
                   {isEdit ? "Salvando..." : "Criando..."}
                 </>
               ) : (
@@ -292,8 +292,8 @@ export default function ClientesPage() {
     <div className="p-6 max-w-5xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#F0EADD]">Clientes</h1>
-          <p className="text-sm text-[#87938F] mt-1">
+          <h1 className="text-2xl font-bold text-porcelain-ink">Clientes</h1>
+          <p className="text-sm text-text-subtle mt-1">
             {isLoading
               ? "Carregando..."
               : `${data.length} cadastrado${data.length !== 1 ? "s" : ""}`}
@@ -301,7 +301,7 @@ export default function ClientesPage() {
         </div>
         <button
           onClick={abrirNovoCliente}
-          className="flex items-center gap-2 h-10 px-4 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm transition-all shrink-0"
+          className="flex items-center gap-2 h-10 px-4 rounded-[14px] bg-teal-ink hover:bg-ink-gold text-ink-night font-semibold text-sm transition-all shrink-0"
         >
           <Plus size={16} />
           Novo Cliente
@@ -309,12 +309,12 @@ export default function ClientesPage() {
       </div>
 
       <div className="relative mb-6">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#87938F]" />
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle" />
         <input
           value={busca}
           onChange={e => setBusca(e.target.value)}
           placeholder="Buscar por nome, telefone ou Instagram..."
-          className="w-full h-10 pl-9 pr-4 rounded-[14px] bg-[#0B171C] border border-[#243337] text-[#F0EADD] text-sm placeholder-[#87938F] focus:outline-none focus:border-[#2F9285] transition-all"
+          className="w-full h-10 pl-9 pr-4 rounded-[14px] bg-ink-bg border border-mist-line text-porcelain-ink text-sm placeholder-text-subtle focus:outline-none focus:border-teal-ink transition-all"
         />
       </div>
 
@@ -322,14 +322,14 @@ export default function ClientesPage() {
       {isLoading && (
         <div className="space-y-2">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-16 bg-[#0B171C] border border-[#243337] rounded-[14px] animate-pulse" />
+            <div key={i} className="h-16 bg-ink-bg border border-mist-line rounded-[14px] animate-pulse" />
           ))}
         </div>
       )}
 
       {/* Empty */}
       {!isLoading && filtrado.length === 0 && (
-        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px]">
+        <div className="bg-ink-bg border border-mist-line rounded-[18px]">
           <EmptyState
             title={busca ? "Nenhum cliente encontrado" : "Seu estúdio ainda não tem clientes"}
             description={
@@ -341,7 +341,7 @@ export default function ClientesPage() {
               !busca ? (
                 <button
                   onClick={abrirNovoCliente}
-                  className="flex items-center gap-2 h-11 px-5 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm transition-colors"
+                  className="flex items-center gap-2 h-11 px-5 rounded-[14px] bg-teal-ink hover:bg-ink-gold text-ink-night font-semibold text-sm transition-colors"
                 >
                   <Plus size={16} />
                   Adicionar primeiro cliente
@@ -359,31 +359,31 @@ export default function ClientesPage() {
             <div
               key={c.id}
               onClick={() => abrirEditarCliente(c)}
-              className="flex items-center justify-between p-4 bg-[#0B171C] border border-[#243337] rounded-[14px] hover:border-[#2F9285]/40 hover:bg-[#102128] transition-all cursor-pointer"
+              className="flex items-center justify-between p-4 bg-ink-bg border border-mist-line rounded-[14px] hover:border-teal-ink/40 hover:bg-surface-raised transition-all cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#102128] border border-[#243337] flex items-center justify-center shrink-0">
-                  <span className="text-sm font-bold text-[#2F9285]">
+                <div className="w-10 h-10 rounded-full bg-surface-raised border border-mist-line flex items-center justify-center shrink-0">
+                  <span className="text-sm font-bold text-teal-ink">
                     {c.nome.charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-[#F0EADD]">{c.nome}</p>
+                  <p className="text-sm font-semibold text-porcelain-ink">{c.nome}</p>
                   <div className="flex items-center gap-3 mt-0.5">
                     {c.telefone && (
-                      <span className="flex items-center gap-1 text-xs text-[#87938F]">
+                      <span className="flex items-center gap-1 text-xs text-text-subtle">
                         <Phone size={10} />
                         {c.telefone}
                       </span>
                     )}
                     {c.instagram && (
-                      <span className="flex items-center gap-1 text-xs text-[#87938F]">
+                      <span className="flex items-center gap-1 text-xs text-text-subtle">
                         <Instagram size={10} />
                         {c.instagram}
                       </span>
                     )}
                     {c.email && (
-                      <span className="flex items-center gap-1 text-xs text-[#87938F]">
+                      <span className="flex items-center gap-1 text-xs text-text-subtle">
                         <Mail size={10} />
                         {c.email}
                       </span>
@@ -391,7 +391,7 @@ export default function ClientesPage() {
                   </div>
                 </div>
               </div>
-              <span className="text-xs text-[#2F9285]">Editar →</span>
+              <span className="text-xs text-teal-ink">Editar →</span>
             </div>
           ))}
         </div>

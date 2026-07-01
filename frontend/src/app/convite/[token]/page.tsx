@@ -87,7 +87,7 @@ export default function AceitarConvitePage() {
   }
 
   return (
-    <div className="min-h-app flex items-center justify-center bg-[#050B12] px-4 py-10">
+    <div className="min-h-app flex items-center justify-center bg-ink-night px-4 py-10">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(47,146,133,0.14),transparent_42%)]" />
 
       <div className="relative z-10 w-full max-w-md">
@@ -95,48 +95,48 @@ export default function AceitarConvitePage() {
           <BrandLogo layout="wide" size="lg" scaling={false} />
         </div>
 
-        <div className="rounded-[2rem] border border-[#243337] bg-[#0B171C]/90 p-6 shadow-2xl shadow-black/40 backdrop-blur-xl sm:p-8">
+        <div className="rounded-[2rem] border border-mist-line bg-ink-bg/90 p-6 shadow-2xl shadow-black/40 backdrop-blur-xl sm:p-8">
           {carregando ? (
             <div className="flex flex-col items-center gap-3 py-10 text-center">
-              <Loader2 size={26} className="animate-spin text-[#2F9285]" />
-              <p className="text-sm text-[#87938F]">Validando seu convite…</p>
+              <Loader2 size={26} className="animate-spin text-teal-ink" />
+              <p className="text-sm text-text-subtle">Validando seu convite…</p>
             </div>
           ) : erroInfo ? (
             <div className="flex flex-col items-center gap-3 py-8 text-center">
-              <div className="grid h-14 w-14 place-items-center rounded-2xl border border-[#243337] bg-[#050B12]">
-                <AlertCircle size={26} className="text-[#E35D5B]" />
+              <div className="grid h-14 w-14 place-items-center rounded-2xl border border-mist-line bg-ink-night">
+                <AlertCircle size={26} className="text-error-red" />
               </div>
-              <h1 className="text-xl font-black text-[#F0EADD]">Convite indisponível</h1>
-              <p className="text-sm leading-relaxed text-[#87938F]">{erroInfo}</p>
+              <h1 className="text-xl font-black text-porcelain-ink">Convite indisponível</h1>
+              <p className="text-sm leading-relaxed text-text-subtle">{erroInfo}</p>
               <a
                 href="/login"
-                className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-[#2F9285] hover:text-[#3AA99A]"
+                className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-teal-ink hover:text-ink-gold"
               >
                 Ir para o login <ArrowRight size={14} />
               </a>
             </div>
           ) : sucesso ? (
             <div className="flex flex-col items-center gap-3 py-8 text-center">
-              <div className="grid h-16 w-16 place-items-center rounded-full bg-[#2F9285]/15 shadow-[0_0_30px_rgba(47,146,133,0.25)]">
-                <CheckCircle size={30} className="text-[#2F9285]" />
+              <div className="grid h-16 w-16 place-items-center rounded-full bg-teal-ink/15 shadow-[0_0_30px_rgba(47,146,133,0.25)]">
+                <CheckCircle size={30} className="text-teal-ink" />
               </div>
-              <h1 className="text-2xl font-black text-[#F0EADD]">Conta criada!</h1>
-              <p className="text-sm leading-relaxed text-[#87938F]">
+              <h1 className="text-2xl font-black text-porcelain-ink">Conta criada!</h1>
+              <p className="text-sm leading-relaxed text-text-subtle">
                 Você agora faz parte de{" "}
-                <strong className="text-[#F0EADD]">{info?.nome_estudio}</strong>.
+                <strong className="text-porcelain-ink">{info?.nome_estudio}</strong>.
                 Redirecionando para o login…
               </p>
             </div>
           ) : (
             <>
               <div className="mb-6 text-center">
-                <h1 className="text-2xl font-black tracking-tight text-[#F0EADD]">
+                <h1 className="text-2xl font-black tracking-tight text-porcelain-ink">
                   Entrar no estúdio
                 </h1>
-                <p className="mt-2 text-sm leading-6 text-[#87938F]">
+                <p className="mt-2 text-sm leading-6 text-text-subtle">
                   Você foi convidado(a) para{" "}
-                  <strong className="text-[#F0EADD]">{info?.nome_estudio}</strong> como{" "}
-                  <strong className="text-[#2F9285]">
+                  <strong className="text-porcelain-ink">{info?.nome_estudio}</strong> como{" "}
+                  <strong className="text-teal-ink">
                     {PAPEL_LABEL[info?.role ?? ""] ?? info?.role}
                   </strong>
                   . Crie sua senha para acessar.
@@ -145,21 +145,21 @@ export default function AceitarConvitePage() {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#87938F]">
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-text-subtle">
                     E-mail
                   </label>
                   <input
                     type="email"
                     value={info?.email ?? ""}
                     disabled
-                    className="h-12 w-full cursor-not-allowed rounded-2xl border border-[#243337] bg-[#050B12] px-4 text-base text-[#87938F]"
+                    className="h-12 w-full cursor-not-allowed rounded-2xl border border-mist-line bg-ink-night px-4 text-base text-text-subtle"
                   />
                 </div>
 
                 <div>
                   <label
                     htmlFor="nome"
-                    className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#87938F]"
+                    className="mb-2 block text-xs font-semibold uppercase tracking-wide text-text-subtle"
                   >
                     Seu nome
                   </label>
@@ -170,14 +170,14 @@ export default function AceitarConvitePage() {
                     value={nome}
                     onChange={(e) => setNome(e.target.value)}
                     placeholder="Nome completo"
-                    className="h-12 w-full rounded-2xl border border-[#243337] bg-[#102128] px-4 text-base text-[#F0EADD] outline-none transition placeholder:text-[#5F6F70] focus:border-[#2F9285] focus:ring-2 focus:ring-[#2F9285]/20"
+                    className="h-12 w-full rounded-2xl border border-mist-line bg-surface-raised px-4 text-base text-porcelain-ink outline-none transition placeholder:text-[#5F6F70] focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
                   />
                 </div>
 
                 <div>
                   <label
                     htmlFor="senha"
-                    className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#87938F]"
+                    className="mb-2 block text-xs font-semibold uppercase tracking-wide text-text-subtle"
                   >
                     Senha
                   </label>
@@ -189,12 +189,12 @@ export default function AceitarConvitePage() {
                       value={senha}
                       onChange={(e) => setSenha(e.target.value)}
                       placeholder="Mínimo 8 caracteres"
-                      className="h-12 w-full rounded-2xl border border-[#243337] bg-[#102128] px-4 pr-12 text-base text-[#F0EADD] outline-none transition placeholder:text-[#5F6F70] focus:border-[#2F9285] focus:ring-2 focus:ring-[#2F9285]/20"
+                      className="h-12 w-full rounded-2xl border border-mist-line bg-surface-raised px-4 pr-12 text-base text-porcelain-ink outline-none transition placeholder:text-[#5F6F70] focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
                     />
                     <button
                       type="button"
                       onClick={() => setShowSenha((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#87938F] transition-colors hover:text-[#B8C2BF]"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-subtle transition-colors hover:text-smoke-text"
                       aria-label={showSenha ? "Ocultar senha" : "Mostrar senha"}
                     >
                       {showSenha ? <EyeOff size={19} /> : <Eye size={19} />}
@@ -203,7 +203,7 @@ export default function AceitarConvitePage() {
                 </div>
 
                 {erro && (
-                  <p className="rounded-2xl border border-[#E35D5B]/30 bg-[#E35D5B]/10 p-3 text-sm text-[#E35D5B]">
+                  <p className="rounded-2xl border border-error-red/30 bg-error-red/10 p-3 text-sm text-error-red">
                     {erro}
                   </p>
                 )}
@@ -211,7 +211,7 @@ export default function AceitarConvitePage() {
                 <button
                   type="submit"
                   disabled={enviando}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#2F9285] px-4 font-bold text-[#050B12] transition hover:bg-[#3AA99A] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-teal-ink px-4 font-bold text-ink-night transition hover:bg-ink-gold disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {enviando ? (
                     <>

@@ -234,7 +234,7 @@ export default function LoginPage() {
         <div className="relative z-10 w-full max-w-md">
           <div className="mb-6 flex flex-col items-center text-center lg:hidden">
             <BrandLogo layout="wide" size="lg" scaling={false} />
-            <p className="mt-4 text-sm leading-6 text-[#87938F]">
+            <p className="mt-4 text-sm leading-6 text-text-subtle">
               Gestão para tatuadores organizarem agenda, clientes, financeiro,
               portfólio e atendimentos em um só lugar.
             </p>
@@ -243,16 +243,16 @@ export default function LoginPage() {
           <div className="relative">
             <DailyTattooLoginAnimation />
 
-            <div className="relative overflow-hidden rounded-[2rem] border border-[#243337] bg-[#0B171C]/90 p-6 shadow-2xl shadow-black/40 backdrop-blur-xl sm:p-8">
+            <div className="relative overflow-hidden rounded-[2rem] border border-mist-line bg-ink-bg/90 p-6 shadow-2xl shadow-black/40 backdrop-blur-xl sm:p-8">
             <div className="mb-7 hidden justify-center lg:flex">
               <BrandLogo layout="wide" size="lg" scaling={false} />
             </div>
 
             <div className="mb-6 text-center">
-              <h1 className="text-2xl font-black tracking-tight text-[#F0EADD]">
+              <h1 className="text-2xl font-black tracking-tight text-porcelain-ink">
                 {mfaRequired ? "Confirme sua identidade" : "Acesse seu estúdio"}
               </h1>
-              <p className="mt-2 text-sm leading-6 text-[#87938F]">
+              <p className="mt-2 text-sm leading-6 text-text-subtle">
                 {mfaRequired
                   ? "Selecione o método e informe o código de segurança."
                   : "Entre para gerenciar seus atendimentos, clientes e agenda."}
@@ -262,7 +262,7 @@ export default function LoginPage() {
             {mfaRequired ? (
               <form onSubmit={handleVerifyMfa} className="space-y-4">
                 {mfaMetodos.includes("totp") && mfaMetodos.includes("email") && (
-                  <div className="flex rounded-xl border border-[#243337] bg-[#050B12] p-1">
+                  <div className="flex rounded-xl border border-mist-line bg-ink-night p-1">
                     <button
                       type="button"
                       onClick={() => {
@@ -272,8 +272,8 @@ export default function LoginPage() {
                       className={cn(
                         "flex-1 rounded-[10px] py-2 text-xs font-semibold transition-all",
                         selectedMetodo === "totp"
-                          ? "bg-[#2F9285] text-[#050B12]"
-                          : "text-[#87938F] hover:text-[#F0EADD]",
+                          ? "bg-teal-ink text-ink-night"
+                          : "text-text-subtle hover:text-porcelain-ink",
                       )}
                     >
                       App autenticador
@@ -288,8 +288,8 @@ export default function LoginPage() {
                       className={cn(
                         "flex-1 rounded-[10px] py-2 text-xs font-semibold transition-all",
                         selectedMetodo === "email"
-                          ? "bg-[#2F9285] text-[#050B12]"
-                          : "text-[#87938F] hover:text-[#F0EADD]",
+                          ? "bg-teal-ink text-ink-night"
+                          : "text-text-subtle hover:text-porcelain-ink",
                       )}
                     >
                       Código por e-mail
@@ -301,7 +301,7 @@ export default function LoginPage() {
                   <div>
                     <label
                       htmlFor="mfa-totp"
-                      className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#87938F]"
+                      className="mb-2 block text-xs font-semibold uppercase tracking-wide text-text-subtle"
                     >
                       Código do app
                     </label>
@@ -315,7 +315,7 @@ export default function LoginPage() {
                       onChange={(event) =>
                         setMfaCodigo(event.target.value.replace(/\D/g, ""))
                       }
-                      className="h-12 w-full rounded-2xl border border-[#243337] bg-[#102128] px-4 text-center font-mono text-base tracking-[0.5em] text-[#F0EADD] outline-none transition focus:border-[#2F9285] focus:ring-2 focus:ring-[#2F9285]/20"
+                      className="h-12 w-full rounded-2xl border border-mist-line bg-surface-raised px-4 text-center font-mono text-base tracking-[0.5em] text-porcelain-ink outline-none transition focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
                       required
                     />
                   </div>
@@ -324,8 +324,8 @@ export default function LoginPage() {
                 {selectedMetodo === "email" && (
                   <div className="space-y-4">
                     {!emailEnviado ? (
-                      <div className="rounded-2xl border border-[#243337] bg-[#050B12] p-4">
-                        <p className="text-sm leading-6 text-[#87938F]">
+                      <div className="rounded-2xl border border-mist-line bg-ink-night p-4">
+                        <p className="text-sm leading-6 text-text-subtle">
                           Enviaremos um código de uso único para o e-mail cadastrado.
                         </p>
 
@@ -334,7 +334,7 @@ export default function LoginPage() {
                           onClick={handleSolicitarEmailOtp}
                           disabled={mfaSubmitting}
                           aria-busy={mfaSubmitting}
-                          className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#2F9285] px-4 text-sm font-bold text-[#050B12] transition hover:bg-[#3AA99A] disabled:cursor-not-allowed disabled:opacity-60"
+                          className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-teal-ink px-4 text-sm font-bold text-ink-night transition hover:bg-ink-gold disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {mfaSubmitting && (
                             <Loader2 size={17} className="animate-spin" />
@@ -346,7 +346,7 @@ export default function LoginPage() {
                       <div>
                         <label
                           htmlFor="mfa-email"
-                          className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#87938F]"
+                          className="mb-2 block text-xs font-semibold uppercase tracking-wide text-text-subtle"
                         >
                           Código recebido por e-mail
                         </label>
@@ -360,7 +360,7 @@ export default function LoginPage() {
                           onChange={(event) =>
                             setMfaCodigo(event.target.value.replace(/\D/g, ""))
                           }
-                          className="h-12 w-full rounded-2xl border border-[#243337] bg-[#102128] px-4 text-center font-mono text-base tracking-[0.5em] text-[#F0EADD] outline-none transition focus:border-[#2F9285] focus:ring-2 focus:ring-[#2F9285]/20"
+                          className="h-12 w-full rounded-2xl border border-mist-line bg-surface-raised px-4 text-center font-mono text-base tracking-[0.5em] text-porcelain-ink outline-none transition focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
                           required
                         />
 
@@ -369,7 +369,7 @@ export default function LoginPage() {
                           onClick={handleSolicitarEmailOtp}
                           disabled={mfaSubmitting}
                           aria-busy={mfaSubmitting}
-                          className="mt-3 text-xs font-semibold text-[#2F9285] hover:text-[#3AA99A] disabled:opacity-60"
+                          className="mt-3 text-xs font-semibold text-teal-ink hover:text-ink-gold disabled:opacity-60"
                         >
                           Reenviar código por e-mail
                         </button>
@@ -382,7 +382,7 @@ export default function LoginPage() {
                   <p
                     role="alert"
                     aria-live="polite"
-                    className="rounded-2xl border border-[#E35D5B]/30 bg-[#E35D5B]/10 p-3 text-sm text-[#E35D5B]"
+                    className="rounded-2xl border border-error-red/30 bg-error-red/10 p-3 text-sm text-error-red"
                   >
                     {mfaError}
                   </p>
@@ -393,7 +393,7 @@ export default function LoginPage() {
                     type="submit"
                     disabled={mfaSubmitting}
                     aria-busy={mfaSubmitting}
-                    className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#2F9285] px-4 font-bold text-[#050B12] transition hover:bg-[#3AA99A] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-teal-ink px-4 font-bold text-ink-night transition hover:bg-ink-gold disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {mfaSubmitting ? (
                       <>
@@ -409,7 +409,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={handleBackToCredentials}
-                  className="h-11 w-full rounded-xl border border-[#243337] text-sm font-semibold text-[#87938F] transition hover:text-[#F0EADD]"
+                  className="h-11 w-full rounded-xl border border-mist-line text-sm font-semibold text-text-subtle transition hover:text-porcelain-ink"
                 >
                   Voltar para o login
                 </button>
@@ -419,7 +419,7 @@ export default function LoginPage() {
                 <div>
                   <label
                     htmlFor="email"
-                    className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#87938F]"
+                    className="mb-2 block text-xs font-semibold uppercase tracking-wide text-text-subtle"
                   >
                     E-mail
                   </label>
@@ -428,11 +428,11 @@ export default function LoginPage() {
                     type="email"
                     autoComplete="email"
                     {...register("email")}
-                    className="h-12 w-full rounded-2xl border border-[#243337] bg-[#102128] px-4 text-base text-[#F0EADD] outline-none transition placeholder:text-[#5F6F70] focus:border-[#2F9285] focus:ring-2 focus:ring-[#2F9285]/20"
+                    className="h-12 w-full rounded-2xl border border-mist-line bg-surface-raised px-4 text-base text-porcelain-ink outline-none transition placeholder:text-[#5F6F70] focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
                     placeholder="voce@email.com"
                   />
                   {errors.email && (
-                    <p className="mt-2 text-xs text-[#E35D5B]">
+                    <p className="mt-2 text-xs text-error-red">
                       {errors.email.message}
                     </p>
                   )}
@@ -441,7 +441,7 @@ export default function LoginPage() {
                 <div>
                   <label
                     htmlFor="senha"
-                    className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#87938F]"
+                    className="mb-2 block text-xs font-semibold uppercase tracking-wide text-text-subtle"
                   >
                     Senha
                   </label>
@@ -452,14 +452,14 @@ export default function LoginPage() {
                       type={showPass ? "text" : "password"}
                       autoComplete="current-password"
                       {...register("senha")}
-                      className="h-12 w-full rounded-2xl border border-[#243337] bg-[#102128] px-4 pr-12 text-base text-[#F0EADD] outline-none transition placeholder:text-[#5F6F70] focus:border-[#2F9285] focus:ring-2 focus:ring-[#2F9285]/20"
+                      className="h-12 w-full rounded-2xl border border-mist-line bg-surface-raised px-4 pr-12 text-base text-porcelain-ink outline-none transition placeholder:text-[#5F6F70] focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
                       placeholder="Sua senha"
                     />
 
                     <button
                       type="button"
                       onClick={() => setShowPass((value) => !value)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#87938F] transition-colors hover:text-[#B8C2BF]"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-subtle transition-colors hover:text-smoke-text"
                       aria-label={showPass ? "Ocultar senha" : "Mostrar senha"}
                     >
                       {showPass ? <EyeOff size={19} /> : <Eye size={19} />}
@@ -467,7 +467,7 @@ export default function LoginPage() {
                   </div>
 
                   {errors.senha && (
-                    <p className="mt-2 text-xs text-[#E35D5B]">
+                    <p className="mt-2 text-xs text-error-red">
                       {errors.senha.message}
                     </p>
                   )}
@@ -475,7 +475,7 @@ export default function LoginPage() {
                   <div className="mt-2 flex justify-end">
                     <Link
                       href="/esqueci-senha"
-                      className="text-xs font-semibold text-[#2F9285] hover:text-[#3AA99A]"
+                      className="text-xs font-semibold text-teal-ink hover:text-ink-gold"
                     >
                       Esqueceu a senha?
                     </Link>
@@ -483,7 +483,7 @@ export default function LoginPage() {
                 </div>
 
                 {apiError && (
-                  <p className="rounded-2xl border border-[#E35D5B]/30 bg-[#E35D5B]/10 p-3 text-sm text-[#E35D5B]">
+                  <p className="rounded-2xl border border-error-red/30 bg-error-red/10 p-3 text-sm text-error-red">
                     {apiError}
                   </p>
                 )}
@@ -492,7 +492,7 @@ export default function LoginPage() {
                   type="submit"
                   disabled={isSubmitting}
                   aria-busy={isSubmitting}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#2F9285] px-4 font-bold text-[#050B12] transition hover:bg-[#3AA99A] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-teal-ink px-4 font-bold text-ink-night transition hover:bg-ink-gold disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSubmitting ? (
                     <>
@@ -507,11 +507,11 @@ export default function LoginPage() {
             )}
 
             {!mfaRequired && (
-              <p className="mt-5 text-center text-sm text-[#87938F]">
+              <p className="mt-5 text-center text-sm text-text-subtle">
                 Não tem conta?{" "}
                 <Link
                   href="/cadastro"
-                  className="font-semibold text-[#2F9285] hover:text-[#3AA99A]"
+                  className="font-semibold text-teal-ink hover:text-ink-gold"
                 >
                   Criar conta grátis
                 </Link>

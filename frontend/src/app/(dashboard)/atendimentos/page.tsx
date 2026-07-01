@@ -10,24 +10,24 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { CurrencyInput } from "@/components/ui/CurrencyInput";
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
-  SOLICITADO:        { label: "Solicitado",      cls: "bg-[#5E9ED6]/15 text-[#5E9ED6] border-[#5E9ED6]/30" },
-  EM_ANALISE:        { label: "Em Análise",       cls: "bg-[#D99A3D]/15 text-[#D99A3D] border-[#D99A3D]/30" },
-  AGUARDANDO_SINAL:  { label: "Aguard. Sinal",    cls: "bg-[#D99A3D]/15 text-[#D99A3D] border-[#D99A3D]/30" },
-  CONFIRMADO:        { label: "Confirmado",       cls: "bg-[#54B88D]/15 text-[#54B88D] border-[#54B88D]/30" },
-  EM_ATENDIMENTO:    { label: "Em Atend.",        cls: "bg-[#2F9285]/15 text-[#2F9285] border-[#2F9285]/30" },
-  FINALIZADO:        { label: "Finalizado",       cls: "bg-[#8B7CF6]/15 text-[#8B7CF6] border-[#8B7CF6]/30" },
-  REAGENDADO:        { label: "Reagendado",       cls: "bg-[#5E9ED6]/15 text-[#5E9ED6] border-[#5E9ED6]/30" },
-  CANCELADO_CLIENTE: { label: "Cancelado",        cls: "bg-[#E35D5B]/15 text-[#E35D5B] border-[#E35D5B]/30" },
-  CANCELADO_ESTUDIO: { label: "Cancelado",        cls: "bg-[#E35D5B]/15 text-[#E35D5B] border-[#E35D5B]/30" },
-  NAO_COMPARECEU:    { label: "Não Compareceu",   cls: "bg-[#C36B3F]/15 text-[#C36B3F] border-[#C36B3F]/30" },
-  RETOQUE:           { label: "Retoque",          cls: "bg-[#87938F]/15 text-[#87938F] border-[#87938F]/30" },
+  SOLICITADO:        { label: "Solicitado",      cls: "bg-info/15 text-info border-info/30" },
+  EM_ANALISE:        { label: "Em Análise",       cls: "bg-warning/15 text-warning border-warning/30" },
+  AGUARDANDO_SINAL:  { label: "Aguard. Sinal",    cls: "bg-warning/15 text-warning border-warning/30" },
+  CONFIRMADO:        { label: "Confirmado",       cls: "bg-success/15 text-success border-success/30" },
+  EM_ATENDIMENTO:    { label: "Em Atend.",        cls: "bg-teal-ink/15 text-teal-ink border-teal-ink/30" },
+  FINALIZADO:        { label: "Finalizado",       cls: "bg-status-finalizado/15 text-status-finalizado border-status-finalizado/30" },
+  REAGENDADO:        { label: "Reagendado",       cls: "bg-info/15 text-info border-info/30" },
+  CANCELADO_CLIENTE: { label: "Cancelado",        cls: "bg-error-red/15 text-error-red border-error-red/30" },
+  CANCELADO_ESTUDIO: { label: "Cancelado",        cls: "bg-error-red/15 text-error-red border-error-red/30" },
+  NAO_COMPARECEU:    { label: "Não Compareceu",   cls: "bg-copper-needle/15 text-copper-needle border-copper-needle/30" },
+  RETOQUE:           { label: "Retoque",          cls: "bg-text-subtle/15 text-text-subtle border-text-subtle/30" },
 };
 
 const FIN_CONFIG: Record<string, { label: string; cls: string }> = {
-  PENDENTE:    { label: "Pendente",    cls: "text-[#D99A3D]" },
-  SINAL_PAGO:  { label: "Sinal Pago", cls: "text-[#5E9ED6]" },
-  PAGO_TOTAL:  { label: "Pago",       cls: "text-[#54B88D]" },
-  ESTORNADO:   { label: "Estornado",  cls: "text-[#E35D5B]" },
+  PENDENTE:    { label: "Pendente",    cls: "text-warning" },
+  SINAL_PAGO:  { label: "Sinal Pago", cls: "text-info" },
+  PAGO_TOTAL:  { label: "Pago",       cls: "text-success" },
+  ESTORNADO:   { label: "Estornado",  cls: "text-error-red" },
 };
 
 interface ClienteAtendimento {
@@ -125,22 +125,22 @@ function NovoAtendimentoModal({ onClose }: { onClose: () => void }) {
   };
 
   const inputCls =
-    "w-full h-10 px-3 rounded-[12px] bg-[#050B12] border border-[#243337] text-[#F0EADD] text-sm placeholder-[#87938F] focus:border-[#2F9285]/60 outline-none transition-colors";
-  const labelCls = "block text-xs font-medium text-[#87938F] mb-1.5";
+    "w-full h-10 px-3 rounded-[12px] bg-ink-night border border-mist-line text-porcelain-ink text-sm placeholder-text-subtle focus:border-teal-ink/60 outline-none transition-colors";
+  const labelCls = "block text-xs font-medium text-text-subtle mb-1.5";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg bg-[#0B171C] border border-[#243337] rounded-[18px] shadow-2xl">
+      <div className="relative w-full max-w-lg bg-ink-bg border border-mist-line rounded-[18px] shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#243337]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-mist-line">
           <div>
-            <h2 className="text-base font-bold text-[#F0EADD]">Novo Atendimento</h2>
-            <p className="text-xs text-[#87938F] mt-0.5">Preencha os dados do atendimento</p>
+            <h2 className="text-base font-bold text-porcelain-ink">Novo Atendimento</h2>
+            <p className="text-xs text-text-subtle mt-0.5">Preencha os dados do atendimento</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-[10px] text-[#87938F] hover:text-[#F0EADD] hover:bg-[#102128] transition-all"
+            className="p-2 rounded-[10px] text-text-subtle hover:text-porcelain-ink hover:bg-surface-raised transition-all"
           >
             <X size={18} />
           </button>
@@ -152,7 +152,7 @@ function NovoAtendimentoModal({ onClose }: { onClose: () => void }) {
             {/* Tipo */}
             <div>
               <label className={labelCls}>
-                Tipo <span className="text-[#E35D5B]">*</span>
+                Tipo <span className="text-error-red">*</span>
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {TIPOS.map(t => (
@@ -163,8 +163,8 @@ function NovoAtendimentoModal({ onClose }: { onClose: () => void }) {
                     className={cn(
                       "h-9 rounded-[10px] text-xs font-semibold border transition-all",
                       form.tipo === t
-                        ? "bg-[#2F9285]/15 border-[#2F9285]/50 text-[#2F9285]"
-                        : "bg-[#050B12] border-[#243337] text-[#87938F] hover:text-[#F0EADD]"
+                        ? "bg-teal-ink/15 border-teal-ink/50 text-teal-ink"
+                        : "bg-ink-night border-mist-line text-text-subtle hover:text-porcelain-ink"
                     )}
                   >
                     {t.charAt(0) + t.slice(1).toLowerCase()}
@@ -203,7 +203,7 @@ function NovoAtendimentoModal({ onClose }: { onClose: () => void }) {
                 onChange={setField("descricao")}
                 placeholder="Descreva o atendimento, referências, detalhes..."
                 rows={3}
-                className="w-full px-3 py-2.5 rounded-[12px] bg-[#050B12] border border-[#243337] text-[#F0EADD] text-sm placeholder-[#87938F] focus:border-[#2F9285]/60 outline-none transition-colors resize-none"
+                className="w-full px-3 py-2.5 rounded-[12px] bg-ink-night border border-mist-line text-porcelain-ink text-sm placeholder-text-subtle focus:border-teal-ink/60 outline-none transition-colors resize-none"
               />
             </div>
 
@@ -247,30 +247,30 @@ function NovoAtendimentoModal({ onClose }: { onClose: () => void }) {
 
             {/* Erro */}
             {erro && (
-              <div className="px-3 py-2.5 rounded-[10px] bg-[#E35D5B]/10 border border-[#E35D5B]/30 text-sm text-[#E35D5B]">
+              <div className="px-3 py-2.5 rounded-[10px] bg-error-red/10 border border-error-red/30 text-sm text-error-red">
                 {erro}
               </div>
             )}
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#243337]">
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-mist-line">
             <button
               type="button"
               onClick={onClose}
               disabled={mutation.isPending}
-              className="h-9 px-4 rounded-[12px] text-sm text-[#87938F] hover:text-[#F0EADD] hover:bg-[#102128] border border-[#243337] transition-all disabled:opacity-50"
+              className="h-9 px-4 rounded-[12px] text-sm text-text-subtle hover:text-porcelain-ink hover:bg-surface-raised border border-mist-line transition-all disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="h-9 px-5 rounded-[12px] text-sm font-semibold bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] transition-all disabled:opacity-50 flex items-center gap-2"
+              className="h-9 px-5 rounded-[12px] text-sm font-semibold bg-teal-ink hover:bg-ink-gold text-ink-night transition-all disabled:opacity-50 flex items-center gap-2"
             >
               {mutation.isPending ? (
                 <>
-                  <span className="w-4 h-4 border-2 border-[#050B12]/30 border-t-[#050B12] rounded-full animate-spin" />
+                  <span className="w-4 h-4 border-2 border-ink-night/30 border-t-ink-night rounded-full animate-spin" />
                   Criando...
                 </>
               ) : (
@@ -314,14 +314,14 @@ export default function AtendimentosPage() {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#F0EADD]">Atendimentos</h1>
-          <p className="text-sm text-[#87938F] mt-1">
+          <h1 className="text-2xl font-bold text-porcelain-ink">Atendimentos</h1>
+          <p className="text-sm text-text-subtle mt-1">
             {isLoading ? "Carregando..." : `${data.length} no total`}
           </p>
         </div>
         <button
           onClick={() => setModalAberto(true)}
-          className="flex items-center gap-2 h-10 px-4 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm transition-all shrink-0"
+          className="flex items-center gap-2 h-10 px-4 rounded-[14px] bg-teal-ink hover:bg-ink-gold text-ink-night font-semibold text-sm transition-all shrink-0"
         >
           <Plus size={16} />
           Novo Atendimento
@@ -331,12 +331,12 @@ export default function AtendimentosPage() {
       {/* Filtros */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#87938F]" />
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle" />
           <input
             value={busca}
             onChange={e => setBusca(e.target.value)}
             placeholder="Buscar por tipo, estilo, parte do corpo..."
-            className="w-full h-10 pl-9 pr-4 rounded-[14px] bg-[#0B171C] border border-[#243337] text-[#F0EADD] text-sm placeholder-[#87938F] focus:outline-none focus:border-[#2F9285] transition-all"
+            className="w-full h-10 pl-9 pr-4 rounded-[14px] bg-ink-bg border border-mist-line text-porcelain-ink text-sm placeholder-text-subtle focus:outline-none focus:border-teal-ink transition-all"
           />
         </div>
         <div className="flex gap-2">
@@ -347,8 +347,8 @@ export default function AtendimentosPage() {
               className={cn(
                 "h-10 px-4 rounded-[14px] text-sm font-medium border transition-all capitalize",
                 view === v
-                  ? "bg-[#2F9285]/15 border-[#2F9285]/40 text-[#2F9285]"
-                  : "bg-[#0B171C] border-[#243337] text-[#87938F] hover:text-[#F0EADD]"
+                  ? "bg-teal-ink/15 border-teal-ink/40 text-teal-ink"
+                  : "bg-ink-bg border-mist-line text-text-subtle hover:text-porcelain-ink"
               )}
             >
               {v === "lista" ? "Lista" : "Kanban"}
@@ -361,14 +361,14 @@ export default function AtendimentosPage() {
       {isLoading && (
         <div className="space-y-3">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-20 bg-[#0B171C] border border-[#243337] rounded-[14px] animate-pulse" />
+            <div key={i} className="h-20 bg-ink-bg border border-mist-line rounded-[14px] animate-pulse" />
           ))}
         </div>
       )}
 
       {/* Empty */}
       {!isLoading && filtrado.length === 0 && (
-        <div className="bg-[#0B171C] border border-[#243337] rounded-[18px]">
+        <div className="bg-ink-bg border border-mist-line rounded-[18px]">
           <EmptyState
             title={busca ? "Nenhum resultado encontrado" : "Nenhum atendimento por aqui ainda"}
             description={
@@ -380,7 +380,7 @@ export default function AtendimentosPage() {
               !busca ? (
                 <button
                   onClick={() => setModalAberto(true)}
-                  className="flex items-center gap-2 h-11 px-5 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm transition-colors"
+                  className="flex items-center gap-2 h-11 px-5 rounded-[14px] bg-teal-ink hover:bg-ink-gold text-ink-night font-semibold text-sm transition-colors"
                 >
                   <Plus size={16} />
                   Criar atendimento
@@ -396,22 +396,22 @@ export default function AtendimentosPage() {
         <div className="space-y-2">
           {filtrado.map(a => {
             const st = STATUS_CONFIG[a.status_operacional] ?? { label: a.status_operacional, cls: "" };
-            const fin = FIN_CONFIG[a.status_financeiro] ?? { label: a.status_financeiro, cls: "text-[#87938F]" };
+            const fin = FIN_CONFIG[a.status_financeiro] ?? { label: a.status_financeiro, cls: "text-text-subtle" };
             return (
               <div
                 key={a.id}
                 onClick={() => setAtendimentoSelecionado(a)}
-                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-[#0B171C] border border-[#243337] rounded-[14px] hover:border-[#2F9285]/40 hover:bg-[#102128] transition-all cursor-pointer"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-ink-bg border border-mist-line rounded-[14px] hover:border-teal-ink/40 hover:bg-surface-raised transition-all cursor-pointer"
               >
                 <div className="flex items-start gap-3">
-                  <div className="p-2.5 bg-[#102128] rounded-[10px] border border-[#243337] shrink-0">
-                    <ClipboardList size={16} className="text-[#2F9285]" />
+                  <div className="p-2.5 bg-surface-raised rounded-[10px] border border-mist-line shrink-0">
+                    <ClipboardList size={16} className="text-teal-ink" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-semibold text-[#F0EADD]">{a.tipo}</p>
-                      {a.estilo && <span className="text-xs text-[#87938F]">• {a.estilo}</span>}
-                      {a.parte_corpo && <span className="text-xs text-[#87938F]">• {a.parte_corpo}</span>}
+                      <p className="text-sm font-semibold text-porcelain-ink">{a.tipo}</p>
+                      {a.estilo && <span className="text-xs text-text-subtle">• {a.estilo}</span>}
+                      {a.parte_corpo && <span className="text-xs text-text-subtle">• {a.parte_corpo}</span>}
                     </div>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <span className={cn("text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border", st.cls)}>
@@ -425,12 +425,12 @@ export default function AtendimentosPage() {
                 </div>
                 <div className="flex items-center gap-4 shrink-0 text-right">
                   {a.valor_total && (
-                    <p className="text-sm font-bold text-[#F0EADD]">
+                    <p className="text-sm font-bold text-porcelain-ink">
                       {formatCurrency(a.valor_total)}
                     </p>
                   )}
-                  <p className="text-xs text-[#87938F]">{formatData(a.data_sessao)}</p>
-                  <span className="text-xs text-[#2F9285]">Ver →</span>
+                  <p className="text-xs text-text-subtle">{formatData(a.data_sessao)}</p>
+                  <span className="text-xs text-teal-ink">Ver →</span>
                 </div>
               </div>
             );
@@ -455,20 +455,20 @@ export default function AtendimentosPage() {
                       <div
                         key={a.id}
                         onClick={() => setAtendimentoSelecionado(a)}
-                        className="p-3 bg-[#0B171C] border border-[#243337] rounded-[14px] hover:border-[#2F9285]/40 transition-all cursor-pointer"
+                        className="p-3 bg-ink-bg border border-mist-line rounded-[14px] hover:border-teal-ink/40 transition-all cursor-pointer"
                       >
-                        <p className="text-sm font-medium text-[#F0EADD]">{a.tipo}</p>
-                        {a.estilo && <p className="text-xs text-[#87938F] mt-0.5">{a.estilo}</p>}
+                        <p className="text-sm font-medium text-porcelain-ink">{a.tipo}</p>
+                        {a.estilo && <p className="text-xs text-text-subtle mt-0.5">{a.estilo}</p>}
                         {a.valor_total && (
-                          <p className="text-xs font-bold text-[#2F9285] mt-1">
+                          <p className="text-xs font-bold text-teal-ink mt-1">
                             {formatCurrency(a.valor_total)}
                           </p>
                         )}
                       </div>
                     ))}
                     {items.length === 0 && (
-                      <div className="h-20 border border-dashed border-[#243337] rounded-[14px] flex items-center justify-center">
-                        <p className="text-xs text-[#87938F]">Vazio</p>
+                      <div className="h-20 border border-dashed border-mist-line rounded-[14px] flex items-center justify-center">
+                        <p className="text-xs text-text-subtle">Vazio</p>
                       </div>
                     )}
                   </div>

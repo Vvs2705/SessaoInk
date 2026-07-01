@@ -133,15 +133,15 @@ export default async function PortalPublicoPage({ params }: Props) {
 
   if (!estudio) {
     return (
-      <div className="min-h-screen bg-[#050B12] flex items-center justify-center p-6">
+      <div className="min-h-screen bg-ink-night flex items-center justify-center p-6">
         <div className="text-center max-w-sm">
-          <div className="w-16 h-16 rounded-2xl bg-[#0B171C] border border-[#243337] mx-auto mb-5 flex items-center justify-center">
-            <AlertCircle size={28} className="text-[#C36B3F]" />
+          <div className="w-16 h-16 rounded-2xl bg-ink-bg border border-mist-line mx-auto mb-5 flex items-center justify-center">
+            <AlertCircle size={28} className="text-copper-needle" />
           </div>
-          <h1 className="text-xl font-bold text-[#F0EADD] mb-2">
+          <h1 className="text-xl font-bold text-porcelain-ink mb-2">
             Estúdio não encontrado
           </h1>
-          <p className="text-sm text-[#87938F]">
+          <p className="text-sm text-text-subtle">
             O link que você acessou não corresponde a nenhum estúdio cadastrado
             no SessãoInk.
           </p>
@@ -160,7 +160,7 @@ export default async function PortalPublicoPage({ params }: Props) {
   const portfolioLimitada = portfolio.slice(0, maxHomeItems);
 
   return (
-    <div className="min-h-screen bg-[#050B12] text-[#F0EADD]">
+    <div className="min-h-screen bg-ink-night text-porcelain-ink">
       {/* Dados estruturados (rich results — negócio local de tatuagem).
           Escapa `<` para impedir breakout de </script> via bio/nome do estúdio
           (campos controlados pelo dono) — defesa contra XSS armazenado. */}
@@ -189,7 +189,7 @@ export default async function PortalPublicoPage({ params }: Props) {
         )}
 
         {/* Foto / Avatar do estúdio */}
-        <div className="w-24 h-24 rounded-[20px] bg-[#0B171C] border border-[#243337] mx-auto mb-6 flex items-center justify-center overflow-hidden shadow-[0_0_40px_rgba(47,146,133,0.12)]">
+        <div className="w-24 h-24 rounded-[20px] bg-ink-bg border border-mist-line mx-auto mb-6 flex items-center justify-center overflow-hidden shadow-[0_0_40px_rgba(47,146,133,0.12)]">
           {estudio.has_foto ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -198,7 +198,7 @@ export default async function PortalPublicoPage({ params }: Props) {
               className="w-full h-full object-cover"
             />
           ) : (
-            <span className="text-3xl font-black text-[#2F9285]">
+            <span className="text-3xl font-black text-teal-ink">
               {estudio.nome.charAt(0).toUpperCase()}
             </span>
           )}
@@ -211,8 +211,8 @@ export default async function PortalPublicoPage({ params }: Props) {
         {/* Localização */}
         {(estudio.endereco_completo || estudio.cidade || estudio.uf) && (
           <div className="mt-4 flex flex-col items-center gap-3 mb-4">
-            <div className="flex max-w-xl items-center justify-center gap-2 text-center text-sm text-[#87938F]">
-              <MapPin size={16} className="shrink-0 text-[#2F9285]" />
+            <div className="flex max-w-xl items-center justify-center gap-2 text-center text-sm text-text-subtle">
+              <MapPin size={16} className="shrink-0 text-teal-ink" />
               <span>
                 {estudio.endereco_completo ||
                   [estudio.cidade, estudio.uf].filter(Boolean).join(" — ")}
@@ -224,7 +224,7 @@ export default async function PortalPublicoPage({ params }: Props) {
                 href={estudio.como_chegar_url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex h-9 items-center justify-center rounded-full border border-[#2F9285]/30 bg-[#2F9285]/10 px-5 text-xs font-bold text-[#2F9285] transition hover:bg-[#2F9285] hover:text-[#050B12]"
+                className="inline-flex h-9 items-center justify-center rounded-full border border-teal-ink/30 bg-teal-ink/10 px-5 text-xs font-bold text-teal-ink transition hover:bg-teal-ink hover:text-ink-night"
               >
                 Como chegar
               </a>
@@ -238,16 +238,16 @@ export default async function PortalPublicoPage({ params }: Props) {
             href={`https://instagram.com/${instagramHandle.replace("@", "")}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm text-[#87938F] hover:text-[#F0EADD] transition-colors mb-5"
+            className="inline-flex items-center gap-1.5 text-sm text-text-subtle hover:text-porcelain-ink transition-colors mb-5"
           >
-            <Instagram size={14} className="text-[#C36B3F]" />
+            <Instagram size={14} className="text-copper-needle" />
             {instagramHandle}
           </a>
         )}
 
         {/* Bio */}
         {estudio.bio && (
-          <p className="text-[#B8C2BF] text-base max-w-md mx-auto mb-8 leading-relaxed">
+          <p className="text-smoke-text text-base max-w-md mx-auto mb-8 leading-relaxed">
             {estudio.bio}
           </p>
         )}
@@ -256,16 +256,16 @@ export default async function PortalPublicoPage({ params }: Props) {
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link
             href={`/${slug}/orcamento`}
-            className="inline-flex items-center justify-center gap-2 h-12 px-7 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-bold text-sm transition-all shadow-[0_0_24px_rgba(47,146,133,0.25)] hover:shadow-[0_0_32px_rgba(47,146,133,0.4)]"
+            className="inline-flex items-center justify-center gap-2 h-12 px-7 rounded-[14px] bg-teal-ink hover:bg-ink-gold text-ink-night font-bold text-sm transition-all shadow-[0_0_24px_rgba(47,146,133,0.25)] hover:shadow-[0_0_32px_rgba(47,146,133,0.4)]"
           >
             <MessageCircle size={17} />
             Pedir Orçamento
           </Link>
           <Link
             href={`/${slug}/flash-arts`}
-            className="inline-flex items-center justify-center gap-2 h-12 px-7 rounded-[14px] bg-[#0B171C] border border-[#243337] hover:bg-[#102128] hover:border-[#2F9285]/40 text-[#F0EADD] font-medium text-sm transition-all"
+            className="inline-flex items-center justify-center gap-2 h-12 px-7 rounded-[14px] bg-ink-bg border border-mist-line hover:bg-surface-raised hover:border-teal-ink/40 text-porcelain-ink font-medium text-sm transition-all"
           >
-            <Zap size={17} className="text-[#C36B3F]" />
+            <Zap size={17} className="text-copper-needle" />
             Ver Flash Arts
           </Link>
         </div>
@@ -273,17 +273,17 @@ export default async function PortalPublicoPage({ params }: Props) {
 
       {/* ── Divider ── */}
       <div className="max-w-2xl mx-auto px-6">
-        <div className="h-px bg-gradient-to-r from-transparent via-[#243337] to-transparent" />
+        <div className="h-px bg-gradient-to-r from-transparent via-mist-line to-transparent" />
       </div>
 
       {/* ── Portfólio ── */}
       <section className="px-6 py-12 max-w-2xl mx-auto">
         <div className="flex justify-between items-center mb-5">
-          <h2 className="font-bold text-lg text-[#F0EADD]">Portfólio</h2>
+          <h2 className="font-bold text-lg text-porcelain-ink">Portfólio</h2>
           {portfolio.length > 0 && (
             <Link
               href={`/${slug}/portfolio`}
-              className="text-xs text-[#2F9285] hover:underline"
+              className="text-xs text-teal-ink hover:underline"
             >
               Ver tudo
             </Link>
@@ -291,14 +291,14 @@ export default async function PortalPublicoPage({ params }: Props) {
         </div>
 
         {portfolio.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 bg-[#0B171C] border border-[#243337] rounded-[18px] text-center">
-            <div className="w-14 h-14 rounded-2xl bg-[#050B12] border border-[#243337] flex items-center justify-center mb-4">
-              <ImageIcon size={22} className="text-[#243337]" />
+          <div className="flex flex-col items-center justify-center py-20 bg-ink-bg border border-mist-line rounded-[18px] text-center">
+            <div className="w-14 h-14 rounded-2xl bg-ink-night border border-mist-line flex items-center justify-center mb-4">
+              <ImageIcon size={22} className="text-mist-line" />
             </div>
-            <p className="text-sm font-medium text-[#87938F]">
+            <p className="text-sm font-medium text-text-subtle">
               Nenhuma foto publicada ainda
             </p>
-            <p className="text-xs text-[#87938F]/60 mt-1">
+            <p className="text-xs text-text-subtle/60 mt-1">
               Volte em breve para conferir o trabalho do artista
             </p>
           </div>
@@ -308,7 +308,7 @@ export default async function PortalPublicoPage({ params }: Props) {
               <Link
                 key={item.id}
                 href={`/${slug}/portfolio`}
-                className="group relative aspect-square rounded-[14px] overflow-hidden bg-[#0B171C] border border-[#243337] cursor-pointer"
+                className="group relative aspect-square rounded-[14px] overflow-hidden bg-ink-bg border border-mist-line cursor-pointer"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -326,7 +326,7 @@ export default async function PortalPublicoPage({ params }: Props) {
                       </p>
                     )}
                     {item.estilo && (
-                      <span className="ml-auto shrink-0 text-[10px] bg-[#2F9285]/80 text-white rounded-full px-2 py-0.5">
+                      <span className="ml-auto shrink-0 text-[10px] bg-teal-ink/80 text-white rounded-full px-2 py-0.5">
                         {item.estilo}
                       </span>
                     )}
@@ -339,9 +339,9 @@ export default async function PortalPublicoPage({ params }: Props) {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-[#243337] bg-[#0B171C] px-6 py-8 flex flex-col items-center justify-center gap-3 text-xs text-[#87938F]">
+      <footer className="border-t border-mist-line bg-ink-bg px-6 py-8 flex flex-col items-center justify-center gap-3 text-xs text-text-subtle">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-[#87938F]/60">Powered by</span>
+          <span className="text-xs text-text-subtle/60">Powered by</span>
           <BrandLogo size="sm" scaling={false} />
         </div>
         <p>

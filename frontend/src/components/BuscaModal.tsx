@@ -146,18 +146,18 @@ export function BuscaModal({
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4">
       {/* Overlay */}
       <div
-        className="absolute inset-0 bg-[#050B12]/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-ink-night/80 backdrop-blur-sm"
         onClick={onFechar}
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg bg-[#0B171C] border border-[#243337] rounded-[18px] shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-lg bg-ink-bg border border-mist-line rounded-[18px] shadow-2xl overflow-hidden">
         {/* Input */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-[#243337]">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-mist-line">
           {carregando ? (
-            <Loader2 size={18} className="text-[#87938F] shrink-0 animate-spin" />
+            <Loader2 size={18} className="text-text-subtle shrink-0 animate-spin" />
           ) : (
-            <Search size={18} className="text-[#87938F] shrink-0" />
+            <Search size={18} className="text-text-subtle shrink-0" />
           )}
           <input
             ref={inputRef}
@@ -165,10 +165,10 @@ export function BuscaModal({
             onChange={(e) => handleChange(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Buscar clientes, atendimentos, flash arts…"
-            className="flex-1 bg-transparent text-sm text-[#F0EADD] placeholder-[#87938F] outline-none"
+            className="flex-1 bg-transparent text-sm text-porcelain-ink placeholder-text-subtle outline-none"
           />
           {query && (
-            <button onClick={() => { setQuery(""); setResultado(null); }} className="text-[#87938F] hover:text-[#F0EADD]">
+            <button onClick={() => { setQuery(""); setResultado(null); }} className="text-text-subtle hover:text-porcelain-ink">
               <X size={16} />
             </button>
           )}
@@ -178,15 +178,15 @@ export function BuscaModal({
         <div className="max-h-[360px] overflow-y-auto">
           {query.length < 2 && (
             <div className="flex flex-col items-center justify-center py-10 text-center">
-              <Search size={28} className="text-[#243337] mb-2" />
-              <p className="text-sm text-[#87938F]">Digite pelo menos 2 caracteres para buscar</p>
-              <p className="text-xs text-[#243337] mt-1">Clientes · Atendimentos · Flash Arts</p>
+              <Search size={28} className="text-mist-line mb-2" />
+              <p className="text-sm text-text-subtle">Digite pelo menos 2 caracteres para buscar</p>
+              <p className="text-xs text-mist-line mt-1">Clientes · Atendimentos · Flash Arts</p>
             </div>
           )}
 
           {query.length >= 2 && !carregando && resultado?.total === 0 && (
             <div className="flex flex-col items-center justify-center py-10 text-center">
-              <p className="text-sm text-[#87938F]">Nenhum resultado para <span className="text-[#F0EADD]">"{query}"</span></p>
+              <p className="text-sm text-text-subtle">Nenhum resultado para <span className="text-porcelain-ink">"{query}"</span></p>
             </div>
           )}
 
@@ -194,7 +194,7 @@ export function BuscaModal({
             const Icon = TIPO_ICON[tipo as keyof typeof TIPO_ICON];
             return (
               <div key={tipo}>
-                <div className="px-4 py-2 text-[10px] font-semibold uppercase tracking-widest text-[#87938F] bg-[#050B12]/40 border-b border-[#243337]">
+                <div className="px-4 py-2 text-[10px] font-semibold uppercase tracking-widest text-text-subtle bg-ink-night/40 border-b border-mist-line">
                   {TIPO_LABEL[tipo]}
                 </div>
                 {itens.map((item) => {
@@ -206,26 +206,26 @@ export function BuscaModal({
                       key={item.id}
                       onClick={() => navegar(item)}
                       className={cn(
-                        "w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#102128] transition-colors",
-                        selecionado && "bg-[#102128]"
+                        "w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-surface-raised transition-colors",
+                        selecionado && "bg-surface-raised"
                       )}
                     >
                       <div className={cn(
                         "p-1.5 rounded-[6px] shrink-0",
-                        tipo === "cliente" ? "bg-[#2F9285]/15 text-[#2F9285]" :
-                        tipo === "atendimento" ? "bg-[#C36B3F]/15 text-[#C36B3F]" :
-                        "bg-[#87938F]/15 text-[#87938F]"
+                        tipo === "cliente" ? "bg-teal-ink/15 text-teal-ink" :
+                        tipo === "atendimento" ? "bg-copper-needle/15 text-copper-needle" :
+                        "bg-text-subtle/15 text-text-subtle"
                       )}>
                         <Icon size={13} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-[#F0EADD] truncate">{item.titulo}</p>
+                        <p className="text-sm text-porcelain-ink truncate">{item.titulo}</p>
                         {item.subtitulo && (
-                          <p className="text-xs text-[#87938F] truncate">{item.subtitulo}</p>
+                          <p className="text-xs text-text-subtle truncate">{item.subtitulo}</p>
                         )}
                       </div>
                       {item.status && (
-                        <span className="text-[10px] text-[#87938F] bg-[#050B12] border border-[#243337] px-1.5 py-0.5 rounded-[4px] shrink-0">
+                        <span className="text-[10px] text-text-subtle bg-ink-night border border-mist-line px-1.5 py-0.5 rounded-[4px] shrink-0">
                           {item.status}
                         </span>
                       )}
@@ -238,12 +238,12 @@ export function BuscaModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center gap-4 px-4 py-2 border-t border-[#243337]">
-          <span className="text-[10px] text-[#87938F]">↑↓ navegar</span>
-          <span className="text-[10px] text-[#87938F]">↵ abrir</span>
-          <span className="text-[10px] text-[#87938F]">Esc fechar</span>
+        <div className="flex items-center gap-4 px-4 py-2 border-t border-mist-line">
+          <span className="text-[10px] text-text-subtle">↑↓ navegar</span>
+          <span className="text-[10px] text-text-subtle">↵ abrir</span>
+          <span className="text-[10px] text-text-subtle">Esc fechar</span>
           {resultado && (
-            <span className="ml-auto text-[10px] text-[#87938F]">
+            <span className="ml-auto text-[10px] text-text-subtle">
               {resultado.total} resultado{resultado.total !== 1 ? "s" : ""}
             </span>
           )}

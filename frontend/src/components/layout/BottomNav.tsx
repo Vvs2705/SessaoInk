@@ -42,7 +42,7 @@ export function BottomNav() {
     <nav
       className={cn(
         "safe-bottom fixed inset-x-0 bottom-0 z-50 lg:hidden",
-        "border-t border-[#243337] bg-[#0B171C]/95 backdrop-blur-xl",
+        "border-t border-mist-line bg-ink-bg/95 backdrop-blur-xl",
       )}
       aria-label="Navegação principal mobile"
     >
@@ -58,7 +58,7 @@ export function BottomNav() {
                 "relative flex flex-col items-center justify-center gap-1",
                 "text-[11px] font-medium transition-colors",
                 "active:scale-[0.97]",
-                active ? "text-[#2F9285]" : "text-[#87938F]",
+                active ? "text-teal-ink" : "text-text-subtle",
               )}
               aria-current={active ? "page" : undefined}
             >
@@ -66,7 +66,7 @@ export function BottomNav() {
               <span className="leading-none">{shortLabel}</span>
 
               {active && (
-                <span className="absolute bottom-1 h-1 w-6 rounded-full bg-[#2F9285]" />
+                <span className="absolute bottom-1 h-1 w-6 rounded-full bg-teal-ink" />
               )}
             </Link>
           );

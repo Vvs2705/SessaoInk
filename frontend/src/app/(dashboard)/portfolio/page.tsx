@@ -54,8 +54,8 @@ function Toast({
       className={cn(
         "fixed bottom-6 right-6 flex items-center gap-3 px-4 py-3 rounded-[14px] border shadow-xl z-50 animate-in slide-in-from-bottom-4",
         tipo === "sucesso"
-          ? "bg-[#0B171C] border-[#2F9285]/40 text-[#2F9285]"
-          : "bg-[#0B171C] border-[#E35D5B]/40 text-[#E35D5B]"
+          ? "bg-ink-bg border-teal-ink/40 text-teal-ink"
+          : "bg-ink-bg border-error-red/40 text-error-red"
       )}
     >
       {tipo === "sucesso" ? (
@@ -63,7 +63,7 @@ function Toast({
       ) : (
         <AlertCircle size={16} />
       )}
-      <span className="text-sm font-medium text-[#F0EADD]">{mensagem}</span>
+      <span className="text-sm font-medium text-porcelain-ink">{mensagem}</span>
       <button onClick={onClose} className="ml-2 opacity-60 hover:opacity-100">
         <X size={14} />
       </button>
@@ -238,8 +238,8 @@ export default function PortfolioPage() {
       {/* Cabeçalho */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#F0EADD]">Portfólio</h1>
-          <p className="text-sm text-[#87938F] mt-1">
+          <h1 className="text-2xl font-bold text-porcelain-ink">Portfólio</h1>
+          <p className="text-sm text-text-subtle mt-1">
             {visualizacao === "ativas"
               ? (isLoading ? "Carregando..." : `${data.length} foto${data.length !== 1 ? "s" : ""}`)
               : (isLoadingArquivados ? "Carregando..." : `${arquivados.length} foto${arquivados.length !== 1 ? "s" : ""} arquivada${arquivados.length !== 1 ? "s" : ""}`)
@@ -249,7 +249,7 @@ export default function PortfolioPage() {
         <button
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="flex items-center gap-2 h-10 px-4 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] disabled:opacity-60 text-[#050B12] font-semibold text-sm transition-all shrink-0"
+          className="flex items-center gap-2 h-10 px-4 rounded-[14px] bg-teal-ink hover:bg-ink-gold disabled:opacity-60 text-ink-night font-semibold text-sm transition-all shrink-0"
         >
           {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
           {uploading ? "Enviando..." : "Adicionar Foto"}
@@ -265,14 +265,14 @@ export default function PortfolioPage() {
 
       {/* Alternância de Abas (somente Admin) */}
       {isAdmin && (
-        <div className="flex gap-2 mb-6 border-b border-[#243337] pb-3">
+        <div className="flex gap-2 mb-6 border-b border-mist-line pb-3">
           <button
             onClick={() => setVisualizacao("ativas")}
             className={cn(
               "px-4 py-2 rounded-[10px] text-sm font-medium transition-all border",
               visualizacao === "ativas"
-                ? "bg-[#2F9285]/10 text-[#2F9285] border-[#2F9285]/30"
-                : "text-[#87938F] hover:text-[#F0EADD] border-transparent"
+                ? "bg-teal-ink/10 text-teal-ink border-teal-ink/30"
+                : "text-text-subtle hover:text-porcelain-ink border-transparent"
             )}
           >
             Fotos Ativas ({data.length})
@@ -282,8 +282,8 @@ export default function PortfolioPage() {
             className={cn(
               "px-4 py-2 rounded-[10px] text-sm font-medium transition-all border",
               visualizacao === "arquivadas"
-                ? "bg-[#2F9285]/10 text-[#2F9285] border-[#2F9285]/30"
-                : "text-[#87938F] hover:text-[#F0EADD] border-transparent"
+                ? "bg-teal-ink/10 text-teal-ink border-teal-ink/30"
+                : "text-text-subtle hover:text-porcelain-ink border-transparent"
             )}
           >
             Fotos Arquivadas ({arquivados.length})
@@ -294,18 +294,18 @@ export default function PortfolioPage() {
       {/* Barra de Busca e Filtros */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#87938F]" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle" />
           <input
             type="text"
             placeholder="Buscar por título, estilo ou parte do corpo..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] pl-10 pr-4 py-2.5 text-sm text-[#F0EADD] placeholder-[#87938F] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+            className="w-full bg-ink-night border border-mist-line rounded-[10px] pl-10 pr-4 py-2.5 text-sm text-porcelain-ink placeholder-text-subtle focus:outline-none focus:border-teal-ink/50 transition-colors"
           />
           {busca && (
             <button
               onClick={() => setBusca("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#87938F] hover:text-[#F0EADD]"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-subtle hover:text-porcelain-ink"
             >
               <X size={14} />
             </button>
@@ -316,7 +316,7 @@ export default function PortfolioPage() {
           <select
             value={filtroVisibilidade}
             onChange={(e) => setFiltroVisibilidade(e.target.value as any)}
-            className="bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2.5 text-sm text-[#F0EADD] focus:outline-none focus:border-[#2F9285]/50 transition-colors"
+            className="bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors"
           >
             <option value="TODOS">Todos os Status</option>
             <option value="PUBLICO">Públicos</option>
@@ -330,32 +330,32 @@ export default function PortfolioPage() {
         <>
           {/* Legenda */}
           <div className="flex gap-4 mb-4">
-            <div className="flex items-center gap-1.5 text-xs text-[#87938F]"><Eye size={14} className="text-[#2F9285]" /> Público</div>
-            <div className="flex items-center gap-1.5 text-xs text-[#87938F]"><EyeOff size={14} className="text-[#87938F]" /> Privado (padrão)</div>
+            <div className="flex items-center gap-1.5 text-xs text-text-subtle"><Eye size={14} className="text-teal-ink" /> Público</div>
+            <div className="flex items-center gap-1.5 text-xs text-text-subtle"><EyeOff size={14} className="text-text-subtle" /> Privado (padrão)</div>
           </div>
 
           {/* Erro upload */}
           {erroUpload && (
-            <div className="flex items-center gap-2 p-3 mb-4 rounded-[10px] bg-[#E35D5B]/10 border border-[#E35D5B]/30 text-sm text-[#E35D5B]">
+            <div className="flex items-center gap-2 p-3 mb-4 rounded-[10px] bg-error-red/10 border border-error-red/30 text-sm text-error-red">
               {erroUpload}
               <button onClick={() => setErroUpload(null)} className="ml-auto"><X size={14} /></button>
             </div>
           )}
 
           {/* Aviso de privacidade */}
-          <div className="flex items-start gap-2 p-3 mb-6 rounded-[10px] bg-[#2F9285]/5 border border-[#2F9285]/20 text-xs text-[#87938F]">
-            <EyeOff size={14} className="text-[#87938F] mt-0.5 shrink-0" />
-            Todas as fotos são <strong className="text-[#F0EADD] mx-1">privadas por padrão</strong>. Para publicar no portal, é necessário confirmar a autorização do cliente.
+          <div className="flex items-start gap-2 p-3 mb-6 rounded-[10px] bg-teal-ink/5 border border-teal-ink/20 text-xs text-text-subtle">
+            <EyeOff size={14} className="text-text-subtle mt-0.5 shrink-0" />
+            Todas as fotos são <strong className="text-porcelain-ink mx-1">privadas por padrão</strong>. Para publicar no portal, é necessário confirmar a autorização do cliente.
           </div>
 
           {isLoading && (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {[1,2,3,4].map(i => <div key={i} className="aspect-square bg-[#0B171C] rounded-[14px] animate-pulse" />)}
+              {[1,2,3,4].map(i => <div key={i} className="aspect-square bg-ink-bg rounded-[14px] animate-pulse" />)}
             </div>
           )}
 
           {!isLoading && itemsFiltrados.length === 0 && (
-            <div className="bg-[#0B171C] border border-[#243337] rounded-[18px]">
+            <div className="bg-ink-bg border border-mist-line rounded-[18px]">
               <EmptyState
                 title={
                   busca || filtroVisibilidade !== "TODOS"
@@ -371,7 +371,7 @@ export default function PortfolioPage() {
                   !busca && filtroVisibilidade === "TODOS" ? (
                     <button
                       onClick={() => inputRef.current?.click()}
-                      className="flex items-center gap-2 h-11 px-5 rounded-[14px] bg-[#2F9285] hover:bg-[#3AA99A] text-[#050B12] font-semibold text-sm transition-colors"
+                      className="flex items-center gap-2 h-11 px-5 rounded-[14px] bg-teal-ink hover:bg-ink-gold text-ink-night font-semibold text-sm transition-colors"
                     >
                       <Upload size={16} />
                       Adicionar primeira foto
@@ -389,7 +389,7 @@ export default function PortfolioPage() {
               {itemsFiltrados.map(item => (
                 <div
                   key={item.id}
-                  className="relative mb-3 break-inside-avoid bg-[#0B171C] border border-[#243337] rounded-[14px] overflow-hidden group hover:border-[#2F9285]/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.45)] transition-all duration-300"
+                  className="relative mb-3 break-inside-avoid bg-ink-bg border border-mist-line rounded-[14px] overflow-hidden group hover:border-teal-ink/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.45)] transition-all duration-300"
                 >
                   <img
                     src={`${API}/api/v1/portfolio/${item.id}/imagem`}
@@ -398,9 +398,9 @@ export default function PortfolioPage() {
                     loading="lazy"
                   />
                   {/* Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#050B12]/85 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
-                    {item.titulo && <p className="text-xs font-semibold text-[#F0EADD] truncate">{item.titulo}</p>}
-                    {item.estilo && <p className="text-[10px] text-[#87938F]">{item.estilo}</p>}
+                  <div className="absolute inset-0 bg-gradient-to-t from-ink-night/85 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
+                    {item.titulo && <p className="text-xs font-semibold text-porcelain-ink truncate">{item.titulo}</p>}
+                    {item.estilo && <p className="text-[10px] text-text-subtle">{item.estilo}</p>}
                   </div>
                   {/* Badge visibilidade — clicável */}
                   <button
@@ -416,13 +416,13 @@ export default function PortfolioPage() {
                     className={cn(
                       "absolute top-2 right-2 p-1.5 rounded-full transition-all hover:scale-110",
                       item.visibilidade === "PUBLICO"
-                        ? "bg-[#2F9285]/90 hover:bg-[#E35D5B]/80"
-                        : "bg-[#050B12]/80 hover:bg-[#2F9285]/70"
+                        ? "bg-teal-ink/90 hover:bg-error-red/80"
+                        : "bg-ink-night/80 hover:bg-teal-ink/70"
                     )}
                   >
                     {item.visibilidade === "PUBLICO"
                       ? <Eye size={12} className="text-white" />
-                      : <EyeOff size={12} className="text-[#87938F]" />
+                      : <EyeOff size={12} className="text-text-subtle" />
                     }
                   </button>
                   {/* Botão arquivar */}
@@ -430,9 +430,9 @@ export default function PortfolioPage() {
                     onClick={() => { setArqItem(item); setArqError(null); }}
                     title="Arquivar foto"
                     aria-label="Arquivar foto"
-                    className="absolute top-2 left-2 p-1.5 rounded-full bg-[#050B12]/80 hover:bg-[#E35D5B]/80 transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
+                    className="absolute top-2 left-2 p-1.5 rounded-full bg-ink-night/80 hover:bg-error-red/80 transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
                   >
-                    <Trash2 size={12} className="text-[#F0EADD]" />
+                    <Trash2 size={12} className="text-porcelain-ink" />
                   </button>
                 </div>
               ))}
@@ -446,12 +446,12 @@ export default function PortfolioPage() {
         <>
           {isLoadingArquivados && (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {[1,2,3,4].map(i => <div key={i} className="aspect-square bg-[#0B171C] rounded-[14px] animate-pulse" />)}
+              {[1,2,3,4].map(i => <div key={i} className="aspect-square bg-ink-bg rounded-[14px] animate-pulse" />)}
             </div>
           )}
 
           {!isLoadingArquivados && arquivadosFiltrados.length === 0 && (
-            <div className="bg-[#0B171C] border border-[#243337] rounded-[18px]">
+            <div className="bg-ink-bg border border-mist-line rounded-[18px]">
               <EmptyState
                 title="Nenhuma foto arquivada"
                 description={
@@ -468,7 +468,7 @@ export default function PortfolioPage() {
               {arquivadosFiltrados.map(item => (
                 <div
                   key={item.id}
-                  className="relative mb-3 break-inside-avoid bg-[#0B171C] border border-[#243337] rounded-[14px] overflow-hidden group hover:border-[#2F9285]/40 transition-all"
+                  className="relative mb-3 break-inside-avoid bg-ink-bg border border-mist-line rounded-[14px] overflow-hidden group hover:border-teal-ink/40 transition-all"
                 >
                   <img
                     src={`${API}/api/v1/portfolio/${item.id}/imagem`}
@@ -477,23 +477,23 @@ export default function PortfolioPage() {
                     loading="lazy"
                   />
                   {/* Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#050B12]/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
-                    {item.titulo && <p className="text-xs font-semibold text-[#F0EADD] truncate">{item.titulo}</p>}
-                    {item.estilo && <p className="text-[10px] text-[#87938F]">{item.estilo}</p>}
+                  <div className="absolute inset-0 bg-gradient-to-t from-ink-night/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+                    {item.titulo && <p className="text-xs font-semibold text-porcelain-ink truncate">{item.titulo}</p>}
+                    {item.estilo && <p className="text-[10px] text-text-subtle">{item.estilo}</p>}
                   </div>
                   {/* Controles */}
                   <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => restaurarMutation.mutate(item.id)}
                       title="Restaurar foto"
-                      className="p-1.5 rounded-full bg-[#050B12]/80 hover:bg-[#2F9285] hover:text-[#050B12] text-[#2F9285] transition-all hover:scale-110"
+                      className="p-1.5 rounded-full bg-ink-night/80 hover:bg-teal-ink hover:text-ink-night text-teal-ink transition-all hover:scale-110"
                     >
                       <RotateCcw size={12} />
                     </button>
                     <button
                       onClick={() => { setPermItem(item); setPermError(null); setConfirmTexto(""); }}
                       title="Excluir permanentemente"
-                      className="p-1.5 rounded-full bg-[#050B12]/80 hover:bg-[#E35D5B] hover:text-[#F0EADD] text-[#E35D5B] transition-all hover:scale-110"
+                      className="p-1.5 rounded-full bg-ink-night/80 hover:bg-error-red hover:text-porcelain-ink text-error-red transition-all hover:scale-110"
                     >
                       <Trash2 size={12} />
                     </button>
@@ -508,24 +508,24 @@ export default function PortfolioPage() {
       {/* ─── Modal: Confirmar arquivamento ─── */}
       {arqItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#0B171C] border border-[#243337] w-full max-w-sm rounded-[18px] shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#243337]">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-sm rounded-[18px] shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-mist-line">
               <div className="flex items-center gap-2">
-                <Trash2 size={18} className="text-[#E35D5B]" />
-                <h2 className="text-[#F0EADD] font-bold text-sm">Arquivar foto?</h2>
+                <Trash2 size={18} className="text-error-red" />
+                <h2 className="text-porcelain-ink font-bold text-sm">Arquivar foto?</h2>
               </div>
-              <button onClick={() => setArqItem(null)} className="text-[#87938F] hover:text-[#F0EADD]">
+              <button onClick={() => setArqItem(null)} className="text-text-subtle hover:text-porcelain-ink">
                 <X size={16} />
               </button>
             </div>
             <div className="p-5 space-y-4">
-              <div className="w-full aspect-square rounded-[12px] overflow-hidden bg-[#050B12] border border-[#243337]">
+              <div className="w-full aspect-square rounded-[12px] overflow-hidden bg-ink-night border border-mist-line">
                 <img src={`${API}/api/v1/portfolio/${arqItem.id}/imagem`} alt="Foto para arquivar" className="w-full h-full object-cover" />
               </div>
-              {arqError && <div className="p-2 bg-[#E35D5B]/10 border border-[#E35D5B]/20 text-[#E35D5B] text-xs rounded-lg">{arqError}</div>}
+              {arqError && <div className="p-2 bg-error-red/10 border border-error-red/20 text-error-red text-xs rounded-lg">{arqError}</div>}
               <div className="flex gap-3">
-                <button type="button" onClick={() => setArqItem(null)} className="flex-1 h-10 rounded-[12px] border border-[#243337] hover:bg-[#102128] text-[#F0EADD] font-semibold text-sm">Cancelar</button>
-                <button type="button" disabled={arquivarMutation.isPending} onClick={() => arquivarMutation.mutate(arqItem.id)} className="flex-1 h-10 rounded-[12px] bg-[#E35D5B] hover:bg-[#c94d4b] disabled:opacity-60 text-white font-semibold text-sm flex items-center justify-center gap-2">
+                <button type="button" onClick={() => setArqItem(null)} className="flex-1 h-10 rounded-[12px] border border-mist-line hover:bg-surface-raised text-porcelain-ink font-semibold text-sm">Cancelar</button>
+                <button type="button" disabled={arquivarMutation.isPending} onClick={() => arquivarMutation.mutate(arqItem.id)} className="flex-1 h-10 rounded-[12px] bg-error-red hover:bg-[#c94d4b] disabled:opacity-60 text-white font-semibold text-sm flex items-center justify-center gap-2">
                   {arquivarMutation.isPending && <Loader2 size={14} className="animate-spin" />}
                   {arquivarMutation.isPending ? "Arquivando..." : "Arquivar"}
                 </button>
@@ -538,27 +538,27 @@ export default function PortfolioPage() {
       {/* ─── Modal: Confirmar autorização de publicação ─── */}
       {pubItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#0B171C] border border-[#243337] w-full max-w-sm rounded-[18px] shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#243337]">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-sm rounded-[18px] shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-mist-line">
               <div className="flex items-center gap-2">
-                <ShieldCheck size={18} className="text-[#2F9285]" />
-                <h2 className="text-[#F0EADD] font-bold text-sm">Confirmar autorização</h2>
+                <ShieldCheck size={18} className="text-teal-ink" />
+                <h2 className="text-porcelain-ink font-bold text-sm">Confirmar autorização</h2>
               </div>
-              <button onClick={() => setPubItem(null)} className="text-[#87938F] hover:text-[#F0EADD]">
+              <button onClick={() => setPubItem(null)} className="text-text-subtle hover:text-porcelain-ink">
                 <X size={16} />
               </button>
             </div>
             <div className="p-5 space-y-4">
-              <div className="w-full aspect-square rounded-[12px] overflow-hidden bg-[#050B12] border border-[#243337]">
+              <div className="w-full aspect-square rounded-[12px] overflow-hidden bg-ink-night border border-mist-line">
                 <img src={`${API}/api/v1/portfolio/${pubItem.id}/imagem`} alt="Foto para publicar" className="w-full h-full object-cover" />
               </div>
-              {pubError && <div className="p-2 bg-[#E35D5B]/10 border border-[#E35D5B]/20 text-[#E35D5B] text-xs rounded-lg">{pubError}</div>}
+              {pubError && <div className="p-2 bg-error-red/10 border border-error-red/20 text-error-red text-xs rounded-lg">{pubError}</div>}
               <div className="flex gap-3">
-                <button type="button" onClick={() => setPubItem(null)} className="flex-1 h-10 rounded-[12px] border border-[#243337] hover:bg-[#102128] text-[#F0EADD] font-semibold text-sm">Cancelar</button>
+                <button type="button" onClick={() => setPubItem(null)} className="flex-1 h-10 rounded-[12px] border border-mist-line hover:bg-surface-raised text-porcelain-ink font-semibold text-sm">Cancelar</button>
                 <button type="button" disabled={pubLoading} onClick={async () => {
                   setPubLoading(true); setPubError(null);
                   try { await visMutation.mutateAsync({ id: pubItem.id, visibilidade: "PUBLICO", autorizado: true }); } finally { setPubLoading(false); }
-                }} className="flex-1 h-10 rounded-[12px] bg-[#2F9285] hover:bg-[#3AA99A] disabled:opacity-60 text-[#050B12] font-semibold text-sm flex items-center justify-center gap-2">
+                }} className="flex-1 h-10 rounded-[12px] bg-teal-ink hover:bg-ink-gold disabled:opacity-60 text-ink-night font-semibold text-sm flex items-center justify-center gap-2">
                   {pubLoading && <Loader2 size={14} className="animate-spin" />}
                   {pubLoading ? "Publicando..." : "Confirmar e Publicar"}
                 </button>
@@ -571,31 +571,31 @@ export default function PortfolioPage() {
       {/* ─── Modal: Confirmar exclusão permanente (Admin) ─── */}
       {permItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#0B171C] border border-[#243337] w-full max-w-sm rounded-[18px] shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#243337]">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-sm rounded-[18px] shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-mist-line">
               <div className="flex items-center gap-2">
-                <AlertCircle size={18} className="text-[#E35D5B]" />
-                <h2 className="text-[#F0EADD] font-bold text-sm">Excluir permanentemente?</h2>
+                <AlertCircle size={18} className="text-error-red" />
+                <h2 className="text-porcelain-ink font-bold text-sm">Excluir permanentemente?</h2>
               </div>
-              <button onClick={() => setPermItem(null)} className="text-[#87938F] hover:text-[#F0EADD]">
+              <button onClick={() => setPermItem(null)} className="text-text-subtle hover:text-porcelain-ink">
                 <X size={16} />
               </button>
             </div>
             <div className="p-5 space-y-4">
-              <div className="w-full aspect-square rounded-[12px] overflow-hidden bg-[#050B12] border border-[#243337]">
+              <div className="w-full aspect-square rounded-[12px] overflow-hidden bg-ink-night border border-mist-line">
                 <img src={`${API}/api/v1/portfolio/${permItem.id}/imagem`} alt="Foto para exclusão" className="w-full h-full object-cover" />
               </div>
-              <div className="p-3 bg-[#E35D5B]/5 border border-[#E35D5B]/20 text-[#E35D5B] text-xs rounded-[10px]">
+              <div className="p-3 bg-error-red/5 border border-error-red/20 text-error-red text-xs rounded-[10px]">
                 <p className="font-semibold">Esta ação é irreversível.</p>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-[#87938F]">Digite <strong className="text-[#F0EADD]">EXCLUIR</strong>:</label>
-                <input type="text" value={confirmTexto} onChange={(e) => setConfirmTexto(e.target.value)} placeholder="EXCLUIR" className="w-full bg-[#050B12] border border-[#243337] rounded-[10px] px-3 py-2 text-sm text-[#F0EADD]" />
+                <label className="text-xs font-medium text-text-subtle">Digite <strong className="text-porcelain-ink">EXCLUIR</strong>:</label>
+                <input type="text" value={confirmTexto} onChange={(e) => setConfirmTexto(e.target.value)} placeholder="EXCLUIR" className="w-full bg-ink-night border border-mist-line rounded-[10px] px-3 py-2 text-sm text-porcelain-ink" />
               </div>
-              {permError && <div className="p-2 bg-[#E35D5B]/10 border border-[#E35D5B]/20 text-[#E35D5B] text-xs rounded-lg">{permError}</div>}
+              {permError && <div className="p-2 bg-error-red/10 border border-error-red/20 text-error-red text-xs rounded-lg">{permError}</div>}
               <div className="flex gap-3">
-                <button type="button" onClick={() => setPermItem(null)} className="flex-1 h-10 rounded-[12px] border border-[#243337] hover:bg-[#102128] text-[#F0EADD] font-semibold text-sm">Cancelar</button>
-                <button type="button" disabled={confirmTexto !== "EXCLUIR" || permanenteMutation.isPending} onClick={() => permanenteMutation.mutate(permItem.id)} className="flex-1 h-10 rounded-[12px] bg-[#E35D5B] hover:bg-[#c94d4b] disabled:opacity-50 text-white font-semibold text-sm flex items-center justify-center gap-2">
+                <button type="button" onClick={() => setPermItem(null)} className="flex-1 h-10 rounded-[12px] border border-mist-line hover:bg-surface-raised text-porcelain-ink font-semibold text-sm">Cancelar</button>
+                <button type="button" disabled={confirmTexto !== "EXCLUIR" || permanenteMutation.isPending} onClick={() => permanenteMutation.mutate(permItem.id)} className="flex-1 h-10 rounded-[12px] bg-error-red hover:bg-[#c94d4b] disabled:opacity-50 text-white font-semibold text-sm flex items-center justify-center gap-2">
                   {permanenteMutation.isPending && <Loader2 size={14} className="animate-spin" />}
                   {permanenteMutation.isPending ? "Excluindo..." : "Excluir permanentemente"}
                 </button>

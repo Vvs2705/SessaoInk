@@ -30,26 +30,26 @@ export default function EsqueciSenhaPage() {
 
   return (
     <section className="flex min-h-app items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md rounded-[2rem] border border-[#243337] bg-[#0B171C] p-6 shadow-2xl shadow-black/30 sm:p-8">
+      <div className="w-full max-w-md rounded-[2rem] border border-mist-line bg-ink-bg p-6 shadow-2xl shadow-black/30 sm:p-8">
         <Link
           href="/login"
-          className="mb-6 inline-flex items-center gap-2 text-sm text-[#87938F] hover:text-[#F0EADD]"
+          className="mb-6 inline-flex items-center gap-2 text-sm text-text-subtle hover:text-porcelain-ink"
         >
           <ArrowLeft size={16} />
           Voltar ao login
         </Link>
 
-        <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-[#2F9285]/10 text-[#2F9285]">
+        <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-teal-ink/10 text-teal-ink">
           <Mail size={23} />
         </div>
 
-        <h1 className="text-2xl font-bold text-[#F0EADD]">Recuperar senha</h1>
-        <p className="mt-2 text-sm leading-6 text-[#87938F]">
+        <h1 className="text-2xl font-bold text-porcelain-ink">Recuperar senha</h1>
+        <p className="mt-2 text-sm leading-6 text-text-subtle">
           Informe seu e-mail. Se existir uma conta vinculada, enviaremos um link seguro para redefinir sua senha.
         </p>
 
         {enviado ? (
-          <div className="mt-6 rounded-2xl border border-[#2F9285]/25 bg-[#2F9285]/10 p-4 text-sm leading-6 text-[#BFE8DF]">
+          <div className="mt-6 rounded-2xl border border-teal-ink/25 bg-teal-ink/10 p-4 text-sm leading-6 text-[#BFE8DF]">
             Pronto. Verifique sua caixa de entrada e siga as instruções para criar uma nova senha.
           </div>
         ) : (
@@ -57,7 +57,7 @@ export default function EsqueciSenhaPage() {
             <div>
               <label
                 htmlFor="email"
-                className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#87938F]"
+                className="mb-2 block text-xs font-semibold uppercase tracking-wide text-text-subtle"
               >
                 E-mail
               </label>
@@ -68,7 +68,7 @@ export default function EsqueciSenhaPage() {
                 required
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                className="h-12 w-full rounded-2xl border border-[#243337] bg-[#102128] px-4 text-base text-[#F0EADD] outline-none transition focus:border-[#2F9285] focus:ring-2 focus:ring-[#2F9285]/20"
+                className="h-12 w-full rounded-2xl border border-mist-line bg-surface-raised px-4 text-base text-porcelain-ink outline-none transition focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
                 placeholder="voce@email.com"
               />
             </div>
@@ -76,7 +76,7 @@ export default function EsqueciSenhaPage() {
             <button
               type="submit"
               disabled={carregando}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#2F9285] px-4 font-bold text-[#050B12] transition hover:bg-[#3AA99A] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-teal-ink px-4 font-bold text-ink-night transition hover:bg-ink-gold disabled:cursor-not-allowed disabled:opacity-60"
             >
               {carregando && <Loader2 size={18} className="animate-spin" />}
               Enviar link de recuperação

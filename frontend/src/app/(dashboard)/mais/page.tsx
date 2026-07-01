@@ -28,10 +28,10 @@ export default function MaisPage() {
   return (
     <section className="mx-auto w-full max-w-lg">
       <div className="mb-5">
-        <h1 className="text-2xl font-bold tracking-tight text-[#F0EADD]">
+        <h1 className="text-2xl font-bold tracking-tight text-porcelain-ink">
           Mais
         </h1>
-        <p className="mt-1 text-sm text-[#87938F]">
+        <p className="mt-1 text-sm text-text-subtle">
           Acesse os módulos complementares do estúdio.
         </p>
       </div>
@@ -41,26 +41,26 @@ export default function MaisPage() {
           <Link
             key={href}
             href={href}
-            className="flex items-center justify-between rounded-2xl border border-[#243337] bg-[#0B171C] p-4 transition-all active:scale-[0.99]"
+            className="flex items-center justify-between rounded-2xl border border-mist-line bg-ink-bg p-4 transition-all active:scale-[0.99]"
           >
             <div className="flex min-w-0 items-center gap-3">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#243337] bg-[#102128]">
-                <Icon size={19} className="text-[#2F9285]" />
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-mist-line bg-surface-raised">
+                <Icon size={19} className="text-teal-ink" />
               </div>
 
-              <span className="truncate text-sm font-semibold text-[#F0EADD]">
+              <span className="truncate text-sm font-semibold text-porcelain-ink">
                 {label}
               </span>
             </div>
 
             <div className="ml-3 flex shrink-0 items-center gap-2">
               {badge && (
-                <span className="rounded-full bg-[#243337] px-2 py-0.5 text-[10px] font-medium text-[#87938F]">
+                <span className="rounded-full bg-mist-line px-2 py-0.5 text-[10px] font-medium text-text-subtle">
                   {badge}
                 </span>
               )}
 
-              <ChevronRight size={17} className="text-[#87938F]" />
+              <ChevronRight size={17} className="text-text-subtle" />
             </div>
           </Link>
         ))}
@@ -68,13 +68,13 @@ export default function MaisPage() {
         <button
           type="button"
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-2xl border border-[#E35D5B]/30 bg-[#0B171C] p-4 text-left transition-all active:scale-[0.99]"
+          className="flex w-full items-center gap-3 rounded-2xl border border-error-red/30 bg-ink-bg p-4 text-left transition-all active:scale-[0.99]"
         >
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#E35D5B]/25 bg-[#E35D5B]/10">
-            <LogOut size={19} className="text-[#E35D5B]" />
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-error-red/25 bg-error-red/10">
+            <LogOut size={19} className="text-error-red" />
           </div>
 
-          <span className="text-sm font-semibold text-[#E35D5B]">Sair</span>
+          <span className="text-sm font-semibold text-error-red">Sair</span>
         </button>
       </div>
     </section>

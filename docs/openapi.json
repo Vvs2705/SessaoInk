@@ -6434,6 +6434,110 @@
         }
       }
     },
+    "/api/v1/lgpd/exportar": {
+      "get": {
+        "tags": [
+          "lgpd"
+        ],
+        "summary": "Exportar Meus Dados",
+        "description": "Direito de acesso e portabilidade (LGPD art. 18, II e V).\n\nRetorna os dados pessoais do usuário autenticado em JSON estruturado. NUNCA\ninclui segredos (hash de senha, segredo TOTP). O download é montado no cliente.",
+        "operationId": "exportar_meus_dados_api_v1_lgpd_exportar_get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Exportar Meus Dados Api V1 Lgpd Exportar Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/lgpd/solicitar-exclusao": {
+      "post": {
+        "tags": [
+          "lgpd"
+        ],
+        "summary": "Solicitar Exclusao",
+        "description": "Direito de eliminação (LGPD art. 18, VI).\n\nRegistra a solicitação de forma **auditável** e NÃO executa exclusão\ndestrutiva automática: parte dos dados tem obrigação legal/fiscal de guarda\n(ex.: registros de pagamento, art. 16 LGPD) e o estúdio pode ter outros\nusuários/clientes vinculados. O operador processa a exclusão com essas\nressalvas dentro do prazo legal.",
+        "operationId": "solicitar_exclusao_api_v1_lgpd_solicitar_exclusao_post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Solicitar Exclusao Api V1 Lgpd Solicitar Exclusao Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [

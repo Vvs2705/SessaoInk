@@ -221,6 +221,8 @@ export default function ConfiguracoesPage() {
   const [mfaDisablePending, setMfaDisablePending] = useState(false);
 
   const [mfaEmailActivating, setMfaEmailActivating] = useState(false);
+  const [showMfaEmailActivateModal, setShowMfaEmailActivateModal] = useState(false);
+  const [mfaEmailActivatePassword, setMfaEmailActivatePassword] = useState("");
 
   // Horário de funcionamento (0=segunda … 6=domingo)
   const [horarioFunc, setHorarioFunc] = useState<
@@ -772,13 +774,18 @@ export default function ConfiguracoesPage() {
   };
 
   const handleActivateEmailMfa = async () => {
+    if (!mfaEmailActivatePassword) return;
     setMfaEmailActivating(true);
     try {
-      await api.post("/api/v1/auth/mfa/email/ativar");
+      await api.post("/api/v1/auth/mfa/email/ativar", {
+        senha: mfaEmailActivatePassword,
+      });
       showToast("sucesso", "Autenticação por E-mail ativada com sucesso!");
+      setShowMfaEmailActivateModal(false);
+      setMfaEmailActivatePassword("");
       queryClient.invalidateQueries({ queryKey: ["usuario"] });
     } catch (e: any) {
-      showToast("erro", e.detail || "Erro ao ativar autenticação por e-mail.");
+      showToast("erro", e.detail || "Senha incorreta. Tente novamente.");
     } finally {
       setMfaEmailActivating(false);
     }
@@ -2050,12 +2057,9 @@ export default function ConfiguracoesPage() {
                       ) : (
                         <button
                           type="button"
-                          onClick={handleActivateEmailMfa}
-                          disabled={mfaEmailActivating}
-                          aria-busy={mfaEmailActivating}
+                          onClick={() => setShowMfaEmailActivateModal(true)}
                           className="min-h-[44px] min-w-[44px] px-4 py-2.5 text-xs font-semibold rounded-[10px] bg-teal-ink/10 border border-teal-ink/30 hover:bg-teal-ink hover:text-ink-night text-teal-ink transition-all inline-flex items-center justify-center gap-1.5 shrink-0"
                         >
-                          {mfaEmailActivating && <Loader2 size={12} className="animate-spin" />}
                           Ativar
                         </button>
                       )}
@@ -2567,6 +2571,70 @@ export default function ConfiguracoesPage() {
                 >
                   {mfaDisablePending && <Loader2 size={14} className="animate-spin" />}
                   Confirmar e Desativar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de ativação do 2º fator por e-mail (step-up: exige a senha) */}
+      {showMfaEmailActivateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-md rounded-[18px] shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-mist-line">
+              <h2 className="text-porcelain-ink font-bold text-sm">
+                Ativar Código por E-mail
+              </h2>
+              <button
+                onClick={() => {
+                  setShowMfaEmailActivateModal(false);
+                  setMfaEmailActivatePassword("");
+                }}
+                className="text-text-subtle hover:text-porcelain-ink"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-xs text-text-subtle leading-relaxed">
+                Por motivos de segurança, digite sua senha atual para confirmar a ativação da verificação em duas etapas por e-mail.
+              </p>
+
+              <div className="space-y-1.5">
+                <label htmlFor="activate-mfa-pass" className="text-xs font-medium text-text-subtle block">
+                  Sua senha
+                </label>
+                <input
+                  id="activate-mfa-pass"
+                  type="password"
+                  autoComplete="current-password"
+                  value={mfaEmailActivatePassword}
+                  onChange={(e) => setMfaEmailActivatePassword(e.target.value)}
+                  placeholder="Digite sua senha"
+                  className="w-full bg-ink-night border border-mist-line rounded-[10px] px-3 py-2 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMfaEmailActivateModal(false);
+                    setMfaEmailActivatePassword("");
+                  }}
+                  className="flex-1 h-10 rounded-[12px] border border-mist-line hover:bg-surface-raised text-porcelain-ink font-semibold text-sm transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={mfaEmailActivating || !mfaEmailActivatePassword}
+                  onClick={handleActivateEmailMfa}
+                  className="flex-1 h-10 rounded-[12px] bg-teal-ink hover:bg-teal-ink/90 disabled:opacity-50 disabled:cursor-not-allowed text-ink-night font-semibold text-sm transition-all flex items-center justify-center gap-2"
+                >
+                  {mfaEmailActivating && <Loader2 size={14} className="animate-spin" />}
+                  Confirmar e Ativar
                 </button>
               </div>
             </div>

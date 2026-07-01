@@ -491,7 +491,7 @@
           "auth"
         ],
         "summary": "Mfa Email Ativar",
-        "description": "Ativa o 2º fator por código enviado ao e-mail do usuário.",
+        "description": "Ativa o 2º fator por código enviado ao e-mail do usuário.\n\nExige a senha (step-up), simétrico com a desativação — impede que uma sessão\nsequestrada (XSS/CSRF) altere as configurações de MFA sem reautenticação.",
         "operationId": "mfa_email_ativar_api_v1_auth_mfa_email_ativar_post",
         "parameters": [
           {
@@ -511,6 +511,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MfaEmailAtivarRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -9606,25 +9616,33 @@
         "properties": {
           "nome": {
             "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
             "title": "Nome"
           },
           "contato": {
             "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
             "title": "Contato"
           },
           "plano": {
             "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
             "title": "Plano"
           },
           "ciclo": {
             "type": "string",
+            "maxLength": 20,
             "title": "Ciclo",
             "default": "mensal"
           },
           "mensagem": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 2000
               },
               {
                 "type": "null"
@@ -9635,7 +9653,8 @@
           "website": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 200
               },
               {
                 "type": "null"
@@ -10580,6 +10599,20 @@
           "senha"
         ],
         "title": "MfaDesativarRequest"
+      },
+      "MfaEmailAtivarRequest": {
+        "properties": {
+          "senha": {
+            "type": "string",
+            "title": "Senha"
+          }
+        },
+        "type": "object",
+        "required": [
+          "senha"
+        ],
+        "title": "MfaEmailAtivarRequest",
+        "description": "Ativação do 2º fator por e-mail exige a senha (step-up), simétrico com a\ndesativação — impede que uma sessão sequestrada mexa no MFA sem reautenticar."
       },
       "MfaEmailToggleResponse": {
         "properties": {

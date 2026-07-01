@@ -434,31 +434,48 @@ async def webhook_mercadopago(
             pagamento = await session.scalar(
                 select(Pagamento).where(Pagamento.gateway_payment_id == recurso_id)
             )
-            if pagamento is None:
-                pagamento = Pagamento(
-                    estudio_id=cobranca.estudio_id if cobranca else None,
-                    cobranca_id=cobranca.id if cobranca else None,
-                    gateway="mercadopago",
-                    gateway_payment_id=recurso_id,
-                    status=_map_status_pagamento(mp_status),
-                    payment_type=mp.get("payment_type_id"),
-                    payment_method_id=mp.get("payment_method_id"),
-                    valor_centavos=valor_pago_cent or None,
-                    payload_minimo_json={
-                        "status": mp_status,
+            if pagamento is None and cobranca is None:
+                # Pagamento sem cobrança local correspondente (external_reference
+                # ausente ou estranho). A tabela `pagamentos` exige tenant
+                # (estudio_id NOT NULL) — criar aqui estouraria IntegrityError e
+                # derrubaria o webhook. Não persistimos registro órfão: o evento
+                # já está no inbox para auditoria/forense.
+                logger.warning(
+                    "webhook_pagamento_sem_cobranca",
+                    extra={"extra": {
+                        "recurso_id": recurso_id,
                         "external_reference": external_ref,
-                        "transaction_amount": mp.get("transaction_amount"),
-                        "currency_id": mp.get("currency_id"),
-                        "payment_type_id": mp.get("payment_type_id"),
-                    },
+                    }},
                 )
-                session.add(pagamento)
-                await session.flush()
             else:
-                pagamento.status = _map_status_pagamento(mp_status)
-            evento.pagamento_id = pagamento.id
-            if cobranca:
-                evento.estudio_id = cobranca.estudio_id
+                if pagamento is None:
+                    # Ramo else + pagamento None ⇒ cobranca não-None (garantido
+                    # pela condição acima); assert deixa isso explícito ao checker.
+                    assert cobranca is not None
+                    pagamento = Pagamento(
+                        estudio_id=cobranca.estudio_id,
+                        cobranca_id=cobranca.id,
+                        gateway="mercadopago",
+                        gateway_payment_id=recurso_id,
+                        status=_map_status_pagamento(mp_status),
+                        payment_type=mp.get("payment_type_id"),
+                        payment_method_id=mp.get("payment_method_id"),
+                        valor_centavos=valor_pago_cent or None,
+                        payload_minimo_json={
+                            "status": mp_status,
+                            "external_reference": external_ref,
+                            "transaction_amount": mp.get("transaction_amount"),
+                            "currency_id": mp.get("currency_id"),
+                            "payment_type_id": mp.get("payment_type_id"),
+                        },
+                    )
+                    session.add(pagamento)
+                    await session.flush()
+                else:
+                    pagamento.status = _map_status_pagamento(mp_status)
+                evento.pagamento_id = pagamento.id
+                if cobranca:
+                    evento.estudio_id = cobranca.estudio_id
 
             if cobranca and mp_status == "approved":
                 if valor_pago_cent != cobranca.valor_centavos:
@@ -483,6 +500,9 @@ async def webhook_mercadopago(
                         },
                     )
                 else:
+                    # cobranca truthy ⇒ passamos pelo ramo else acima ⇒ pagamento
+                    # foi atribuído (criado ou existente); assert para o checker.
+                    assert pagamento is not None
                     cobranca.status = StatusCobranca.PAGA
                     pagamento.reconciliado_em = datetime.now(UTC)
                     pagamento.pago_em = datetime.now(UTC)

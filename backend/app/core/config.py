@@ -136,6 +136,19 @@ class Settings(BaseSettings):
         if not self.LGPD_RETENTION_TOKEN or len(self.LGPD_RETENTION_TOKEN) < 32:
             erros.append("LGPD_RETENTION_TOKEN deve ter pelo menos 32 caracteres em producao")
 
+        # Anti-spoofing do IP do cliente: com TRUSTED_PROXY_ENABLED e sem
+        # INTERNAL_PROXY_SECRET, o backend confia em X-Forwarded-For não
+        # autenticado — um atacante falando direto com a Fly forja o IP e evade
+        # o rate-limit/auditoria por IP. Exigimos o segredo (fail-closed).
+        if self.TRUSTED_PROXY_ENABLED and (
+            not self.INTERNAL_PROXY_SECRET or len(self.INTERNAL_PROXY_SECRET) < 32
+        ):
+            erros.append(
+                "INTERNAL_PROXY_SECRET deve ter >=32 caracteres quando "
+                "TRUSTED_PROXY_ENABLED em produção (sem ele o X-Forwarded-For não é "
+                "autenticado e o rate-limit por IP é falsificável)"
+            )
+
         # P0-04 — guardrails específicos de cobrança real. Só valem quando o
         # go-live está ligado; com PAGAMENTOS_GO_LIVE=false são ignorados (estado
         # atual de produção não é afetado).

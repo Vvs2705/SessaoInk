@@ -6,6 +6,7 @@ export interface Usuario {
   estudio_id: string;
   mfa_totp_ativo?: boolean;
   mfa_email_ativo?: boolean;
+  criado_em?: string | null;
 }
 
 export interface LoginRequest {

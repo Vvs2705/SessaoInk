@@ -1,27 +1,36 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 import { api } from "@/lib/api/client";
 import type { Usuario } from "@/lib/auth/types";
 
+/** Dias de carência para o ADMIN ativar o 2º fator antes do bloqueio total. */
+const CARENCIA_DIAS = 15;
+
 /**
- * MFA obrigatório para ADMIN.
+ * MFA obrigatório para ADMIN, com carência de {@link CARENCIA_DIAS} dias.
  *
  * O dono do estúdio (ADMIN) é o alvo mais valioso para takeover de conta, então
  * exigimos que ele configure a verificação em duas etapas. O ADMIN não é o
  * adversário — a aplicação correta é *forçar a configuração*: uma vez ativa, o
  * login passa a exigir o 2º fator (já implementado no fluxo de login).
  *
- * Enquanto não houver TOTP nem OTP por e-mail ativos, um overlay bloqueia o uso
- * do app. A rota `/configuracoes` é isenta — é exatamente onde ele ativa o MFA.
- * O overlay some sozinho quando o setup invalida a query `["usuario"]`.
+ * - Nos primeiros {@link CARENCIA_DIAS} dias após o cadastro: aviso NÃO
+ *   bloqueante e dispensável (não atrapalha o onboarding).
+ * - Depois da carência: overlay bloqueia o uso do app até o 2º fator ser ativado.
+ *
+ * A rota `/configuracoes` é isenta — é onde ele ativa o MFA. Ambos somem sozinhos
+ * quando o setup invalida a query `["usuario"]`. Se `criado_em` for desconhecido,
+ * tratamos como dentro da carência (nunca travar por falta de dado).
  */
 export function MfaEnforcementGate() {
   const pathname = usePathname();
+  const [avisoDispensado, setAvisoDispensado] = useState(false);
   const { data: usuario, isLoading } = useQuery<Usuario>({
     queryKey: ["usuario"],
     queryFn: () => api.get<Usuario>("/api/v1/auth/me"),
@@ -35,6 +44,61 @@ export function MfaEnforcementGate() {
   const temMfa = Boolean(usuario.mfa_totp_ativo || usuario.mfa_email_ativo);
   if (!isAdmin || temMfa) return null;
 
+  const diasDesdeCadastro = usuario.criado_em
+    ? Math.floor(
+        (Date.now() - new Date(usuario.criado_em).getTime()) / 86_400_000
+      )
+    : null;
+  // criado_em ausente ⇒ dentro da carência (não travar por falta de dado).
+  const dentroCarencia =
+    diasDesdeCadastro === null || diasDesdeCadastro < CARENCIA_DIAS;
+
+  // Dentro da carência: aviso não-bloqueante e dispensável.
+  if (dentroCarencia) {
+    if (avisoDispensado) return null;
+    const diasRestantes =
+      diasDesdeCadastro === null
+        ? CARENCIA_DIAS
+        : Math.max(1, CARENCIA_DIAS - diasDesdeCadastro);
+    return (
+      <div
+        role="status"
+        className="fixed bottom-20 left-4 right-4 z-50 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-sm"
+      >
+        <div className="flex items-start gap-3 rounded-[14px] border border-warning/30 bg-ink-bg p-4 shadow-2xl">
+          <ShieldAlert size={18} className="mt-0.5 shrink-0 text-warning" aria-hidden="true" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-porcelain-ink">
+              Ative a verificação em duas etapas
+            </p>
+            <p className="mt-0.5 text-xs text-text-subtle leading-relaxed">
+              Obrigatória para administradores em{" "}
+              <strong className="text-porcelain-ink">
+                {diasRestantes} dia{diasRestantes > 1 ? "s" : ""}
+              </strong>
+              . Proteja o acesso aos dados dos seus clientes.
+            </p>
+            <Link
+              href="/configuracoes"
+              className="mt-2 inline-flex min-h-[36px] items-center rounded-[10px] bg-teal-ink px-3 py-1.5 text-xs font-semibold text-ink-night transition-all hover:bg-teal-ink/90"
+            >
+              Configurar agora
+            </Link>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAvisoDispensado(true)}
+            aria-label="Dispensar aviso"
+            className="shrink-0 text-text-subtle transition-colors hover:text-porcelain-ink"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Após a carência: bloqueio total.
   return (
     <div
       role="dialog"

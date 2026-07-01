@@ -1,6 +1,7 @@
 """Schemas Pydantic para autenticação."""
 
 import uuid
+from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -83,6 +84,8 @@ class UsuarioResponse(BaseModel):
     estudio_id: uuid.UUID
     mfa_totp_ativo: bool = False
     mfa_email_ativo: bool = False
+    # Usado pela carência de MFA obrigatório para ADMIN (janela de dias após o cadastro).
+    criado_em: datetime | None = None
 
     model_config = {"from_attributes": True}
 

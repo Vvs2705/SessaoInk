@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.auth.dependencies import get_usuario_atual
 from app.core.database import get_session
+from app.core.email import enviar_solicitacao_exclusao_lgpd
 from app.core.request_context import get_client_ip, get_user_agent
 from app.models.usuario import Estudio, Usuario
 from app.services.audit import log_event
@@ -101,6 +102,15 @@ async def solicitar_exclusao(
         dados={"email": usuario.email},
         commit=True,
     )
+
+    # Notifica o operador para dar andamento manual (não-destrutivo).
+    estudio = await session.get(Estudio, usuario.estudio_id)
+    await enviar_solicitacao_exclusao_lgpd(
+        titular_nome=usuario.nome,
+        titular_email=usuario.email,
+        estudio_nome=estudio.nome if estudio else None,
+    )
+
     return {
         "message": (
             "Solicitação de exclusão registrada. Processaremos seu pedido dentro do "

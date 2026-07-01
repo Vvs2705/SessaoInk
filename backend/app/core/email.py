@@ -228,6 +228,52 @@ async def enviar_lead_interesse_plano(
         logger.warning(f"Falha ao enviar lead via Resend: {exc}")
 
 
+async def enviar_solicitacao_exclusao_lgpd(
+    titular_nome: str,
+    titular_email: str,
+    estudio_nome: str | None,
+) -> None:
+    """Notifica o operador sobre uma solicitação de exclusão de dados (LGPD art. 18, VI).
+
+    Destino: settings.LEADS_EMAIL (caixa do operador). Sem Resend/destino, apenas
+    registra no log — a solicitação nunca se perde (também fica na auditoria).
+    O log NÃO carrega PII (o titular já está identificado no e-mail e na auditoria).
+    """
+    destino = settings.LEADS_EMAIL
+    if not destino or not _resend_configurado():
+        logger.info("lgpd_exclusao_solicitada")
+        return
+
+    nome_html = titular_nome.replace("<", "&lt;").replace(">", "&gt;")
+    email_html = titular_email.replace("<", "&lt;").replace(">", "&gt;")
+    estudio_html = (estudio_nome or "—").replace("<", "&lt;").replace(">", "&gt;")
+    html = f"""
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#050B12;font-family:-apple-system,'Segoe UI',sans-serif;">
+  <div style="max-width:520px;margin:40px auto;background:#0B171C;border:1px solid #243337;border-radius:18px;overflow:hidden;">
+    <div style="background:#B4534F;padding:22px 30px;">
+      <p style="margin:0;font-size:11px;color:#F0EADD;font-weight:700;letter-spacing:2px;text-transform:uppercase;">SessãoInk · LGPD</p>
+      <h1 style="margin:6px 0 0;font-size:19px;color:#F0EADD;font-weight:800;">Solicitação de exclusão de dados</h1>
+    </div>
+    <div style="padding:24px 30px;">
+      <table style="width:100%;border-collapse:collapse;">
+        <tr><td style="padding:6px 0;font-size:12px;color:#87938F;width:30%;">Titular</td><td style="padding:6px 0;font-size:14px;color:#F0EADD;font-weight:600;">{nome_html}</td></tr>
+        <tr style="border-top:1px solid #1a2830;"><td style="padding:6px 0;font-size:12px;color:#87938F;">E-mail</td><td style="padding:6px 0;font-size:14px;color:#F0EADD;">{email_html}</td></tr>
+        <tr style="border-top:1px solid #1a2830;"><td style="padding:6px 0;font-size:12px;color:#87938F;">Estúdio</td><td style="padding:6px 0;font-size:14px;color:#F0EADD;">{estudio_html}</td></tr>
+      </table>
+      <p style="margin:16px 0 0;font-size:13px;color:#87938F;line-height:1.6;">Processe dentro do prazo legal, preservando os dados com obrigação legal/fiscal de guarda (art. 16 LGPD).</p>
+    </div>
+  </div>
+</body></html>
+"""
+    assunto = "[SessãoInk] Solicitação de exclusão de dados (LGPD)"
+    try:
+        await asyncio.to_thread(_enviar_sync, destino, assunto, html)
+        logger.info("lgpd_exclusao_solicitada_enviada")
+    except Exception as exc:
+        logger.warning(f"Falha ao enviar solicitação de exclusão via Resend: {exc}")
+
+
 async def enviar_convite_equipe(
     email_destino: str,
     nome_estudio: str,

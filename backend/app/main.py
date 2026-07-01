@@ -53,6 +53,7 @@ from app.api.v1.estoque.router import router as estoque_router
 from app.api.v1.estudio.router import router as estudio_router
 from app.api.v1.financeiro.router import router as financeiro_router
 from app.api.v1.flash_arts.router import router as flash_arts_router
+from app.api.v1.lgpd.router import router as lgpd_router
 from app.api.v1.pagamentos.router import router as pagamentos_router
 from app.api.v1.portfolio.router import router as portfolio_router
 from app.api.v1.publico.router import router as publico_router
@@ -253,6 +254,7 @@ app.include_router(relatorios_router, prefix="/api/v1")
 app.include_router(usuarios_router, prefix="/api/v1")
 app.include_router(convites_router, prefix="/api/v1")
 app.include_router(auditoria_router, prefix="/api/v1")
+app.include_router(lgpd_router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["health"])

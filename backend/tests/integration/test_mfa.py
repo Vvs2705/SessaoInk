@@ -103,7 +103,9 @@ class TestEmailOtp:
         usuario_id, email = await _criar_usuario_mfa(estudio_id)
 
         await client.post("/api/v1/auth/login", json={"email": email, "senha": SENHA})
-        ativar = await client.post("/api/v1/auth/mfa/email/ativar")
+        ativar = await client.post(
+            "/api/v1/auth/mfa/email/ativar", json={"senha": SENHA}
+        )
         assert ativar.status_code == 200
         assert ativar.json()["mfa_email_ativo"] is True
 
@@ -136,3 +138,68 @@ class TestEmailOtp:
         )
         assert verificar.status_code == 200, verificar.text
         assert verificar.json()["mfa_required"] is False
+
+    async def test_ativar_email_mfa_exige_senha_correta(
+        self, autenticado: AsyncClient, client: AsyncClient
+    ):
+        """Step-up: ativar MFA por e-mail exige a senha atual (defesa contra
+        sessão sequestrada)."""
+        estudio_id = await _estudio_id(autenticado)
+        _, email = await _criar_usuario_mfa(estudio_id)
+        await client.post("/api/v1/auth/login", json={"email": email, "senha": SENHA})
+
+        # Senha errada → 400 e MFA permanece desativado
+        errado = await client.post(
+            "/api/v1/auth/mfa/email/ativar", json={"senha": "senha-errada"}
+        )
+        assert errado.status_code == 400
+        me = await client.get("/api/v1/auth/me")
+        assert me.json()["mfa_email_ativo"] is False
+
+        # Senha correta → ativa
+        ok = await client.post(
+            "/api/v1/auth/mfa/email/ativar", json={"senha": SENHA}
+        )
+        assert ok.status_code == 200
+        assert ok.json()["mfa_email_ativo"] is True
+
+
+class TestMfaLockout:
+    async def test_bloqueio_apos_tentativas_de_codigo(
+        self, autenticado: AsyncClient, client: AsyncClient
+    ):
+        """Anti-força-bruta: após MFA_VERIFY_MAX_TENTATIVAS códigos errados, o
+        usuário fica bloqueado (429) mesmo apresentando um código correto em um
+        novo desafio."""
+        from app.core.redis import MFA_VERIFY_MAX_TENTATIVAS, salvar_otp_email
+
+        estudio_id = await _estudio_id(autenticado)
+        usuario_id, email = await _criar_usuario_mfa(estudio_id)
+        await client.post("/api/v1/auth/login", json={"email": email, "senha": SENHA})
+        await client.post("/api/v1/auth/mfa/email/ativar", json={"senha": SENHA})
+
+        login = await client.post(
+            "/api/v1/auth/login", json={"email": email, "senha": SENHA}
+        )
+        desafio = login.json()["desafio"]
+
+        # Esgota o orçamento de tentativas com códigos errados
+        for _ in range(MFA_VERIFY_MAX_TENTATIVAS):
+            r = await client.post(
+                "/api/v1/auth/mfa/verificar",
+                json={"desafio": desafio, "codigo": "000000", "metodo": "email"},
+            )
+            assert r.status_code == 400, r.text
+
+        # Novo login → novo desafio; o bloqueio (por usuário) persiste 15 min,
+        # então nem mesmo um código correto é aceito.
+        login2 = await client.post(
+            "/api/v1/auth/login", json={"email": email, "senha": SENHA}
+        )
+        desafio2 = login2.json()["desafio"]
+        await salvar_otp_email(str(usuario_id), "654321")
+        bloqueado = await client.post(
+            "/api/v1/auth/mfa/verificar",
+            json={"desafio": desafio2, "codigo": "654321", "metodo": "email"},
+        )
+        assert bloqueado.status_code == 429, bloqueado.text

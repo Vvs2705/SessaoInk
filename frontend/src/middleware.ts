@@ -38,6 +38,8 @@ const PUBLIC_EXACT = new Set([
   "/registro", // aliases defensivos
   "/senha",
   "/precos", // marketing pública
+  "/politica-de-privacidade", // páginas legais públicas (LGPD)
+  "/termos-de-uso",
 ]);
 
 // Prefixos públicos por primeiro segmento (a rota inteira fica liberada).

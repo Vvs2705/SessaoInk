@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { MobileTopBar } from "@/components/layout/MobileTopBar";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { MfaEnforcementGate } from "@/components/MfaEnforcementGate";
 import { PageGuide } from "@/components/PageGuide";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
@@ -20,6 +21,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
       <BottomNav />
       <PageGuide />
+      <MfaEnforcementGate />
     </div>
   );
 }

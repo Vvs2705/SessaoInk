@@ -748,13 +748,41 @@ export default function OrcamentoPage() {
               {[
                 {
                   key: "aceite_privacidade" as const,
-                  label: "Li e aceito a Política de Privacidade do estúdio",
+                  conteudo: (
+                    <>
+                      Li e aceito a{" "}
+                      <a
+                        href="/politica-de-privacidade"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-teal-ink hover:underline"
+                      >
+                        Política de Privacidade
+                      </a>{" "}
+                      do estúdio
+                    </>
+                  ),
                 },
                 {
                   key: "aceite_termos" as const,
-                  label: "Li e aceito os Termos de Uso da plataforma SessãoInk",
+                  conteudo: (
+                    <>
+                      Li e aceito os{" "}
+                      <a
+                        href="/termos-de-uso"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-teal-ink hover:underline"
+                      >
+                        Termos de Uso
+                      </a>{" "}
+                      da plataforma SessãoInk
+                    </>
+                  ),
                 },
-              ].map(({ key, label }) => (
+              ].map(({ key, conteudo }) => (
                 <label key={key} className="flex items-start gap-3 cursor-pointer group">
                   <input
                     type="checkbox"
@@ -762,7 +790,7 @@ export default function OrcamentoPage() {
                     onChange={(e) => set(key, e.target.checked)}
                     className="mt-1"
                   />
-                  <span className="text-sm text-text-subtle group-hover:text-smoke-text transition-colors">{label}</span>
+                  <span className="text-sm text-text-subtle group-hover:text-smoke-text transition-colors">{conteudo}</span>
                 </label>
               ))}
             </div>

@@ -15,7 +15,7 @@ from fastapi import (
     Request,
     UploadFile,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -63,14 +63,16 @@ class EstudioPublicoResponse(BaseModel):
 
 
 class OrcamentoRequest(BaseModel):
-    nome: str
-    whatsapp: str
-    instagram: str | None = None
-    descricao: str | None = None
-    estilo: str | None = None
-    parte_corpo: str | None = None
-    tamanho_cm: str | None = None
-    observacoes: str | None = None
+    # Endpoint público (não autenticado): limites de tamanho evitam payloads
+    # gigantes que consumam memória/banco (DoS por corpo inflado).
+    nome: str = Field(min_length=1, max_length=200)
+    whatsapp: str = Field(min_length=1, max_length=40)
+    instagram: str | None = Field(default=None, max_length=120)
+    descricao: str | None = Field(default=None, max_length=4000)
+    estilo: str | None = Field(default=None, max_length=120)
+    parte_corpo: str | None = Field(default=None, max_length=120)
+    tamanho_cm: str | None = Field(default=None, max_length=40)
+    observacoes: str | None = Field(default=None, max_length=2000)
     aceite_privacidade: bool
     aceite_termos: bool
 
@@ -103,13 +105,14 @@ async def listar_planos():
 
 
 class InteressePlanoRequest(BaseModel):
-    nome: str
-    contato: str  # WhatsApp ou e-mail
-    plano: str
-    ciclo: str = "mensal"
-    mensagem: str | None = None
+    # Endpoint público (não autenticado): limites de tamanho contra DoS por corpo inflado.
+    nome: str = Field(min_length=1, max_length=200)
+    contato: str = Field(min_length=1, max_length=200)  # WhatsApp ou e-mail
+    plano: str = Field(min_length=1, max_length=60)
+    ciclo: str = Field(default="mensal", max_length=20)
+    mensagem: str | None = Field(default=None, max_length=2000)
     # Honeypot anti-spam (deve vir vazio)
-    website: str | None = None
+    website: str | None = Field(default=None, max_length=200)
 
 
 @router.post("/planos/interesse", status_code=202)
@@ -608,8 +611,9 @@ async def solicitar_orcamento(
     imagens: list[UploadFile] | None = File(None),
     session: AsyncSession = Depends(get_session),
 ):
-    # 1. Rate Limiting
-    ip = request.client.host if request.client else "unknown"
+    # 1. Rate Limiting — usa o IP real do cliente (X-Forwarded-For validado), não
+    # o do proxy Vercel/Fly; senão o limite vira um bucket global compartilhado.
+    ip = get_client_ip(request)
     if await verificar_limite_orcamento(ip):
         raise HTTPException(
             status_code=429,

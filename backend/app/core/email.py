@@ -131,7 +131,7 @@ async def enviar_notificacao_orcamento(
     assunto = f"[SessãoInk] Novo orçamento de {nome_cliente} — {protocolo}"
     try:
         await asyncio.to_thread(_enviar_sync, email_destino, assunto, html)
-        logger.info(f"Email enviado via Resend para {email_destino} (protocolo {protocolo})")
+        logger.info(f"Email de orçamento enviado via Resend (protocolo {protocolo})")
     except Exception as exc:
         # Não deixar falha de email derrubar a requisição
         logger.warning(f"Falha ao enviar email via Resend: {exc}")
@@ -169,7 +169,7 @@ async def enviar_codigo_mfa(email_destino: str, nome: str, codigo: str) -> bool:
         await asyncio.to_thread(
             _enviar_sync, email_destino, "[SessãoInk] Seu código de verificação", html
         )
-        logger.info(f"Código MFA enviado via Resend para {email_destino}")
+        logger.info("Código MFA enviado via Resend")
         return True
     except Exception as exc:
         logger.warning(f"Falha ao enviar código MFA via Resend: {exc}")
@@ -192,7 +192,7 @@ async def enviar_lead_interesse_plano(
     if not destino or not _resend_configurado():
         logger.info(
             "lead_interesse_plano",
-            extra={"extra": {"nome": nome, "contato": contato, "plano": plano, "ciclo": ciclo}},
+            extra={"extra": {"plano": plano, "ciclo": ciclo}},
         )
         return
 
@@ -223,7 +223,7 @@ async def enviar_lead_interesse_plano(
     assunto = f"[SessãoInk] Interesse no plano {plano} ({ciclo}) — {nome}"
     try:
         await asyncio.to_thread(_enviar_sync, destino, assunto, html)
-        logger.info(f"Lead de interesse enviado para {destino} (plano {plano})")
+        logger.info(f"Lead de interesse enviado (plano {plano})")
     except Exception as exc:
         logger.warning(f"Falha ao enviar lead via Resend: {exc}")
 
@@ -287,7 +287,7 @@ async def enviar_convite_equipe(
             f"[SessãoInk] Convite para o estúdio {nome_estudio}",
             html,
         )
-        logger.info(f"Convite de equipe enviado para {email_destino}")
+        logger.info("Convite de equipe enviado")
         return True
     except Exception as exc:
         logger.warning(f"Falha ao enviar convite de equipe: {exc}")
@@ -333,7 +333,7 @@ async def enviar_email_reset_senha(
             "[SessãoInk] Redefinição de senha",
             html,
         )
-        logger.info(f"Email de reset enviado para {email_destino}")
+        logger.info("Email de reset enviado")
         return True
     except Exception as exc:
         logger.warning(f"Falha ao enviar email de reset: {exc}")

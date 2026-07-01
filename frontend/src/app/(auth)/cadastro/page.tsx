@@ -187,7 +187,25 @@ export default function CadastroPage() {
         </div>
 
         <p className="mt-4 text-center text-[11px] text-text-subtle leading-relaxed">
-          Ao criar a conta você concorda com os Termos de Uso e a Política de Privacidade.
+          Ao criar a conta você concorda com os{" "}
+          <Link
+            href="/termos-de-uso"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-teal-ink hover:underline"
+          >
+            Termos de Uso
+          </Link>{" "}
+          e a{" "}
+          <Link
+            href="/politica-de-privacidade"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-teal-ink hover:underline"
+          >
+            Política de Privacidade
+          </Link>
+          .
         </p>
       </div>
     </div>

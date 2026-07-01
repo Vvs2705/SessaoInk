@@ -392,9 +392,16 @@ async def registrar_tentativa_signup(ip: str) -> int:
 MFA_DESAFIO_PREFIX = "mfa_challenge:"
 MFA_OTP_PREFIX = "mfa_otp:"
 MFA_OTP_RATE_PREFIX = "mfa_otp_rate:"
+MFA_VERIFY_FAIL_PREFIX = "mfa_verify_fail:"
 MFA_DESAFIO_TTL_SEGUNDOS = 5 * 60  # 5 minutos para concluir o 2º fator
 MFA_OTP_TTL_SEGUNDOS = 5 * 60
 MFA_OTP_MAX_ENVIOS = 5  # por janela de TTL
+# Anti-força-bruta do 2º fator: 5 códigos errados → bloqueio de 15 min.
+# Chave por usuário (não por desafio) para que re-logar não zere o orçamento
+# do atacante — quem chega aqui já tem a senha correta, então proteger o
+# segundo fator é o objetivo central.
+MFA_VERIFY_MAX_TENTATIVAS = 5
+MFA_VERIFY_BLOQUEIO_SEGUNDOS = 15 * 60
 
 
 async def salvar_desafio_mfa(usuario_id: str) -> str:
@@ -458,6 +465,30 @@ async def registrar_envio_otp(usuario_id: str) -> int:
         if total == 1:
             await r.expire(chave, MFA_OTP_TTL_SEGUNDOS)
         return total
+
+
+async def verificar_bloqueio_mfa(usuario_id: str) -> bool:
+    """True se o usuário está bloqueado por excesso de códigos MFA errados."""
+    async with get_redis() as r:
+        val = await r.get(f"{MFA_VERIFY_FAIL_PREFIX}{usuario_id}")
+        return int(val) >= MFA_VERIFY_MAX_TENTATIVAS if val else False
+
+
+async def incrementar_tentativa_mfa(usuario_id: str) -> int:
+    """Incrementa o contador de falhas de 2º fator; aplica TTL na primeira falha.
+    Retorna o total acumulado."""
+    async with get_redis() as r:
+        chave = f"{MFA_VERIFY_FAIL_PREFIX}{usuario_id}"
+        total = await r.incr(chave)
+        if total == 1:
+            await r.expire(chave, MFA_VERIFY_BLOQUEIO_SEGUNDOS)
+        return total
+
+
+async def limpar_tentativas_mfa(usuario_id: str) -> None:
+    """Zera o contador de falhas de 2º fator após verificação bem-sucedida."""
+    async with get_redis() as r:
+        await r.delete(f"{MFA_VERIFY_FAIL_PREFIX}{usuario_id}")
 
 
 async def revogar_todas_sessoes_usuario(usuario_id: str) -> int:

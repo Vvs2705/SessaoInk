@@ -15,6 +15,7 @@ from app.api.v1.auth.schemas import (
     MfaAtivarRequest,
     MfaDesafioRequest,
     MfaDesativarRequest,
+    MfaEmailAtivarRequest,
     MfaEmailToggleResponse,
     MfaSetupResponse,
     MfaVerificarRequest,
@@ -31,8 +32,11 @@ from app.core.email import enviar_codigo_mfa, enviar_email_reset_senha
 from app.core.password_policy import validar_senha_forte
 from app.core.redis import (
     MFA_OTP_MAX_ENVIOS,
+    MFA_VERIFY_MAX_TENTATIVAS,
     incrementar_tentativa_login,
+    incrementar_tentativa_mfa,
     limpar_tentativas_login,
+    limpar_tentativas_mfa,
     obter_usuario_do_desafio,
     obter_usuario_do_refresh,
     obter_usuario_do_token_reset_senha,
@@ -48,6 +52,7 @@ from app.core.redis import (
     salvar_refresh_token,
     salvar_token_reset_senha,
     verificar_bloqueio_login,
+    verificar_bloqueio_mfa,
     verificar_limite_reset_senha,
     verificar_limite_signup,
     verificar_otp_email,
@@ -58,6 +63,7 @@ from app.core.security import (
     criar_refresh_token,
     hash_senha,
     verificar_senha,
+    verificar_senha_dummy,
 )
 from app.core.slug import SLUG_MAX, SLUGS_RESERVADOS, slugify
 from app.models.usuario import Estudio, TipoUsuario, Usuario
@@ -260,6 +266,11 @@ async def login(
         )
     )
     usuario = result.scalar_one_or_none()
+
+    # Anti-enumeração: se o e-mail não existe, roda um bcrypt descartável para
+    # que o tempo de resposta seja idêntico ao de "senha incorreta".
+    if usuario is None:
+        verificar_senha_dummy(dados.senha)
 
     if not usuario or not verificar_senha(dados.senha, usuario.senha_hash):
         await incrementar_tentativa_login(ip)
@@ -577,12 +588,34 @@ async def mfa_totp_desativar(
 
 @router.post("/mfa/email/ativar", response_model=MfaEmailToggleResponse)
 async def mfa_email_ativar(
+    dados: MfaEmailAtivarRequest,
+    request: Request,
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(get_usuario_atual),
 ):
-    """Ativa o 2º fator por código enviado ao e-mail do usuário."""
+    """Ativa o 2º fator por código enviado ao e-mail do usuário.
+
+    Exige a senha (step-up), simétrico com a desativação — impede que uma sessão
+    sequestrada (XSS/CSRF) altere as configurações de MFA sem reautenticação.
+    """
+    if not verificar_senha(dados.senha, usuario.senha_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Senha incorreta."
+        )
     usuario.mfa_email_ativo = True
     await session.commit()
+    await log_event(
+        session,
+        acao="auth.mfa.email.ativado",
+        estudio_id=usuario.estudio_id,
+        actor_usuario_id=usuario.id,
+        actor_tipo=usuario.tipo.value,
+        entidade="usuario",
+        entidade_id=str(usuario.id),
+        ip=get_client_ip(request),
+        user_agent=get_user_agent(request),
+        commit=True,
+    )
     return MfaEmailToggleResponse(mfa_email_ativo=True)
 
 
@@ -665,6 +698,14 @@ async def mfa_verificar(
     """Verifica o 2º fator (TOTP ou OTP de e-mail) e emite a sessão."""
     usuario = await _usuario_do_desafio(session, dados.desafio)
 
+    # Anti-força-bruta: bloqueia após MFA_VERIFY_MAX_TENTATIVAS códigos errados.
+    # Chave por usuário — re-logar não zera o orçamento do atacante.
+    if await verificar_bloqueio_mfa(str(usuario.id)):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Muitas tentativas de verificação. Aguarde 15 minutos e tente novamente.",
+        )
+
     ok = False
     if dados.metodo == "totp" and usuario.mfa_totp_ativo:
         ok = mfa_core.verificar_totp(usuario.mfa_totp_secret or "", dados.codigo)
@@ -672,6 +713,11 @@ async def mfa_verificar(
         ok = await verificar_otp_email(str(usuario.id), dados.codigo)
 
     if not ok:
+        tentativas = await incrementar_tentativa_mfa(str(usuario.id))
+        # Ao atingir o limite, invalida o desafio: força novo login (senha) para
+        # obter outro desafio, encurtando ainda mais a janela de ataque.
+        if tentativas >= MFA_VERIFY_MAX_TENTATIVAS:
+            await revogar_desafio_mfa(dados.desafio)
         await log_event(
             session,
             acao="auth.mfa.failure",
@@ -682,7 +728,7 @@ async def mfa_verificar(
             entidade_id=str(usuario.id),
             ip=get_client_ip(request),
             user_agent=get_user_agent(request),
-            dados={"metodo": dados.metodo},
+            dados={"metodo": dados.metodo, "tentativas": tentativas},
             commit=True,
         )
         raise HTTPException(
@@ -690,6 +736,7 @@ async def mfa_verificar(
             detail="Código de verificação inválido.",
         )
 
+    await limpar_tentativas_mfa(str(usuario.id))
     await revogar_desafio_mfa(dados.desafio)
     await log_event(
         session,

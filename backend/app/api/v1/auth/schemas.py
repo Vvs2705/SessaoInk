@@ -54,6 +54,13 @@ class MfaDesativarRequest(BaseModel):
     senha: str
 
 
+class MfaEmailAtivarRequest(BaseModel):
+    """Ativação do 2º fator por e-mail exige a senha (step-up), simétrico com a
+    desativação — impede que uma sessão sequestrada mexa no MFA sem reautenticar."""
+
+    senha: str
+
+
 class MfaEmailToggleResponse(BaseModel):
     mfa_email_ativo: bool
 

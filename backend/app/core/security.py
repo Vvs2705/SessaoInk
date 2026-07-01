@@ -23,6 +23,19 @@ def verificar_senha(senha_plana: str, senha_hash: str) -> bool:
     return _bcrypt.checkpw(senha_plana.encode("utf-8"), senha_hash.encode("utf-8"))
 
 
+# Hash bcrypt fixo (rounds=12) para equalizar o tempo de resposta do login
+# quando o e-mail não existe. Sem isso, o `checkpw` só roda para e-mails
+# cadastrados e o atraso mensurável denuncia quais e-mails têm conta
+# (enumeração de usuários). Computado uma vez no import.
+_DUMMY_HASH = _bcrypt.hashpw(b"dummy-password-para-timing", _bcrypt.gensalt(rounds=12))
+
+
+def verificar_senha_dummy(senha_plana: str) -> None:
+    """Executa um bcrypt descartável para igualar o tempo do caminho 'usuário
+    inexistente' ao do 'senha incorreta'. Não retorna nada útil."""
+    _bcrypt.checkpw(senha_plana.encode("utf-8"), _DUMMY_HASH)
+
+
 def criar_access_token(data: dict[str, Any]) -> str:
     """Cria JWT de acesso com claims completas (iss, aud, jti, type, iat, exp).
 
@@ -90,6 +103,7 @@ def decodificar_token(token: str) -> dict[str, Any]:
 __all__ = [
     "hash_senha",
     "verificar_senha",
+    "verificar_senha_dummy",
     "criar_access_token",
     "criar_refresh_token",
     "hash_refresh_token",

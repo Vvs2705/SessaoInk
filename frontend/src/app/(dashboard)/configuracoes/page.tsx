@@ -27,6 +27,9 @@ import {
   CalendarDays,
   RefreshCw,
   Plus,
+  Download,
+  Trash2,
+  ShieldAlert,
 } from "lucide-react";
 import { api, ApiError, withCsrfHeaders } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
@@ -223,6 +226,11 @@ export default function ConfiguracoesPage() {
   const [mfaEmailActivating, setMfaEmailActivating] = useState(false);
   const [showMfaEmailActivateModal, setShowMfaEmailActivateModal] = useState(false);
   const [mfaEmailActivatePassword, setMfaEmailActivatePassword] = useState("");
+
+  // LGPD — direitos do titular
+  const [exportandoDados, setExportandoDados] = useState(false);
+  const [showExclusaoModal, setShowExclusaoModal] = useState(false);
+  const [solicitandoExclusao, setSolicitandoExclusao] = useState(false);
 
   // Horário de funcionamento (0=segunda … 6=domingo)
   const [horarioFunc, setHorarioFunc] = useState<
@@ -788,6 +796,46 @@ export default function ConfiguracoesPage() {
       showToast("erro", e.detail || "Senha incorreta. Tente novamente.");
     } finally {
       setMfaEmailActivating(false);
+    }
+  };
+
+  // LGPD — exporta os dados pessoais do titular (acesso/portabilidade, art. 18).
+  // O backend retorna JSON; o download é montado no cliente (o proxy reescreve headers).
+  const handleExportarDados = async () => {
+    setExportandoDados(true);
+    try {
+      const dados = await api.get<unknown>("/api/v1/lgpd/exportar");
+      const blob = new Blob([JSON.stringify(dados, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "sessaoink-meus-dados.json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast("sucesso", "Seus dados foram exportados.");
+    } catch (e: any) {
+      showToast("erro", e.detail || "Não foi possível exportar seus dados.");
+    } finally {
+      setExportandoDados(false);
+    }
+  };
+
+  const handleSolicitarExclusao = async () => {
+    setSolicitandoExclusao(true);
+    try {
+      const res = await api.post<{ message?: string }>(
+        "/api/v1/lgpd/solicitar-exclusao"
+      );
+      setShowExclusaoModal(false);
+      showToast("sucesso", res?.message || "Solicitação de exclusão registrada.");
+    } catch (e: any) {
+      showToast("erro", e.detail || "Não foi possível registrar a solicitação.");
+    } finally {
+      setSolicitandoExclusao(false);
     }
   };
 
@@ -2114,6 +2162,58 @@ export default function ConfiguracoesPage() {
                   ))}
                 </div>
               </div>
+
+              {/* Privacidade e seus dados (LGPD art. 18) */}
+              <div className="bg-ink-bg border border-mist-line rounded-[18px] p-6">
+                <h2 className="text-base font-semibold text-porcelain-ink mb-1">
+                  Privacidade e seus dados
+                </h2>
+                <p className="text-xs text-text-subtle mb-4">
+                  Seus direitos como titular de dados (LGPD). Estes controles se aplicam à sua conta.
+                </p>
+
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between gap-3 py-2 border-b border-mist-line">
+                    <div className="min-w-0">
+                      <p className="text-sm text-porcelain-ink">Exportar meus dados</p>
+                      <p className="text-xs text-text-subtle">
+                        Baixe uma cópia dos dados da sua conta em JSON.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleExportarDados}
+                      disabled={exportandoDados}
+                      aria-busy={exportandoDados}
+                      className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 text-xs font-semibold rounded-[10px] border border-mist-line hover:bg-surface-raised text-porcelain-ink transition-all shrink-0 disabled:opacity-50"
+                    >
+                      {exportandoDados ? (
+                        <Loader2 size={13} className="animate-spin" />
+                      ) : (
+                        <Download size={13} />
+                      )}
+                      Exportar
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3 py-2">
+                    <div className="min-w-0">
+                      <p className="text-sm text-porcelain-ink">Solicitar exclusão da conta</p>
+                      <p className="text-xs text-text-subtle">
+                        Registra seu pedido de eliminação de dados.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowExclusaoModal(true)}
+                      className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 text-xs font-semibold rounded-[10px] border border-error-red/30 hover:bg-error-red hover:text-porcelain-ink text-error-red transition-all shrink-0"
+                    >
+                      <Trash2 size={13} />
+                      Solicitar
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -2635,6 +2735,54 @@ export default function ConfiguracoesPage() {
                 >
                   {mfaEmailActivating && <Loader2 size={14} className="animate-spin" />}
                   Confirmar e Ativar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de solicitação de exclusão (LGPD art. 18, VI) */}
+      {showExclusaoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-md rounded-[18px] shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-mist-line">
+              <div className="flex items-center gap-2">
+                <ShieldAlert size={18} className="text-error-red" />
+                <h2 className="text-porcelain-ink font-bold text-sm">
+                  Solicitar exclusão da conta
+                </h2>
+              </div>
+              <button
+                onClick={() => setShowExclusaoModal(false)}
+                className="text-text-subtle hover:text-porcelain-ink"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-xs text-text-subtle leading-relaxed">
+                Vamos registrar seu pedido de exclusão e processá-lo dentro do prazo
+                legal. Alguns dados podem ser mantidos por obrigação legal/fiscal
+                (por exemplo, registros de pagamento). Você receberá retorno pelo
+                e-mail cadastrado.
+              </p>
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowExclusaoModal(false)}
+                  className="flex-1 h-10 rounded-[12px] border border-mist-line hover:bg-surface-raised text-porcelain-ink font-semibold text-sm transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={solicitandoExclusao}
+                  onClick={handleSolicitarExclusao}
+                  className="flex-1 h-10 rounded-[12px] bg-error-red hover:bg-[#c94d4b] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm transition-all flex items-center justify-center gap-2"
+                >
+                  {solicitandoExclusao && <Loader2 size={14} className="animate-spin" />}
+                  Confirmar solicitação
                 </button>
               </div>
             </div>

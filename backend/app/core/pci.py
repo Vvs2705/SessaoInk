@@ -39,6 +39,15 @@ _CHAVES_SENSIVEIS = {
     "qrcode",
     "qrcodebase64",
     "ticketurl",
+    # PII de titular / URLs com token (LGPD art. 6º/46) — nunca em log/Sentry.
+    # reset_url/convite_url contêm o token de uso único = credencial.
+    "email",
+    "emaildestino",
+    "reseturl",
+    "conviteurl",
+    "telefone",
+    "whatsapp",
+    "contato",
 }
 
 # Campos proibidos em payloads de pagamento (dados de cartão / autenticação).

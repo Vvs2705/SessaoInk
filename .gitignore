@@ -107,3 +107,6 @@ NOTAS_*.md
 TODO_*.md
 CONTEXTO_*.md
 PROMPT_*.md
+
+# CLAUDE.md — guia de agente: apenas local, nunca no repo (decisao do dono)
+CLAUDE.md

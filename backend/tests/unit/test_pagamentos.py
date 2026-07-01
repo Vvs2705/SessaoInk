@@ -52,40 +52,17 @@ class TestMontagemPayloads:
         assert gw.configurado() is False
 
 
-class TestPrecoTesteOverride:
-    """Override de teste de pagamento: só sousavmaker@gmail.com paga R$2 no
-    Essencial (mensal ou trimestral); todo o resto segue o catálogo.
-    (Remover após o teste.)"""
+class TestValorVenda:
+    """Valor de venda calculado 100% server-side a partir do catálogo."""
 
-    EMAIL = "sousavmaker@gmail.com"
-
-    def test_email_de_teste_paga_2_reais_no_essencial(self):
+    def test_mensal_usa_preco_mensal(self):
         plano = get_plano("essencial")
-        # mensal (recorrente) e trimestral (avulso/Pix) → R$2
-        assert valor_venda_centavos(plano, "mensal", email=self.EMAIL) == 200
-        assert valor_venda_centavos(plano, "trimestral", email=self.EMAIL) == 200
-        # case-insensitive + espaços
-        assert valor_venda_centavos(plano, "trimestral", email="  SousaVMaker@Gmail.com ") == 200
-        # o preapproval (mensal) e a preference (trimestral) cobram o MESMO R$2
-        gw = GatewayPagamento()
-        pre = gw.montar_preapproval(plano=plano, email_pagador=self.EMAIL, referencia="r1")
-        assert pre["auto_recurring"]["transaction_amount"] == 2.0
-        pref = gw.montar_preference(
-            plano=plano, ciclo="trimestral", email_pagador=self.EMAIL, referencia="r2"
-        )
-        assert pref["items"][0]["unit_price"] == 2.0
-
-    def test_outro_email_paga_preco_normal(self):
-        plano = get_plano("essencial")
-        assert valor_venda_centavos(plano, "mensal", email="outro@x.com") == 5000
-        assert valor_venda_centavos(plano, "trimestral", email="outro@x.com") != 200
         assert valor_venda_centavos(plano, "mensal") == 5000
 
-    def test_override_nao_vaza_para_outro_plano_ou_ciclo(self):
-        # mesmo email, outro plano → preço normal (Profissional mensal = R$135)
-        assert valor_venda_centavos(get_plano("profissional"), "mensal", email=self.EMAIL) == 13500
-        # mesmo email/plano, ciclo fora da lista de teste (semestral) → preço normal
-        assert valor_venda_centavos(get_plano("essencial"), "semestral", email=self.EMAIL) != 200
+    def test_ciclo_com_desconto_usa_pix_total(self):
+        plano = get_plano("profissional")
+        # anual = 12 * 135 = 1620, Pix -25% = 1215.00
+        assert valor_venda_centavos(plano, "anual") == 121500
 
 
 class TestWebhookSignature:

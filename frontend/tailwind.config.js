@@ -1,3 +1,9 @@
+// Habilita modificador de opacidade do Tailwind (ex.: bg-teal-ink/20) em tokens
+// definidos como cor cheia (var --token, com fallback hex + OKLCH). color-mix
+// preserva o OKLCH; suporte ~95% (browsers 2023+). Sem isso, /opacidade em token
+// não funcionaria e o refactor de hex ficaria incompleto.
+const withAlpha = (v) => `color-mix(in oklab, ${v} calc(<alpha-value> * 100%), transparent)`;
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -14,48 +20,75 @@ module.exports = {
       },
       colors: {
         ink: {
-          night: "var(--ink-night)",
-          gold: "var(--si-gold)",
+          night: withAlpha("var(--ink-night)"),
+          gold: withAlpha("var(--si-gold)"),
           // Sistema de superfícies em camadas (design upgrade)
-          bg: "var(--si-bg)",
-          surface: "var(--si-surface)",
-          raised: "var(--si-raised)",
-          overlay: "var(--si-overlay)",
-          teal: "var(--si-teal)",
-          text: "var(--si-text)",
-          muted: "var(--si-text-muted)",
-          subtle: "var(--si-text-subtle)",
-          border: "var(--si-border)",
-          "border-strong": "var(--si-border-strong)",
+          bg: withAlpha("var(--si-bg)"),
+          surface: withAlpha("var(--si-surface)"),
+          raised: withAlpha("var(--si-raised)"),
+          overlay: withAlpha("var(--si-overlay)"),
+          teal: withAlpha("var(--si-teal)"),
+          text: withAlpha("var(--si-text)"),
+          muted: withAlpha("var(--si-text-muted)"),
+          subtle: withAlpha("var(--si-text-subtle)"),
+          border: withAlpha("var(--si-border)"),
+          "border-strong": withAlpha("var(--si-border-strong)"),
         },
         deep: {
-          graphite: "var(--deep-graphite)",
-          teal: "var(--deep-teal)",
+          graphite: withAlpha("var(--deep-graphite)"),
+          teal: withAlpha("var(--deep-teal)"),
         },
         porcelain: {
-          ink: "var(--porcelain-ink)",
+          ink: withAlpha("var(--porcelain-ink)"),
         },
         teal: {
-          ink: "var(--teal-ink)",
+          ink: withAlpha("var(--teal-ink)"),
         },
         copper: {
-          needle: "var(--copper-needle)",
+          needle: withAlpha("var(--copper-needle)"),
         },
         smoke: {
-          text: "var(--smoke-text)",
+          text: withAlpha("var(--smoke-text)"),
         },
         mist: {
-          line: "var(--mist-line)",
+          line: withAlpha("var(--mist-line)"),
         },
         error: {
-          red: "var(--error-red)",
+          red: withAlpha("var(--error-red)"),
         },
         surface: {
-          raised: "var(--surface-raised)",
-          soft: "var(--surface-soft)",
+          raised: withAlpha("var(--surface-raised)"),
+          soft: withAlpha("var(--surface-soft)"),
         },
         text: {
-          subtle: "var(--text-subtle)",
+          subtle: withAlpha("var(--text-subtle)"),
+        },
+        // Acento de identidade (esmeralda) + acento quente (cobre)
+        si: {
+          accent: withAlpha("var(--si-accent)"),
+          warm: withAlpha("var(--si-warm)"),
+        },
+        // Semânticos de estado
+        warning: withAlpha("var(--warning)"),
+        success: withAlpha("var(--success)"),
+        info: withAlpha("var(--info)"),
+        // Status de atendimento (antes só via CSS var / .status-badge)
+        status: {
+          solicitado: withAlpha("var(--status-solicitado)"),
+          "aguardando-sinal": withAlpha("var(--status-aguardando-sinal)"),
+          confirmado: withAlpha("var(--status-confirmado)"),
+          finalizado: withAlpha("var(--status-finalizado)"),
+          cancelado: withAlpha("var(--status-cancelado)"),
+          "nao-compareceu": withAlpha("var(--status-nao-compareceu)"),
+          privado: withAlpha("var(--status-privado)"),
+          publico: withAlpha("var(--status-publico)"),
+        },
+        // Status financeiro
+        fin: {
+          pendente: withAlpha("var(--fin-pendente)"),
+          "sinal-pago": withAlpha("var(--fin-sinal-pago)"),
+          "pago-total": withAlpha("var(--fin-pago-total)"),
+          estornado: withAlpha("var(--fin-estornado)"),
         },
       },
       borderRadius: {

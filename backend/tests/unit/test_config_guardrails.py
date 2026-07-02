@@ -12,6 +12,7 @@ _PROD_OK = dict(
     DATABASE_URL="postgresql+asyncpg://u:p@neon.tech/db",
     REDIS_URL="redis://fly-redis:6379",
     LGPD_RETENTION_TOKEN="x" * 40,
+    INTERNAL_PROXY_SECRET="x" * 40,
 )
 
 
@@ -62,6 +63,23 @@ def test_redis_localhost_aborta():
 def test_lgpd_retention_token_curto_aborta():
     with pytest.raises(ValueError):
         _settings(LGPD_RETENTION_TOKEN="curto")
+
+
+def test_proxy_secret_ausente_com_trusted_proxy_aborta():
+    # TRUSTED_PROXY_ENABLED (padrão) sem INTERNAL_PROXY_SECRET → XFF falsificável.
+    with pytest.raises(ValueError):
+        _settings(INTERNAL_PROXY_SECRET="")
+
+
+def test_proxy_secret_curto_aborta():
+    with pytest.raises(ValueError):
+        _settings(INTERNAL_PROXY_SECRET="curto")
+
+
+def test_trusted_proxy_desligado_nao_exige_secret():
+    # Sem confiar em proxy, o XFF é ignorado — o segredo deixa de ser necessário.
+    s = _settings(TRUSTED_PROXY_ENABLED=False, INTERNAL_PROXY_SECRET="")
+    assert s.TRUSTED_PROXY_ENABLED is False
 
 
 def test_desenvolvimento_nao_aplica_guardrails():

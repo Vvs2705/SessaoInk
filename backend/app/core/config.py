@@ -66,8 +66,8 @@ class Settings(BaseSettings):
 
     # LGPD
     LGPD_ORCAMENTO_RETENCAO_DIAS: int = 180
-    LGPD_PRIVACIDADE_VERSAO: str = "2026-06-01"
-    LGPD_TERMOS_VERSAO: str = "2026-06-01"
+    LGPD_PRIVACIDADE_VERSAO: str = "2026-07-02"
+    LGPD_TERMOS_VERSAO: str = "2026-07-02"
     LGPD_RETENTION_TOKEN: str = ""
 
     # CSRF

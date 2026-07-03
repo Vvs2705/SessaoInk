@@ -13,14 +13,14 @@ export default function TermosDeUsoPage() {
   return (
     <LegalDocument
       titulo="Termos de Uso"
-      vigencia="1º de julho de 2026"
-      versao="2026-07-01"
+      vigencia="2 de julho de 2026"
+      versao="2026-07-02"
     >
       <p>
         Estes Termos de Uso regem o acesso e a utilização da plataforma SessãoInk,
         oferecida por{" "}
         <strong className="text-porcelain-ink">
-          [RAZÃO SOCIAL], CNPJ nº [CNPJ]
+          VSTACK SOLUTIONS LTDA, inscrita no CNPJ nº 40.204.602/0001-85
         </strong>{" "}
         (&ldquo;SessãoInk&rdquo;). Ao criar uma conta ou utilizar a plataforma, você
         declara ter lido e concordado com estes Termos.
@@ -142,15 +142,16 @@ export default function TermosDeUsoPage() {
         <p>
           Estes Termos são regidos pelas leis da República Federativa do Brasil. Fica
           eleito o foro da comarca de{" "}
-          <strong className="text-porcelain-ink">[CIDADE/UF]</strong> para dirimir
-          controvérsias, salvo competência legal diversa.
+          <strong className="text-porcelain-ink">Caieiras, Estado de São Paulo</strong>{" "}
+          para dirimir controvérsias, salvo competência legal diversa.
         </p>
       </LegalSection>
 
       <LegalSection titulo="11. Contato">
         <p>
           Dúvidas sobre estes Termos:{" "}
-          <strong className="text-porcelain-ink">[E-MAIL DE CONTATO]</strong>.
+          <strong className="text-porcelain-ink">vinicius@vstack-solutions.com.br</strong>{" "}
+          · (11) 97335-8775.
         </p>
       </LegalSection>
     </LegalDocument>

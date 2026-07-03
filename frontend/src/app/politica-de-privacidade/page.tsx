@@ -13,18 +13,21 @@ export default function PoliticaPrivacidadePage() {
   return (
     <LegalDocument
       titulo="Política de Privacidade"
-      vigencia="1º de julho de 2026"
-      versao="2026-07-01"
+      vigencia="2 de julho de 2026"
+      versao="2026-07-02"
     >
       <p>
         Esta Política de Privacidade descreve como a{" "}
         <strong className="text-porcelain-ink">
-          [RAZÃO SOCIAL], inscrita no CNPJ nº [CNPJ]
+          VSTACK SOLUTIONS LTDA, inscrita no CNPJ nº 40.204.602/0001-85
         </strong>{" "}
-        (&ldquo;SessãoInk&rdquo;, &ldquo;nós&rdquo;), com sede em{" "}
-        <strong className="text-porcelain-ink">[ENDEREÇO COMPLETO]</strong>, trata
-        dados pessoais no âmbito da plataforma SessãoInk, em conformidade com a Lei
-        nº 13.709/2018 (Lei Geral de Proteção de Dados Pessoais — &ldquo;LGPD&rdquo;).
+        (&ldquo;SessãoInk&rdquo;, &ldquo;nós&rdquo;), com sede na{" "}
+        <strong className="text-porcelain-ink">
+          Rua Vicente Lisa, nº 6281, Vila Rosina, Caieiras/SP, CEP 07749-220
+        </strong>
+        , trata dados pessoais no âmbito da plataforma SessãoInk, em conformidade
+        com a Lei nº 13.709/2018 (Lei Geral de Proteção de Dados Pessoais —
+        &ldquo;LGPD&rdquo;).
       </p>
 
       <LegalSection titulo="1. Papéis: controlador e operador">
@@ -147,7 +150,7 @@ export default function PoliticaPrivacidadePage() {
           Mantemos os dados pelo tempo necessário às finalidades descritas e às
           obrigações legais/fiscais aplicáveis (art. 16 da LGPD). Pré-cadastros de
           orçamento do portal público não convertidos são anonimizados após{" "}
-          <strong className="text-porcelain-ink">[PRAZO — ex.: 180 dias]</strong>.
+          <strong className="text-porcelain-ink">180 dias</strong>.
           Após o encerramento da conta, os dados são eliminados ou anonimizados,
           ressalvados os que a lei exige preservar.
         </p>
@@ -187,9 +190,12 @@ export default function PoliticaPrivacidadePage() {
       <LegalSection titulo="10. Encarregado (DPO) e contato">
         <p>
           Encarregado pelo Tratamento de Dados Pessoais:{" "}
-          <strong className="text-porcelain-ink">[NOME DO ENCARREGADO]</strong>. Para
-          exercer seus direitos ou tirar dúvidas sobre privacidade, entre em contato:{" "}
-          <strong className="text-porcelain-ink">[E-MAIL DO ENCARREGADO]</strong>.
+          <strong className="text-porcelain-ink">Vinicius Vieira de Sousa</strong>. Para
+          exercer seus direitos ou tirar dúvidas sobre privacidade, entre em contato
+          pelo e-mail{" "}
+          <strong className="text-porcelain-ink">vinicius@vstack-solutions.com.br</strong>{" "}
+          ou pelo telefone{" "}
+          <strong className="text-porcelain-ink">(11) 97335-8775</strong>.
         </p>
       </LegalSection>
 

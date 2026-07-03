@@ -90,6 +90,22 @@ module.exports = {
           "pago-total": withAlpha("var(--fin-pago-total)"),
           estornado: withAlpha("var(--fin-estornado)"),
         },
+        // Semânticos shadcn/ui → tokens autorais SessãoInk (dark-first).
+        // Componentes do registry (@vstack) usam bg-background/border-border/
+        // ring-ring etc.; a ponte é feita aqui, sem CSS var nova (evita colisão
+        // com --primary/--accent/--border que tokens.css já define).
+        background: withAlpha("var(--si-bg)"),
+        foreground: withAlpha("var(--si-text)"),
+        card: { DEFAULT: withAlpha("var(--si-surface)"), foreground: withAlpha("var(--si-text)") },
+        popover: { DEFAULT: withAlpha("var(--si-overlay)"), foreground: withAlpha("var(--si-text)") },
+        primary: { DEFAULT: withAlpha("var(--si-accent)"), foreground: withAlpha("var(--ink-night)") },
+        secondary: { DEFAULT: withAlpha("var(--si-raised)"), foreground: withAlpha("var(--si-text)") },
+        muted: { DEFAULT: withAlpha("var(--surface-soft)"), foreground: withAlpha("var(--si-text-muted)") },
+        accent: { DEFAULT: withAlpha("var(--si-overlay)"), foreground: withAlpha("var(--si-text)") },
+        destructive: { DEFAULT: withAlpha("var(--error-red)"), foreground: withAlpha("var(--porcelain-ink)") },
+        border: withAlpha("var(--mist-line)"),
+        input: withAlpha("var(--mist-line)"),
+        ring: withAlpha("var(--si-accent)"),
       },
       borderRadius: {
         xs: "var(--radius-xs)",
@@ -151,5 +167,6 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  // Animações de entrada/saída dos componentes shadcn (animate-in/out) no TW3.
+  plugins: [require("tailwindcss-animate")],
 }

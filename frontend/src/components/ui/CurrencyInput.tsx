@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { formatCurrencyValue, maskCurrencyInput } from "@/lib/utils";
+
+import { formatCurrencyValue, maskCurrencyInput } from "@/lib/currency";
 
 type CurrencyInputProps = Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
@@ -22,7 +23,7 @@ type CurrencyInputProps = Omit<
  * digitar um formato inválido (apenas dígitos são aceitos).
  *
  * O `value` é sempre canônico (ponto decimal) para manter compatibilidade
- * com o `parseFloat`/envio existente nos formulários.
+ * com `parseFloat`/envio nos formulários (react-hook-form friendly).
  */
 export const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
   function CurrencyInput({ value, onValueChange, ...props }, ref) {

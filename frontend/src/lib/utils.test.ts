@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatCurrencyValue, maskCurrencyInput } from "./utils";
+import { formatCurrencyValue, maskCurrencyInput } from "@/lib/currency";
 
 describe("maskCurrencyInput (acumulador de centavos)", () => {
   it("formata os dígitos do bug relatado (R$ 4.218,50)", () => {

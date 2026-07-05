@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { HelpCircle, X, Lightbulb } from "lucide-react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import { resolveGuide } from "@/lib/page-guides";
+
+gsap.registerPlugin(useGSAP);
 
 /**
  * Guia contextual por página. Botão flutuante "?" que abre um painel explicando
@@ -13,6 +17,28 @@ export function PageGuide() {
   const pathname = usePathname();
   const [aberto, setAberto] = useState(false);
   const guia = resolveGuide(pathname);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Entrada do painel (padrão gsap-react: useGSAP com scope + matchMedia).
+  // Com prefers-reduced-motion, nada anima — o conteúdo só aparece.
+  useGSAP(
+    () => {
+      if (!aberto) return;
+      const mm = gsap.matchMedia();
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        gsap
+          .timeline({ defaults: { ease: "power3.out" } })
+          .from("[data-guide-backdrop]", { opacity: 0, duration: 0.25 })
+          .from("[data-guide-panel]", { xPercent: 100, duration: 0.45 }, "<")
+          .from(
+            "[data-guide-section]",
+            { opacity: 0, y: 14, stagger: 0.07, duration: 0.35 },
+            "-=0.25",
+          );
+      });
+    },
+    { scope: dialogRef, dependencies: [aberto] },
+  );
 
   // Fecha ao trocar de página
   useEffect(() => {
@@ -47,6 +73,7 @@ export function PageGuide() {
 
       {aberto && (
         <div
+          ref={dialogRef}
           className="fixed inset-0 z-50 flex justify-end"
           role="dialog"
           aria-modal="true"
@@ -54,12 +81,16 @@ export function PageGuide() {
         >
           {/* Backdrop */}
           <div
+            data-guide-backdrop
             className="absolute inset-0 bg-black/50"
             onClick={() => setAberto(false)}
           />
 
           {/* Painel */}
-          <div className="relative w-full max-w-md h-full overflow-y-auto bg-ink-bg border-l border-mist-line shadow-2xl">
+          <div
+            data-guide-panel
+            className="relative w-full max-w-md h-full overflow-y-auto bg-ink-bg border-l border-mist-line shadow-2xl"
+          >
             <div className="sticky top-0 flex items-center justify-between px-5 py-4 bg-ink-bg border-b border-mist-line">
               <div className="flex items-center gap-2">
                 <HelpCircle size={18} className="text-teal-ink" />
@@ -76,7 +107,7 @@ export function PageGuide() {
             </div>
 
             <div className="px-5 py-5 space-y-6">
-              <section>
+              <section data-guide-section>
                 <h3 className="text-[11px] uppercase tracking-wide text-text-subtle mb-1.5">
                   O que faz
                 </h3>
@@ -85,7 +116,7 @@ export function PageGuide() {
                 </p>
               </section>
 
-              <section>
+              <section data-guide-section>
                 <h3 className="text-[11px] uppercase tracking-wide text-text-subtle mb-2">
                   Como usar
                 </h3>
@@ -101,7 +132,7 @@ export function PageGuide() {
                 </ol>
               </section>
 
-              <section>
+              <section data-guide-section>
                 <h3 className="text-[11px] uppercase tracking-wide text-text-subtle mb-1.5">
                   Para que serve
                 </h3>
@@ -111,7 +142,10 @@ export function PageGuide() {
               </section>
 
               {guia.dicas && guia.dicas.length > 0 && (
-                <section className="rounded-[14px] bg-copper-needle/10 border border-copper-needle/20 p-3.5">
+                <section
+                  data-guide-section
+                  className="rounded-[14px] bg-copper-needle/10 border border-copper-needle/20 p-3.5"
+                >
                   <h3 className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-copper-needle mb-1.5">
                     <Lightbulb size={13} /> Dica
                   </h3>

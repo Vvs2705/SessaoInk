@@ -1,0 +1,38 @@
+# Revisão de segurança por IA em cada PR (anthropics/claude-code-security-review).
+# Enquanto o secret ANTHROPIC_API_KEY não existir, o job PULA (verde) em vez de
+# barrar todo PR — a review ativa sozinha assim que o secret for criado.
+name: Security Review
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  claude-security-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verifica se ANTHROPIC_API_KEY está configurada
+        id: guard
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::notice::ANTHROPIC_API_KEY não configurada — pulando a review de segurança por IA."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.guard.outputs.enabled == 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - if: steps.guard.outputs.enabled == 'true'
+        uses: anthropics/claude-code-security-review@main
+        with:
+          comment-pr: true
+          claude-api-key: ${{ secrets.ANTHROPIC_API_KEY }}

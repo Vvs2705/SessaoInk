@@ -58,7 +58,7 @@ export default function PortfolioPublicoPage() {
     return (
       <div className="min-h-screen bg-ink-night flex items-center justify-center p-6">
         <div className="text-center max-w-sm">
-          <div className="w-16 h-16 rounded-2xl bg-ink-bg border border-mist-line mx-auto mb-5 flex items-center justify-center">
+          <div className="w-16 h-16 rounded-lg bg-ink-bg border border-mist-line mx-auto mb-5 flex items-center justify-center">
             <AlertCircle size={28} className="text-error-red" />
           </div>
           <h1 className="text-xl font-bold text-porcelain-ink mb-2">Erro ao carregar portfólio</h1>
@@ -96,7 +96,7 @@ export default function PortfolioPublicoPage() {
         {/* Grid de Portfólio */}
         {portfolio.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 bg-ink-bg border border-mist-line rounded-[18px] text-center">
-            <div className="w-14 h-14 rounded-2xl bg-ink-night border border-mist-line flex items-center justify-center mb-4">
+            <div className="w-14 h-14 rounded-lg bg-ink-night border border-mist-line flex items-center justify-center mb-4">
               <ImageIcon size={22} className="text-mist-line" />
             </div>
             <p className="text-sm font-medium text-text-subtle">Nenhum trabalho publicado ainda</p>
@@ -150,7 +150,7 @@ export default function PortfolioPublicoPage() {
             <X size={20} />
           </button>
 
-          <div className="bg-ink-bg border border-mist-line w-full max-w-lg rounded-[20px] overflow-hidden shadow-2xl flex flex-col">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-lg rounded-[20px] overflow-hidden shadow-popover flex flex-col">
             {/* Imagem */}
             <div className="relative aspect-square w-full bg-ink-night flex items-center justify-center border-b border-mist-line">
               <img

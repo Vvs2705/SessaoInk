@@ -41,7 +41,7 @@ export default function MaisPage() {
           <Link
             key={href}
             href={href}
-            className="flex items-center justify-between rounded-2xl border border-mist-line bg-ink-bg p-4 transition-all active:scale-[0.99]"
+            className="flex items-center justify-between rounded-lg border border-mist-line bg-ink-bg p-4 transition-all active:scale-[0.99]"
           >
             <div className="flex min-w-0 items-center gap-3">
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-mist-line bg-surface-raised">
@@ -68,7 +68,7 @@ export default function MaisPage() {
         <button
           type="button"
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-2xl border border-error-red/30 bg-ink-bg p-4 text-left transition-all active:scale-[0.99]"
+          className="flex w-full items-center gap-3 rounded-lg border border-error-red/30 bg-ink-bg p-4 text-left transition-all active:scale-[0.99]"
         >
           <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-error-red/25 bg-error-red/10">
             <LogOut size={19} className="text-error-red" />

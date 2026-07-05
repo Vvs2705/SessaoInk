@@ -232,7 +232,7 @@ export default function DashboardPage() {
       case "SEM_PAGAMENTO":
         return "text-warning bg-warning/10 border-warning/20"; // Yellow
       case "COMISSAO_PENDENTE":
-        return "text-[#A78BFA] bg-[#A78BFA]/10 border-[#A78BFA]/20"; // Purple
+        return "text-fin-comissao bg-fin-comissao/10 border-fin-comissao/20"; // Purple
       case "SINAL_PENDENTE":
       case "ORCAMENTO_PARADO":
         return "text-info bg-info/10 border-info/20"; // Blue
@@ -396,7 +396,7 @@ export default function DashboardPage() {
       {showFinancials && dashboard && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Cash Flow SVG Chart */}
-          <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 space-y-4 shadow-lg lg:col-span-2">
+          <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 space-y-4 shadow-card lg:col-span-2">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <h3 className="text-sm font-bold text-porcelain-ink">Fluxo diário no período</h3>
@@ -441,9 +441,9 @@ export default function DashboardPage() {
                       >
                         <div className="flex h-full w-full items-end justify-center gap-0.5" aria-hidden="true">
                           {/* Green color for entradas status constraint */}
-                          <div style={{ height: `${entPct}%` }} className="w-2 bg-success rounded-t-[2px] hover:bg-[#68cca0] transition-all" title={`Entrada: ${formatCurrency(d.entradas)}`} />
+                          <div style={{ height: `${entPct}%` }} className="w-2 bg-success rounded-t-[2px] hover:bg-success-hover transition-all" title={`Entrada: ${formatCurrency(d.entradas)}`} />
                           {/* Red color for saídas status constraint */}
-                          <div style={{ height: `${saiPct}%` }} className="w-2 bg-error-red rounded-t-[2px] hover:bg-[#c94d4b] transition-all" title={`Saída: ${formatCurrency(d.saidas)}`} />
+                          <div style={{ height: `${saiPct}%` }} className="w-2 bg-error-red rounded-t-[2px] hover:bg-error-hover transition-all" title={`Saída: ${formatCurrency(d.saidas)}`} />
                         </div>
                         <span className="mt-2 block origin-top-left -rotate-45 text-[10px] text-text-subtle" aria-hidden="true">{d.dia.split("-")[2]}</span>
                       </div>
@@ -455,7 +455,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Revenue by Artist List */}
-          <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 space-y-4 shadow-lg flex flex-col">
+          <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 space-y-4 shadow-card flex flex-col">
             <div>
               <h3 className="text-sm font-bold text-porcelain-ink">Faturamento por Artista</h3>
               <p className="text-xs text-text-subtle">Fórmula proporcional no período</p>

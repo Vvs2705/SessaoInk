@@ -151,7 +151,7 @@ export function BuscaModal({
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg bg-ink-bg border border-mist-line rounded-[18px] shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-lg bg-ink-bg border border-mist-line rounded-[18px] shadow-popover overflow-hidden">
         {/* Input */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-mist-line">
           {carregando ? (

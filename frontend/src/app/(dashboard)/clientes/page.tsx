@@ -104,7 +104,7 @@ function ClienteModal({ cliente, onClose }: ClienteModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="relative w-full max-w-md bg-ink-bg border border-mist-line rounded-[18px] shadow-2xl">
+      <div className="relative w-full max-w-md bg-ink-bg border border-mist-line rounded-[18px] shadow-popover">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-mist-line">
           <div>

@@ -65,7 +65,7 @@ export function PageGuide() {
         onClick={() => setAberto(true)}
         aria-label={`Ajuda da página: ${guia.titulo}`}
         title="Como usar esta página"
-        className="fixed z-40 bottom-20 right-4 lg:bottom-6 lg:right-6 flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-teal-ink text-ink-night font-semibold shadow-lg hover:bg-[#34a394] transition-colors"
+        className="fixed z-40 bottom-20 right-4 lg:bottom-6 lg:right-6 flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-teal-ink text-ink-night font-semibold shadow-card hover:bg-primary-hover transition-colors"
       >
         <HelpCircle size={18} className="shrink-0" />
         <span className="hidden sm:inline text-sm">Como usar</span>
@@ -89,7 +89,7 @@ export function PageGuide() {
           {/* Painel */}
           <div
             data-guide-panel
-            className="relative w-full max-w-md h-full overflow-y-auto bg-ink-bg border-l border-mist-line shadow-2xl"
+            className="relative w-full max-w-md h-full overflow-y-auto bg-ink-bg border-l border-mist-line shadow-popover"
           >
             <div className="sticky top-0 flex items-center justify-between px-5 py-4 bg-ink-bg border-b border-mist-line">
               <div className="flex items-center gap-2">

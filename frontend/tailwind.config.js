@@ -55,6 +55,7 @@ module.exports = {
         },
         error: {
           red: withAlpha("var(--error-red)"),
+          hover: withAlpha("var(--error-hover)"),
         },
         surface: {
           raised: withAlpha("var(--surface-raised)"),
@@ -70,7 +71,10 @@ module.exports = {
         },
         // Semânticos de estado
         warning: withAlpha("var(--warning)"),
-        success: withAlpha("var(--success)"),
+        success: {
+          DEFAULT: withAlpha("var(--success)"),
+          hover: withAlpha("var(--success-hover)"),
+        },
         info: withAlpha("var(--info)"),
         // Status de atendimento (antes só via CSS var / .status-badge)
         status: {
@@ -89,6 +93,7 @@ module.exports = {
           "sinal-pago": withAlpha("var(--fin-sinal-pago)"),
           "pago-total": withAlpha("var(--fin-pago-total)"),
           estornado: withAlpha("var(--fin-estornado)"),
+          comissao: withAlpha("var(--fin-comissao)"),
         },
         // Semânticos shadcn/ui → tokens autorais SessãoInk (dark-first).
         // Componentes do registry (@vstack) usam bg-background/border-border/
@@ -98,7 +103,11 @@ module.exports = {
         foreground: withAlpha("var(--si-text)"),
         card: { DEFAULT: withAlpha("var(--si-surface)"), foreground: withAlpha("var(--si-text)") },
         popover: { DEFAULT: withAlpha("var(--si-overlay)"), foreground: withAlpha("var(--si-text)") },
-        primary: { DEFAULT: withAlpha("var(--si-accent)"), foreground: withAlpha("var(--ink-night)") },
+        primary: {
+          DEFAULT: withAlpha("var(--si-accent)"),
+          foreground: withAlpha("var(--ink-night)"),
+          hover: withAlpha("var(--primary-hover)"),
+        },
         secondary: { DEFAULT: withAlpha("var(--si-raised)"), foreground: withAlpha("var(--si-text)") },
         muted: { DEFAULT: withAlpha("var(--surface-soft)"), foreground: withAlpha("var(--si-text-muted)") },
         accent: { DEFAULT: withAlpha("var(--si-overlay)"), foreground: withAlpha("var(--si-text)") },

@@ -65,7 +65,7 @@ export function MfaEnforcementGate() {
         role="status"
         className="fixed bottom-20 left-4 right-4 z-50 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-sm"
       >
-        <div className="flex items-start gap-3 rounded-[14px] border border-warning/30 bg-ink-bg p-4 shadow-2xl">
+        <div className="flex items-start gap-3 rounded-[14px] border border-warning/30 bg-ink-bg p-4 shadow-popover">
           <ShieldAlert size={18} className="mt-0.5 shrink-0 text-warning" aria-hidden="true" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-porcelain-ink">
@@ -106,7 +106,7 @@ export function MfaEnforcementGate() {
       aria-labelledby="mfa-gate-titulo"
       className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-ink-night/90 backdrop-blur-sm"
     >
-      <div className="w-full max-w-md rounded-[18px] border border-mist-line bg-ink-bg shadow-2xl overflow-hidden">
+      <div className="w-full max-w-md rounded-[18px] border border-mist-line bg-ink-bg shadow-popover overflow-hidden">
         <div className="flex flex-col items-center gap-3 px-6 pt-7 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-warning/15 text-warning">
             <ShieldAlert size={26} aria-hidden="true" />

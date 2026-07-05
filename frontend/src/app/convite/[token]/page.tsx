@@ -95,7 +95,7 @@ export default function AceitarConvitePage() {
           <BrandLogo layout="wide" size="lg" scaling={false} />
         </div>
 
-        <div className="rounded-[2rem] border border-mist-line bg-ink-bg/90 p-6 shadow-2xl shadow-black/40 backdrop-blur-xl sm:p-8">
+        <div className="rounded-[2rem] border border-mist-line bg-ink-bg/90 p-6 shadow-popover backdrop-blur-xl sm:p-8">
           {carregando ? (
             <div className="flex flex-col items-center gap-3 py-10 text-center">
               <Loader2 size={26} className="animate-spin text-teal-ink" />
@@ -103,7 +103,7 @@ export default function AceitarConvitePage() {
             </div>
           ) : erroInfo ? (
             <div className="flex flex-col items-center gap-3 py-8 text-center">
-              <div className="grid h-14 w-14 place-items-center rounded-2xl border border-mist-line bg-ink-night">
+              <div className="grid h-14 w-14 place-items-center rounded-lg border border-mist-line bg-ink-night">
                 <AlertCircle size={26} className="text-error-red" />
               </div>
               <h1 className="text-xl font-black text-porcelain-ink">Convite indisponível</h1>
@@ -152,7 +152,7 @@ export default function AceitarConvitePage() {
                     type="email"
                     value={info?.email ?? ""}
                     disabled
-                    className="h-12 w-full cursor-not-allowed rounded-2xl border border-mist-line bg-ink-night px-4 text-base text-text-subtle"
+                    className="h-12 w-full cursor-not-allowed rounded-lg border border-mist-line bg-ink-night px-4 text-base text-text-subtle"
                   />
                 </div>
 
@@ -170,7 +170,7 @@ export default function AceitarConvitePage() {
                     value={nome}
                     onChange={(e) => setNome(e.target.value)}
                     placeholder="Nome completo"
-                    className="h-12 w-full rounded-2xl border border-mist-line bg-surface-raised px-4 text-base text-porcelain-ink outline-none transition placeholder:text-[#5F6F70] focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
+                    className="h-12 w-full rounded-lg border border-mist-line bg-surface-raised px-4 text-base text-porcelain-ink outline-none transition placeholder:text-text-subtle focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
                   />
                 </div>
 
@@ -189,7 +189,7 @@ export default function AceitarConvitePage() {
                       value={senha}
                       onChange={(e) => setSenha(e.target.value)}
                       placeholder="Mínimo 8 caracteres"
-                      className="h-12 w-full rounded-2xl border border-mist-line bg-surface-raised px-4 pr-12 text-base text-porcelain-ink outline-none transition placeholder:text-[#5F6F70] focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
+                      className="h-12 w-full rounded-lg border border-mist-line bg-surface-raised px-4 pr-12 text-base text-porcelain-ink outline-none transition placeholder:text-text-subtle focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
                     />
                     <button
                       type="button"
@@ -203,7 +203,7 @@ export default function AceitarConvitePage() {
                 </div>
 
                 {erro && (
-                  <p className="rounded-2xl border border-error-red/30 bg-error-red/10 p-3 text-sm text-error-red">
+                  <p className="rounded-lg border border-error-red/30 bg-error-red/10 p-3 text-sm text-error-red">
                     {erro}
                   </p>
                 )}
@@ -211,7 +211,7 @@ export default function AceitarConvitePage() {
                 <button
                   type="submit"
                   disabled={enviando}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-teal-ink px-4 font-bold text-ink-night transition hover:bg-ink-gold disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-teal-ink px-4 font-bold text-ink-night transition hover:bg-ink-gold disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {enviando ? (
                     <>
@@ -224,7 +224,7 @@ export default function AceitarConvitePage() {
                 </button>
               </form>
 
-              <p className="mt-6 text-center text-xs text-[#5F6F70]">
+              <p className="mt-6 text-center text-xs text-text-subtle">
                 Ambiente seguro — seus dados ficam protegidos no SessãoInk.
               </p>
             </>

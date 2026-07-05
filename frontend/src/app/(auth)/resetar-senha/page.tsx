@@ -54,7 +54,7 @@ export default function ResetarSenhaPage() {
 
   return (
     <section className="flex min-h-app items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md rounded-[2rem] border border-mist-line bg-ink-bg p-6 shadow-2xl shadow-black/30 sm:p-8">
+      <div className="w-full max-w-md rounded-[2rem] border border-mist-line bg-ink-bg p-6 shadow-popover sm:p-8">
         <Link
           href="/login"
           className="mb-6 inline-flex items-center gap-2 text-sm text-text-subtle hover:text-porcelain-ink"
@@ -65,7 +65,7 @@ export default function ResetarSenhaPage() {
 
         {sucesso ? (
           <div>
-            <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-teal-ink/10 text-teal-ink">
+            <div className="mb-6 grid h-12 w-12 place-items-center rounded-lg bg-teal-ink/10 text-teal-ink">
               <CheckCircle size={24} />
             </div>
 
@@ -76,7 +76,7 @@ export default function ResetarSenhaPage() {
 
             <Link
               href="/login"
-              className="mt-6 flex h-12 w-full items-center justify-center rounded-2xl bg-teal-ink px-4 font-bold text-ink-night transition hover:bg-ink-gold"
+              className="mt-6 flex h-12 w-full items-center justify-center rounded-lg bg-teal-ink px-4 font-bold text-ink-night transition hover:bg-ink-gold"
             >
               Ir para login
             </Link>
@@ -103,7 +103,7 @@ export default function ResetarSenhaPage() {
                   required
                   value={senha}
                   onChange={(event) => setSenha(event.target.value)}
-                  className="h-12 w-full rounded-2xl border border-mist-line bg-surface-raised px-4 text-base text-porcelain-ink outline-none transition focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
+                  className="h-12 w-full rounded-lg border border-mist-line bg-surface-raised px-4 text-base text-porcelain-ink outline-none transition focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
                 />
               </div>
 
@@ -121,12 +121,12 @@ export default function ResetarSenhaPage() {
                   required
                   value={confirmacao}
                   onChange={(event) => setConfirmacao(event.target.value)}
-                  className="h-12 w-full rounded-2xl border border-mist-line bg-surface-raised px-4 text-base text-porcelain-ink outline-none transition focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
+                  className="h-12 w-full rounded-lg border border-mist-line bg-surface-raised px-4 text-base text-porcelain-ink outline-none transition focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
                 />
               </div>
 
               {erro && (
-                <p className="rounded-2xl border border-error-red/30 bg-error-red/10 p-3 text-sm text-error-red">
+                <p className="rounded-lg border border-error-red/30 bg-error-red/10 p-3 text-sm text-error-red">
                   {erro}
                 </p>
               )}
@@ -134,7 +134,7 @@ export default function ResetarSenhaPage() {
               <button
                 type="submit"
                 disabled={carregando}
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-teal-ink px-4 font-bold text-ink-night transition hover:bg-ink-gold disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-teal-ink px-4 font-bold text-ink-night transition hover:bg-ink-gold disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {carregando && <Loader2 size={18} className="animate-spin" />}
                 Salvar nova senha

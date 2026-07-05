@@ -269,8 +269,8 @@ export default function RelatoriosPage() {
                   label: "Finalizados",
                   valor: resumo?.atendimentos_finalizados ?? 0,
                   icon: CheckCircle,
-                  cor: "text-[#4CAF82]",
-                  bg: "bg-[#4CAF82]/10",
+                  cor: "text-success",
+                  bg: "bg-success/10",
                 },
                 {
                   label: "Sinais recebidos",

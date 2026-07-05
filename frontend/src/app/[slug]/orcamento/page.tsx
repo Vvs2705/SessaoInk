@@ -714,7 +714,7 @@ export default function OrcamentoPage() {
                 <button
                   type="button"
                   onClick={() => setMostrarHorarioCustom((v) => !v)}
-                  className="text-xs font-semibold text-copper-needle hover:text-[#D87E52] transition-colors min-h-[44px] text-left"
+                  className="text-xs font-semibold text-copper-needle hover:text-si-warm transition-colors min-h-[44px] text-left"
                 >
                   {mostrarHorarioCustom
                     ? "Esconder horário personalizado"

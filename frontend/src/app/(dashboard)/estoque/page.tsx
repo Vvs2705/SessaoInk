@@ -385,7 +385,7 @@ export default function EstoquePage() {
       {/* ─── Modal Novo Item ─── */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-ink-bg border border-mist-line w-full max-w-md rounded-[18px] shadow-2xl">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-md rounded-[18px] shadow-popover">
             <div className="flex items-center justify-between px-5 py-4 border-b border-mist-line">
               <div className="flex items-center gap-2">
                 <Package size={18} className="text-teal-ink" />
@@ -498,7 +498,7 @@ export default function EstoquePage() {
       {/* ─── Modal Movimentação de Quantidade ─── */}
       {movItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-ink-bg border border-mist-line w-full max-w-sm rounded-[18px] shadow-2xl">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-sm rounded-[18px] shadow-popover">
             <div className="flex items-center justify-between px-5 py-4 border-b border-mist-line">
               <h2 className="text-porcelain-ink font-bold text-sm">Movimentar: {movItem.nome}</h2>
               <button onClick={() => setMovItem(null)} className="text-text-subtle hover:text-porcelain-ink">

@@ -66,6 +66,8 @@
   --accent-soft: rgba(195, 107, 63, .14);
   --warning: #D99A3D;
   --success: #54B88D;
+  --success-hover: #68CCA0;
+  --error-hover: #C94D4B;
   --info: #5E9ED6;
 
   /* Status de atendimento */
@@ -83,6 +85,7 @@
   --fin-sinal-pago: #5E9ED6;
   --fin-pago-total: #54B88D;
   --fin-estornado: #E35D5B;
+  --fin-comissao: #A78BFA;
 
   /* Radius */
   --radius-xs: 8px;

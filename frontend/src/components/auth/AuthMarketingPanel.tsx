@@ -47,9 +47,9 @@ export function AuthMarketingPanel() {
         {BENEFICIOS.map(({ titulo, texto, icon: Icon }) => (
           <article
             key={titulo}
-            className="rounded-3xl border border-mist-line bg-ink-bg/80 p-5 shadow-2xl shadow-black/20 backdrop-blur"
+            className="rounded-xl border border-mist-line bg-ink-bg/80 p-5 shadow-popover backdrop-blur"
           >
-            <div className="mb-4 grid h-11 w-11 place-items-center rounded-2xl border border-teal-ink/25 bg-teal-ink/10 text-teal-ink">
+            <div className="mb-4 grid h-11 w-11 place-items-center rounded-lg border border-teal-ink/25 bg-teal-ink/10 text-teal-ink">
               <Icon size={21} />
             </div>
 

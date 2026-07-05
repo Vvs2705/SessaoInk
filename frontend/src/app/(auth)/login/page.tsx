@@ -243,7 +243,7 @@ export default function LoginPage() {
           <div className="relative">
             <DailyTattooLoginAnimation />
 
-            <div className="relative overflow-hidden rounded-[2rem] border border-mist-line bg-ink-bg/90 p-6 shadow-2xl shadow-black/40 backdrop-blur-xl sm:p-8">
+            <div className="relative overflow-hidden rounded-[2rem] border border-mist-line bg-ink-bg/90 p-6 shadow-popover backdrop-blur-xl sm:p-8">
             <div className="mb-7 hidden justify-center lg:flex">
               <BrandLogo layout="wide" size="lg" scaling={false} />
             </div>
@@ -315,7 +315,7 @@ export default function LoginPage() {
                       onChange={(event) =>
                         setMfaCodigo(event.target.value.replace(/\D/g, ""))
                       }
-                      className="h-12 w-full rounded-2xl border border-mist-line bg-surface-raised px-4 text-center font-mono text-base tracking-[0.5em] text-porcelain-ink outline-none transition focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
+                      className="h-12 w-full rounded-lg border border-mist-line bg-surface-raised px-4 text-center font-mono text-base tracking-[0.5em] text-porcelain-ink outline-none transition focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
                       required
                     />
                   </div>
@@ -324,7 +324,7 @@ export default function LoginPage() {
                 {selectedMetodo === "email" && (
                   <div className="space-y-4">
                     {!emailEnviado ? (
-                      <div className="rounded-2xl border border-mist-line bg-ink-night p-4">
+                      <div className="rounded-lg border border-mist-line bg-ink-night p-4">
                         <p className="text-sm leading-6 text-text-subtle">
                           Enviaremos um código de uso único para o e-mail cadastrado.
                         </p>
@@ -360,7 +360,7 @@ export default function LoginPage() {
                           onChange={(event) =>
                             setMfaCodigo(event.target.value.replace(/\D/g, ""))
                           }
-                          className="h-12 w-full rounded-2xl border border-mist-line bg-surface-raised px-4 text-center font-mono text-base tracking-[0.5em] text-porcelain-ink outline-none transition focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
+                          className="h-12 w-full rounded-lg border border-mist-line bg-surface-raised px-4 text-center font-mono text-base tracking-[0.5em] text-porcelain-ink outline-none transition focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
                           required
                         />
 
@@ -382,7 +382,7 @@ export default function LoginPage() {
                   <p
                     role="alert"
                     aria-live="polite"
-                    className="rounded-2xl border border-error-red/30 bg-error-red/10 p-3 text-sm text-error-red"
+                    className="rounded-lg border border-error-red/30 bg-error-red/10 p-3 text-sm text-error-red"
                   >
                     {mfaError}
                   </p>
@@ -393,7 +393,7 @@ export default function LoginPage() {
                     type="submit"
                     disabled={mfaSubmitting}
                     aria-busy={mfaSubmitting}
-                    className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-teal-ink px-4 font-bold text-ink-night transition hover:bg-ink-gold disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-teal-ink px-4 font-bold text-ink-night transition hover:bg-ink-gold disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {mfaSubmitting ? (
                       <>
@@ -428,7 +428,7 @@ export default function LoginPage() {
                     type="email"
                     autoComplete="email"
                     {...register("email")}
-                    className="h-12 w-full rounded-2xl border border-mist-line bg-surface-raised px-4 text-base text-porcelain-ink outline-none transition placeholder:text-[#5F6F70] focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
+                    className="h-12 w-full rounded-lg border border-mist-line bg-surface-raised px-4 text-base text-porcelain-ink outline-none transition placeholder:text-text-subtle focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
                     placeholder="voce@email.com"
                   />
                   {errors.email && (
@@ -452,7 +452,7 @@ export default function LoginPage() {
                       type={showPass ? "text" : "password"}
                       autoComplete="current-password"
                       {...register("senha")}
-                      className="h-12 w-full rounded-2xl border border-mist-line bg-surface-raised px-4 pr-12 text-base text-porcelain-ink outline-none transition placeholder:text-[#5F6F70] focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
+                      className="h-12 w-full rounded-lg border border-mist-line bg-surface-raised px-4 pr-12 text-base text-porcelain-ink outline-none transition placeholder:text-text-subtle focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
                       placeholder="Sua senha"
                     />
 
@@ -483,7 +483,7 @@ export default function LoginPage() {
                 </div>
 
                 {apiError && (
-                  <p className="rounded-2xl border border-error-red/30 bg-error-red/10 p-3 text-sm text-error-red">
+                  <p className="rounded-lg border border-error-red/30 bg-error-red/10 p-3 text-sm text-error-red">
                     {apiError}
                   </p>
                 )}
@@ -492,7 +492,7 @@ export default function LoginPage() {
                   type="submit"
                   disabled={isSubmitting}
                   aria-busy={isSubmitting}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-teal-ink px-4 font-bold text-ink-night transition hover:bg-ink-gold disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-teal-ink px-4 font-bold text-ink-night transition hover:bg-ink-gold disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSubmitting ? (
                     <>
@@ -518,7 +518,7 @@ export default function LoginPage() {
               </p>
             )}
 
-            <p className="mt-6 text-center text-xs text-[#5F6F70]">
+            <p className="mt-6 text-center text-xs text-text-subtle">
               Ambiente seguro — seus dados ficam protegidos no SessãoInk.
             </p>
             </div>

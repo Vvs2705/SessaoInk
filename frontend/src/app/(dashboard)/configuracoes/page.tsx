@@ -127,7 +127,7 @@ function Toast({
   return (
     <div
       className={cn(
-        "fixed bottom-6 right-6 flex items-center gap-3 px-4 py-3 rounded-[14px] border shadow-xl z-50 animate-in slide-in-from-bottom-4",
+        "fixed bottom-6 right-6 flex items-center gap-3 px-4 py-3 rounded-[14px] border shadow-ink-lg z-50 animate-in slide-in-from-bottom-4",
         tipo === "sucesso"
           ? "bg-ink-bg border-teal-ink/40 text-teal-ink"
           : "bg-ink-bg border-error-red/40 text-error-red"
@@ -2529,7 +2529,7 @@ export default function ConfiguracoesPage() {
       {/* Modal TOTP Setup */}
       {showTotpSetupModal && totpSetupData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-ink-bg border border-mist-line w-full max-w-md rounded-[18px] shadow-2xl overflow-hidden">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-md rounded-[18px] shadow-popover overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-mist-line">
               <h2 className="text-porcelain-ink font-bold text-sm">Configurar App Autenticador</h2>
               <button
@@ -2617,7 +2617,7 @@ export default function ConfiguracoesPage() {
       {/* Modal Desativar MFA */}
       {showMfaDisableModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-ink-bg border border-mist-line w-full max-w-md rounded-[18px] shadow-2xl overflow-hidden">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-md rounded-[18px] shadow-popover overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-mist-line">
               <h2 className="text-porcelain-ink font-bold text-sm">
                 Desativar {showMfaDisableModal.type === "totp" ? "App Autenticador" : "Código por E-mail"}
@@ -2667,7 +2667,7 @@ export default function ConfiguracoesPage() {
                   type="button"
                   disabled={mfaDisablePending || !mfaDisablePassword}
                   onClick={handleDisableMfa}
-                  className="flex-1 h-10 rounded-[12px] bg-error-red hover:bg-[#c94d4b] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm transition-all flex items-center justify-center gap-2"
+                  className="flex-1 h-10 rounded-[12px] bg-error-red hover:bg-error-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm transition-all flex items-center justify-center gap-2"
                 >
                   {mfaDisablePending && <Loader2 size={14} className="animate-spin" />}
                   Confirmar e Desativar
@@ -2681,7 +2681,7 @@ export default function ConfiguracoesPage() {
       {/* Modal de ativação do 2º fator por e-mail (step-up: exige a senha) */}
       {showMfaEmailActivateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-ink-bg border border-mist-line w-full max-w-md rounded-[18px] shadow-2xl overflow-hidden">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-md rounded-[18px] shadow-popover overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-mist-line">
               <h2 className="text-porcelain-ink font-bold text-sm">
                 Ativar Código por E-mail
@@ -2745,7 +2745,7 @@ export default function ConfiguracoesPage() {
       {/* Modal de solicitação de exclusão (LGPD art. 18, VI) */}
       {showExclusaoModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-ink-bg border border-mist-line w-full max-w-md rounded-[18px] shadow-2xl overflow-hidden">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-md rounded-[18px] shadow-popover overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-mist-line">
               <div className="flex items-center gap-2">
                 <ShieldAlert size={18} className="text-error-red" />
@@ -2779,7 +2779,7 @@ export default function ConfiguracoesPage() {
                   type="button"
                   disabled={solicitandoExclusao}
                   onClick={handleSolicitarExclusao}
-                  className="flex-1 h-10 rounded-[12px] bg-error-red hover:bg-[#c94d4b] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm transition-all flex items-center justify-center gap-2"
+                  className="flex-1 h-10 rounded-[12px] bg-error-red hover:bg-error-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm transition-all flex items-center justify-center gap-2"
                 >
                   {solicitandoExclusao && <Loader2 size={14} className="animate-spin" />}
                   Confirmar solicitação
@@ -2793,7 +2793,7 @@ export default function ConfiguracoesPage() {
       {/* Modal de confirmação do slug */}
       {showModalSlug && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-ink-bg border border-mist-line w-full max-w-md rounded-[18px] shadow-2xl overflow-hidden">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-md rounded-[18px] shadow-popover overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-mist-line">
               <div className="flex items-center gap-2">
                 <AlertCircle size={18} className="text-copper-needle" />
@@ -2825,7 +2825,7 @@ export default function ConfiguracoesPage() {
                   type="button"
                   disabled={atualizarSlug.isPending}
                   onClick={() => atualizarSlug.mutate(novoSlug)}
-                  className="flex-1 h-10 rounded-[12px] bg-error-red hover:bg-[#c94d4b] disabled:opacity-60 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2"
+                  className="flex-1 h-10 rounded-[12px] bg-error-red hover:bg-error-hover disabled:opacity-60 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2"
                 >
                   {atualizarSlug.isPending && <Loader2 size={14} className="animate-spin" />}
                   Confirmar e Mudar

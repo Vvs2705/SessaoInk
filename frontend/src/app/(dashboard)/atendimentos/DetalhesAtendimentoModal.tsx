@@ -146,7 +146,7 @@ export default function DetalhesAtendimentoModal({ atendimento, onClose }: Detal
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-3xl bg-ink-bg border border-mist-line rounded-[18px] shadow-2xl my-8">
+      <div className="relative w-full max-w-3xl bg-ink-bg border border-mist-line rounded-[18px] shadow-popover my-8">
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-mist-line">
@@ -469,7 +469,7 @@ export default function DetalhesAtendimentoModal({ atendimento, onClose }: Detal
             src={imagemExpandida}
             alt="Referência Ampliada"
             crossOrigin="use-credentials"
-            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-popover"
           />
         </div>
       )}

@@ -115,7 +115,7 @@ function AgendarSessaoModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-ink-bg border border-mist-line rounded-[18px] shadow-2xl">
+      <div className="w-full max-w-md bg-ink-bg border border-mist-line rounded-[18px] shadow-popover">
         <div className="flex items-center justify-between px-6 py-4 border-b border-mist-line">
           <h2 className="text-base font-bold text-porcelain-ink">Agendar Sessão</h2>
           <button onClick={onClose} className="p-2 rounded-[10px] text-text-subtle hover:text-porcelain-ink hover:bg-surface-raised transition-all">

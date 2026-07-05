@@ -52,7 +52,7 @@ function Toast({
   return (
     <div
       className={cn(
-        "fixed bottom-6 right-6 flex items-center gap-3 px-4 py-3 rounded-[14px] border shadow-xl z-50 animate-in slide-in-from-bottom-4",
+        "fixed bottom-6 right-6 flex items-center gap-3 px-4 py-3 rounded-[14px] border shadow-ink-lg z-50 animate-in slide-in-from-bottom-4",
         tipo === "sucesso"
           ? "bg-ink-bg border-teal-ink/40 text-teal-ink"
           : "bg-ink-bg border-error-red/40 text-error-red"
@@ -508,7 +508,7 @@ export default function PortfolioPage() {
       {/* ─── Modal: Confirmar arquivamento ─── */}
       {arqItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-ink-bg border border-mist-line w-full max-w-sm rounded-[18px] shadow-2xl overflow-hidden">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-sm rounded-[18px] shadow-popover overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-mist-line">
               <div className="flex items-center gap-2">
                 <Trash2 size={18} className="text-error-red" />
@@ -525,7 +525,7 @@ export default function PortfolioPage() {
               {arqError && <div className="p-2 bg-error-red/10 border border-error-red/20 text-error-red text-xs rounded-lg">{arqError}</div>}
               <div className="flex gap-3">
                 <button type="button" onClick={() => setArqItem(null)} className="flex-1 h-10 rounded-[12px] border border-mist-line hover:bg-surface-raised text-porcelain-ink font-semibold text-sm">Cancelar</button>
-                <button type="button" disabled={arquivarMutation.isPending} onClick={() => arquivarMutation.mutate(arqItem.id)} className="flex-1 h-10 rounded-[12px] bg-error-red hover:bg-[#c94d4b] disabled:opacity-60 text-white font-semibold text-sm flex items-center justify-center gap-2">
+                <button type="button" disabled={arquivarMutation.isPending} onClick={() => arquivarMutation.mutate(arqItem.id)} className="flex-1 h-10 rounded-[12px] bg-error-red hover:bg-error-hover disabled:opacity-60 text-white font-semibold text-sm flex items-center justify-center gap-2">
                   {arquivarMutation.isPending && <Loader2 size={14} className="animate-spin" />}
                   {arquivarMutation.isPending ? "Arquivando..." : "Arquivar"}
                 </button>
@@ -538,7 +538,7 @@ export default function PortfolioPage() {
       {/* ─── Modal: Confirmar autorização de publicação ─── */}
       {pubItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-ink-bg border border-mist-line w-full max-w-sm rounded-[18px] shadow-2xl overflow-hidden">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-sm rounded-[18px] shadow-popover overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-mist-line">
               <div className="flex items-center gap-2">
                 <ShieldCheck size={18} className="text-teal-ink" />
@@ -571,7 +571,7 @@ export default function PortfolioPage() {
       {/* ─── Modal: Confirmar exclusão permanente (Admin) ─── */}
       {permItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-ink-bg border border-mist-line w-full max-w-sm rounded-[18px] shadow-2xl overflow-hidden">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-sm rounded-[18px] shadow-popover overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-mist-line">
               <div className="flex items-center gap-2">
                 <AlertCircle size={18} className="text-error-red" />
@@ -595,7 +595,7 @@ export default function PortfolioPage() {
               {permError && <div className="p-2 bg-error-red/10 border border-error-red/20 text-error-red text-xs rounded-lg">{permError}</div>}
               <div className="flex gap-3">
                 <button type="button" onClick={() => setPermItem(null)} className="flex-1 h-10 rounded-[12px] border border-mist-line hover:bg-surface-raised text-porcelain-ink font-semibold text-sm">Cancelar</button>
-                <button type="button" disabled={confirmTexto !== "EXCLUIR" || permanenteMutation.isPending} onClick={() => permanenteMutation.mutate(permItem.id)} className="flex-1 h-10 rounded-[12px] bg-error-red hover:bg-[#c94d4b] disabled:opacity-50 text-white font-semibold text-sm flex items-center justify-center gap-2">
+                <button type="button" disabled={confirmTexto !== "EXCLUIR" || permanenteMutation.isPending} onClick={() => permanenteMutation.mutate(permItem.id)} className="flex-1 h-10 rounded-[12px] bg-error-red hover:bg-error-hover disabled:opacity-50 text-white font-semibold text-sm flex items-center justify-center gap-2">
                   {permanenteMutation.isPending && <Loader2 size={14} className="animate-spin" />}
                   {permanenteMutation.isPending ? "Excluindo..." : "Excluir permanentemente"}
                 </button>

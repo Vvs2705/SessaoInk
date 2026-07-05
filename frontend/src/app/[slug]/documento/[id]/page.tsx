@@ -118,7 +118,7 @@ export default function DocumentoAssinaturaPage() {
     return (
       <div className="min-h-screen bg-ink-night flex items-center justify-center p-6">
         <div className="text-center max-w-sm">
-          <div className="w-16 h-16 rounded-2xl bg-ink-bg border border-mist-line mx-auto mb-5 flex items-center justify-center">
+          <div className="w-16 h-16 rounded-lg bg-ink-bg border border-mist-line mx-auto mb-5 flex items-center justify-center">
             <AlertCircle size={28} className="text-error-red" />
           </div>
           <h1 className="text-xl font-bold text-porcelain-ink mb-2">Erro ao carregar termo</h1>
@@ -133,7 +133,7 @@ export default function DocumentoAssinaturaPage() {
       <div className="max-w-lg w-full">
         {/* Header */}
         <div className="text-center mb-8 flex flex-col items-center">
-          <div className="w-14 h-14 rounded-2xl bg-teal-ink/10 border border-teal-ink/20 flex items-center justify-center mb-4">
+          <div className="w-14 h-14 rounded-lg bg-teal-ink/10 border border-teal-ink/20 flex items-center justify-center mb-4">
             <FileText size={24} className="text-teal-ink" />
           </div>
           <h1 className="text-xl font-bold text-porcelain-ink">{documento?.titulo}</h1>
@@ -141,7 +141,7 @@ export default function DocumentoAssinaturaPage() {
         </div>
 
         {/* Card do Termo */}
-        <div className="bg-ink-bg border border-mist-line rounded-[18px] p-6 shadow-xl mb-6 space-y-4">
+        <div className="bg-ink-bg border border-mist-line rounded-[18px] p-6 shadow-ink-lg mb-6 space-y-4">
           <div className="max-h-60 overflow-y-auto pr-2 text-sm text-smoke-text leading-relaxed border border-mist-line/50 rounded-[12px] p-4 bg-ink-night/40 font-mono whitespace-pre-wrap">
             {documento?.conteudo || "Sem conteúdo disponível no momento."}
           </div>

@@ -306,7 +306,7 @@ export default function FlashArtsPage() {
       {/* Modal dialog for creating Flash Art */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-ink-bg border border-mist-line w-full max-w-lg rounded-[18px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-lg rounded-[18px] overflow-hidden shadow-popover flex flex-col max-h-[90vh]">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-mist-line">
               <div className="flex items-center gap-2">

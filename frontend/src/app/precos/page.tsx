@@ -118,7 +118,7 @@ export default function PrecosPage() {
                   key={p.slug}
                   className={`relative flex flex-col rounded-[18px] border p-6 ${
                     p.destaque
-                      ? "border-teal-ink bg-ink-bg shadow-lg shadow-teal-ink/10"
+                      ? "border-teal-ink bg-ink-bg shadow-card"
                       : "border-mist-line bg-ink-bg"
                   }`}
                 >
@@ -164,7 +164,7 @@ export default function PrecosPage() {
                     href="/cadastro"
                     className={`mt-4 block w-full py-2.5 rounded-[12px] font-semibold text-sm text-center transition-colors ${
                       p.destaque
-                        ? "bg-teal-ink text-ink-night hover:bg-[#34a394]"
+                        ? "bg-teal-ink text-ink-night hover:bg-primary-hover"
                         : "bg-surface-raised text-porcelain-ink border border-mist-line hover:border-teal-ink/40"
                     }`}
                   >
@@ -183,9 +183,9 @@ export default function PrecosPage() {
                         {r.incluso ? (
                           <Check size={16} className="text-teal-ink shrink-0 mt-0.5" />
                         ) : (
-                          <X size={16} className="text-[#4a5a5f] shrink-0 mt-0.5" />
+                          <X size={16} className="text-ink-subtle shrink-0 mt-0.5" />
                         )}
-                        <span className={r.incluso ? "" : "text-[#5a6a6f] line-through"}>
+                        <span className={r.incluso ? "" : "text-text-subtle line-through"}>
                           {r.label}
                           {r.detalhe && (
                             <span className="text-text-subtle"> — {r.detalhe}</span>
@@ -345,7 +345,7 @@ function LeadModal({
             <button
               type="submit"
               disabled={enviando}
-              className="w-full py-2.5 rounded-[12px] bg-teal-ink text-ink-night font-semibold text-sm hover:bg-[#34a394] disabled:opacity-60"
+              className="w-full py-2.5 rounded-[12px] bg-teal-ink text-ink-night font-semibold text-sm hover:bg-primary-hover disabled:opacity-60"
             >
               {enviando ? "Enviando…" : "Enviar interesse"}
             </button>

@@ -135,7 +135,7 @@ export default async function PortalPublicoPage({ params }: Props) {
     return (
       <div className="min-h-screen bg-ink-night flex items-center justify-center p-6">
         <div className="text-center max-w-sm">
-          <div className="w-16 h-16 rounded-2xl bg-ink-bg border border-mist-line mx-auto mb-5 flex items-center justify-center">
+          <div className="w-16 h-16 rounded-lg bg-ink-bg border border-mist-line mx-auto mb-5 flex items-center justify-center">
             <AlertCircle size={28} className="text-copper-needle" />
           </div>
           <h1 className="text-xl font-bold text-porcelain-ink mb-2">
@@ -292,7 +292,7 @@ export default async function PortalPublicoPage({ params }: Props) {
 
         {portfolio.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 bg-ink-bg border border-mist-line rounded-[18px] text-center">
-            <div className="w-14 h-14 rounded-2xl bg-ink-night border border-mist-line flex items-center justify-center mb-4">
+            <div className="w-14 h-14 rounded-lg bg-ink-night border border-mist-line flex items-center justify-center mb-4">
               <ImageIcon size={22} className="text-mist-line" />
             </div>
             <p className="text-sm font-medium text-text-subtle">

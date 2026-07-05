@@ -208,7 +208,7 @@ export default function DocumentosPage() {
       {/* ─── Modal Novo Documento ─── */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-ink-bg border border-mist-line w-full max-w-lg rounded-[18px] shadow-2xl flex flex-col max-h-[90vh]">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-lg rounded-[18px] shadow-popover flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between px-5 py-4 border-b border-mist-line">
               <div className="flex items-center gap-2">
                 <FileText size={18} className="text-teal-ink" />
@@ -297,7 +297,7 @@ export default function DocumentosPage() {
       {/* ─── Modal Visualizar Documento ─── */}
       {viewDoc && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-ink-bg border border-mist-line w-full max-w-2xl rounded-[18px] shadow-2xl flex flex-col max-h-[85vh]">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-2xl rounded-[18px] shadow-popover flex flex-col max-h-[85vh]">
             <div className="flex items-start justify-between px-5 py-4 border-b border-mist-line">
               <div>
                 <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border", TIPO_CONFIG[viewDoc.tipo]?.cls)}>

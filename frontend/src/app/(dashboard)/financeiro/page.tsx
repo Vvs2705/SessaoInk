@@ -124,7 +124,7 @@ const STATUS_COLORS: Record<string, string> = {
 const TYPE_CONFIG: Record<string, { label: string; cls: string }> = {
   ENTRADA: { label: "Entrada", cls: "text-success" },
   SAIDA: { label: "Saída", cls: "text-error-red" },
-  COMISSAO: { label: "Comissão", cls: "text-[#A78BFA]" },
+  COMISSAO: { label: "Comissão", cls: "text-fin-comissao" },
   SINAL: { label: "Sinal", cls: "text-info" },
   RESERVA: { label: "Reserva", cls: "text-info" }, // Blue color for agenda/reserva status constraint
   ESTORNO: { label: "Estorno", cls: "text-error-red" },
@@ -166,7 +166,7 @@ function Toast({
   return (
     <div
       className={cn(
-        "fixed bottom-6 right-6 flex items-center gap-3 px-4 py-3 rounded-[14px] border shadow-xl z-50 animate-in slide-in-from-bottom-4",
+        "fixed bottom-6 right-6 flex items-center gap-3 px-4 py-3 rounded-[14px] border shadow-ink-lg z-50 animate-in slide-in-from-bottom-4",
         tipo === "sucesso"
           ? "bg-ink-bg border-teal-ink/40 text-teal-ink"
           : "bg-ink-bg border-error-red/40 text-error-red"
@@ -612,7 +612,7 @@ export default function FinanceiroPage() {
           ) : (
             consolidado && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 shadow-lg flex items-center justify-between">
+                <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 shadow-card flex items-center justify-between">
                   <div>
                     <span className="text-[10px] text-text-subtle font-bold uppercase tracking-wider">Receitas (Pagas)</span>
                     <h3 className="text-2xl font-extrabold text-success mt-1">{formatCurrency(consolidado.resumo.entradas_pagas)}</h3>
@@ -623,7 +623,7 @@ export default function FinanceiroPage() {
                   </div>
                 </div>
 
-                <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 shadow-lg flex items-center justify-between">
+                <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 shadow-card flex items-center justify-between">
                   <div>
                     <span className="text-[10px] text-text-subtle font-bold uppercase tracking-wider">Despesas (Pagas)</span>
                     <h3 className="text-2xl font-extrabold text-error-red mt-1">{formatCurrency(consolidado.resumo.saidas_pagas)}</h3>
@@ -634,7 +634,7 @@ export default function FinanceiroPage() {
                   </div>
                 </div>
 
-                <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 shadow-lg flex items-center justify-between">
+                <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 shadow-card flex items-center justify-between">
                   <div>
                     <span className="text-[10px] text-text-subtle font-bold uppercase tracking-wider">Saldo Líquido</span>
                     <h3 className={cn("text-2xl font-extrabold mt-1", consolidado.resumo.saldo_realizado >= 0 ? "text-success" : "text-error-red")}>
@@ -647,7 +647,7 @@ export default function FinanceiroPage() {
                   </div>
                 </div>
 
-                <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 shadow-lg flex items-center justify-between">
+                <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 shadow-card flex items-center justify-between">
                   <div>
                     <span className="text-[10px] text-text-subtle font-bold uppercase tracking-wider">Comissões Pendentes</span>
                     <h3 className="text-2xl font-extrabold text-warning mt-1">{formatCurrency(consolidado.resumo.comissoes_pendentes)}</h3>
@@ -665,7 +665,7 @@ export default function FinanceiroPage() {
           {consolidado && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Daily Flow Chart (SVG) */}
-              <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 space-y-4 shadow-lg">
+              <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 space-y-4 shadow-card">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <h3 className="text-sm font-bold text-porcelain-ink">Fluxo diário (Entradas vs Saídas)</h3>
@@ -704,8 +704,8 @@ export default function FinanceiroPage() {
                             aria-label={`${diaLabel}: entradas ${formatCurrency(d.entradas)}, saídas ${formatCurrency(d.saidas)}`}
                           >
                             <div className="w-full flex gap-0.5 justify-center items-end h-full" aria-hidden="true">
-                              <div style={{ height: `${entPct}%` }} className="w-2.5 bg-success rounded-t-[3px] hover:bg-[#68cca0] transition-all" title={`Entrada: ${formatCurrency(d.entradas)}`} />
-                              <div style={{ height: `${saiPct}%` }} className="w-2.5 bg-error-red rounded-t-[3px] hover:bg-[#c94d4b] transition-all" title={`Saída: ${formatCurrency(d.saidas)}`} />
+                              <div style={{ height: `${entPct}%` }} className="w-2.5 bg-success rounded-t-[3px] hover:bg-success-hover transition-all" title={`Entrada: ${formatCurrency(d.entradas)}`} />
+                              <div style={{ height: `${saiPct}%` }} className="w-2.5 bg-error-red rounded-t-[3px] hover:bg-error-hover transition-all" title={`Saída: ${formatCurrency(d.saidas)}`} />
                             </div>
                             <span className="text-[9px] text-text-subtle font-semibold mt-2.5 transform -rotate-45 origin-top-left translate-y-1 block whitespace-nowrap" aria-hidden="true">{d.dia.split("-")[2]}</span>
                           </div>
@@ -719,7 +719,7 @@ export default function FinanceiroPage() {
               {/* Artist and Category Charts */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {/* Revenue by Artist */}
-                <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 space-y-4 shadow-lg flex flex-col">
+                <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 space-y-4 shadow-card flex flex-col">
                   <div>
                     <h3 className="text-sm font-bold text-porcelain-ink">Receita por Artista</h3>
                     <p className="text-xs text-text-subtle">Faturamento no período</p>
@@ -748,7 +748,7 @@ export default function FinanceiroPage() {
                 </div>
 
                 {/* Expenses by Category */}
-                <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 space-y-4 shadow-lg flex flex-col">
+                <div className="bg-ink-bg border border-mist-line rounded-[18px] p-5 space-y-4 shadow-card flex flex-col">
                   <div>
                     <h3 className="text-sm font-bold text-porcelain-ink">Despesas por Categoria</h3>
                     <p className="text-xs text-text-subtle">Classificação de saídas</p>
@@ -846,7 +846,7 @@ export default function FinanceiroPage() {
 
           {/* List Loader */}
           {isLoadingLancamentos && (
-            <div className="bg-ink-bg border border-mist-line rounded-[18px] overflow-hidden shadow-xl p-5 space-y-3 animate-pulse">
+            <div className="bg-ink-bg border border-mist-line rounded-[18px] overflow-hidden shadow-ink-lg p-5 space-y-3 animate-pulse">
               {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className="flex items-center justify-between py-3 border-b border-mist-line/30 last:border-b-0">
                   <div className="flex items-center gap-4 flex-1">
@@ -875,7 +875,7 @@ export default function FinanceiroPage() {
 
           {/* Desktop Table & Mobile Cards */}
           {!isLoadingLancamentos && filteredLancamentos.length > 0 && (
-            <div className="bg-ink-bg border border-mist-line rounded-[18px] overflow-hidden shadow-xl">
+            <div className="bg-ink-bg border border-mist-line rounded-[18px] overflow-hidden shadow-ink-lg">
               <div className="hidden lg:block overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
@@ -947,7 +947,7 @@ export default function FinanceiroPage() {
                             {item.tipo === "COMISSAO" && item.status === "PENDENTE" && isAdmin && (
                               <button
                                 onClick={() => pagarComissaoMutation.mutate(item.id)}
-                                className="p-1.5 rounded-[8px] bg-[#A78BFA]/10 border border-[#A78BFA]/20 hover:bg-[#A78BFA] hover:text-ink-night text-[#A78BFA] transition-all"
+                                className="p-1.5 rounded-[8px] bg-fin-comissao/10 border border-fin-comissao/20 hover:bg-fin-comissao hover:text-ink-night text-fin-comissao transition-all"
                                 title="Confirmar pagamento de comissão"
                               >
                                 <Check size={13} />
@@ -1042,7 +1042,7 @@ export default function FinanceiroPage() {
       {/* Modal dialog for creating/editing launches */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-ink-bg border border-mist-line w-full max-w-lg rounded-[20px] overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-lg rounded-[20px] overflow-hidden shadow-popover flex flex-col max-h-[85vh]">
             <div className="flex items-center justify-between px-6 py-4 border-b border-mist-line shrink-0">
               <h2 className="text-base font-bold text-porcelain-ink">{editingItem ? "Editar Lançamento" : "Novo Lançamento"}</h2>
               <button onClick={() => setIsModalOpen(false)} className="text-text-subtle hover:text-porcelain-ink">
@@ -1285,7 +1285,7 @@ export default function FinanceiroPage() {
       {/* Modal dialog for generating commissions */}
       {isComissaoModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-ink-bg border border-mist-line w-full max-w-md rounded-[20px] overflow-hidden shadow-2xl flex flex-col">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-md rounded-[20px] overflow-hidden shadow-popover flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-mist-line shrink-0">
               <div className="flex items-center gap-2 text-teal-ink">
                 <Percent size={18} />
@@ -1406,7 +1406,7 @@ export default function FinanceiroPage() {
       {/* Modal: Confirmar Exclusão */}
       {deleteItemId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-ink-bg border border-error-red/20 w-full max-w-sm rounded-[20px] overflow-hidden shadow-2xl p-6 space-y-4">
+          <div className="bg-ink-bg border border-error-red/20 w-full max-w-sm rounded-[20px] overflow-hidden shadow-popover p-6 space-y-4">
             <div className="flex items-center gap-3 text-error-red">
               <AlertCircle size={24} />
               <h3 className="text-base font-bold text-porcelain-ink">Confirmar Exclusão</h3>
@@ -1427,7 +1427,7 @@ export default function FinanceiroPage() {
                   setDeleteItemId(null);
                 }}
                 disabled={deleteLancamentoMutation.isPending}
-                className="flex-1 h-9 rounded-[10px] bg-error-red hover:bg-[#c94d4b] text-white text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
+                className="flex-1 h-9 rounded-[10px] bg-error-red hover:bg-error-hover text-white text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
               >
                 {deleteLancamentoMutation.isPending && <Loader2 size={12} className="animate-spin" />}
                 Excluir

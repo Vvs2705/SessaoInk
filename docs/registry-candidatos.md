@@ -17,7 +17,7 @@
 | **CurrencyInput** | `frontend/src/components/ui/CurrencyInput.tsx` | baixo | 5/5 | nenhuma (máscara BRL isolada em utils) |
 | **BrandLogo** | `frontend/src/components/BrandLogo.tsx` | baixo | 5/5 | src da imagem via prop |
 | PageGuide | `frontend/src/components/PageGuide.tsx` | médio | 4/5 | receber guia via prop (hoje `resolveGuide(pathname)`) |
-| BuscaModal → SearchModal | `frontend/src/components/BuscaModal.tsx` | médio-alto | 4/5 | tipos/ícones/href/busca via config+callbacks |
+| ~~BuscaModal → SearchModal~~ | `frontend/src/components/BuscaModal.tsx` | — | **extraído** | publicado como `@vstack/search-modal`; BuscaModal é wrapper fino de config |
 | Sidebar | `frontend/src/components/layout/Sidebar.tsx` | médio | 4/5 | `navItems`/`userRole`/`onLogout` via props (remover `useRole`) |
 | BottomNav | `frontend/src/components/layout/BottomNav.tsx` | médio | 4/5 | idem Sidebar |
 | MfaEnforcementGate | `frontend/src/components/MfaEnforcementGate.tsx` | alto | 3/5 | carência/role/query via props |

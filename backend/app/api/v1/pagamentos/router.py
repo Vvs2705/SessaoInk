@@ -233,6 +233,27 @@ async def criar_checkout(
     return CheckoutResponse(**resultado)
 
 
+def _parse_next_payment(valor: str | None) -> datetime | None:
+    """Converte o next_payment_date do preapproval (ISO com offset) em datetime
+    UTC-aware; None se ausente/inválido."""
+    if not valor:
+        return None
+    try:
+        dt = datetime.fromisoformat(valor)
+    except (ValueError, TypeError):
+        return None
+    return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
+
+
+def _resumo_com_cancelamento(assinatura: Assinatura | None) -> dict:
+    """Resumo da assinatura + flag `cancelar_no_fim` (o `resumo` do service não a
+    expõe e está fora do escopo desta raia). O frontend usa a flag para mostrar
+    'Cancelamento agendado' em vez do botão de cancelar."""
+    dados = resumo_assinatura(assinatura)
+    dados["cancelar_no_fim"] = bool(assinatura.cancelar_no_fim) if assinatura else False
+    return dados
+
+
 @router.get("/assinatura")
 async def status_assinatura(
     session: AsyncSession = Depends(get_session),
@@ -240,7 +261,76 @@ async def status_assinatura(
 ):
     """Status da assinatura do estúdio (plano, trial, dias restantes) para o frontend."""
     assinatura = await get_assinatura(session, usuario.estudio_id)
-    return resumo_assinatura(assinatura)
+    return _resumo_com_cancelamento(assinatura)
+
+
+@router.post("/cancelar")
+async def cancelar_assinatura(
+    session: AsyncSession = Depends(get_session),
+    usuario: Usuario = Depends(require_role(TipoUsuario.ADMIN)),
+):
+    """Cancelamento in-app da assinatura (ADMIN do estúdio).
+
+    Padrão SaaS justo: NÃO revoga o acesso na hora — apenas agenda o fim
+    (`cancelar_no_fim=True`), mantendo o acesso até o término do período/trial já
+    pago, e desliga a recorrência no gateway para não haver nova cobrança.
+
+    - Mensal recorrente (preapproval): cancela o preapproval no Mercado Pago.
+    - Avulso (trimestral/semestral/anual): não há recorrência no gateway — só
+      marca localmente (o período pago segue até `periodo_fim`).
+
+    Idempotente: com o cancelamento já agendado, a 2ª chamada não repete o efeito
+    nem fala de novo com o gateway. Reembolso (CDC 7 dias) segue manual pelo painel.
+    """
+    assinatura = await get_assinatura(session, usuario.estudio_id)
+    if assinatura is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Nenhuma assinatura para cancelar.",
+        )
+
+    # Idempotência: já agendado → devolve o resumo sem tocar no gateway de novo.
+    if assinatura.cancelar_no_fim:
+        return _resumo_com_cancelamento(assinatura)
+
+    # Mensal recorrente tem preapproval no MP a cancelar; avulso não. Se o MP
+    # falhar, aborta ANTES de marcar o estado local — nada de assinatura marcada
+    # como cancelada localmente enquanto a recorrência segue viva no gateway.
+    if assinatura.ciclo == "mensal" and assinatura.externo_id and gateway.configurado():
+        try:
+            # Lê o fim do ciclo já pago ANTES de cancelar (o MP limpa o
+            # next_payment_date após o cancelamento). O acesso segue até essa data.
+            pre = await gateway.obter_preapproval(assinatura.externo_id)
+            fim_ciclo = _parse_next_payment(pre.get("next_payment_date"))
+            await gateway.cancelar_preapproval(assinatura.externo_id)
+        except GatewayPagamentoError as exc:
+            logger.warning("cancelamento_mp_falhou", extra={"extra": {"erro": str(exc)}})
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Não foi possível cancelar no gateway agora. Tente novamente em instantes.",
+            ) from exc
+        # Mantém o acesso até o fim do ciclo pago (enforcement lazy via periodo_fim).
+        # Sem esse fim, o webhook `cancelled` que o MP dispara agora suspenderia o
+        # acesso na hora — quebrando a promessa "use até o fim do período".
+        assinatura.periodo_fim = fim_ciclo or (datetime.now(UTC) + timedelta(days=31))
+
+    # NÃO mexe em `status` (segue ATIVA): o acesso vale por acesso_liberado() até o
+    # trial/periodo_fim. O webhook `preapproval cancelled` respeita cancelar_no_fim
+    # e não suspende — a expiração é lazy pelo periodo_fim gravado acima.
+    assinatura.cancelar_no_fim = True
+
+    await log_event(
+        session,
+        acao="assinatura.cancelamento_agendado",
+        estudio_id=usuario.estudio_id,
+        actor_usuario_id=usuario.id,
+        actor_tipo=usuario.tipo.value,
+        entidade="assinatura",
+        entidade_id=str(assinatura.id),
+        dados={"ciclo": assinatura.ciclo, "via": "in_app"},
+        commit=True,
+    )
+    return _resumo_com_cancelamento(assinatura)
 
 
 async def _reconciliar_cobranca_via_mp(session: AsyncSession, cobranca: Cobranca) -> str:
@@ -629,23 +719,47 @@ async def webhook_mercadopago(
                                     },
                                 )
 
-                # Assinatura recorrente cancelada/pausada (ex.: falha de cobrança)
-                # → suspende o acesso (proteção de receita).
+                # Assinatura recorrente cancelada/pausada. Duas origens distintas:
+                #  - Cancelamento AGENDADO pelo usuário (in-app, cancelar_no_fim=True):
+                #    o /cancelar já gravou periodo_fim = fim do ciclo pago. NÃO
+                #    suspende — o acesso segue até periodo_fim (expiração lazy),
+                #    honrando "cancele quando quiser, use até o fim do período".
+                #  - Cancelado/pausado pelo MP sem pedido do usuário (falha de
+                #    cobrança) → suspende na hora (proteção de receita).
                 elif pre_status in ("cancelled", "paused"):
                     if assinatura and assinatura.status == StatusAssinatura.ATIVA:
-                        assinatura.status = StatusAssinatura.SUSPENSA
-                        await log_event(
-                            session,
-                            acao="assinatura.suspended",
-                            estudio_id=assinatura.estudio_id,
-                            entidade="assinatura",
-                            entidade_id=str(assinatura.id),
-                            dados={
-                                "motivo": pre_status,
-                                "cobranca": str(cobranca.id),
-                                "via": "preapproval",
-                            },
-                        )
+                        if assinatura.cancelar_no_fim:
+                            await log_event(
+                                session,
+                                acao="assinatura.cancelamento_confirmado",
+                                estudio_id=assinatura.estudio_id,
+                                entidade="assinatura",
+                                entidade_id=str(assinatura.id),
+                                dados={
+                                    "motivo": pre_status,
+                                    "cobranca": str(cobranca.id),
+                                    "via": "preapproval",
+                                    "acesso_ate": (
+                                        assinatura.periodo_fim.isoformat()
+                                        if assinatura.periodo_fim
+                                        else None
+                                    ),
+                                },
+                            )
+                        else:
+                            assinatura.status = StatusAssinatura.SUSPENSA
+                            await log_event(
+                                session,
+                                acao="assinatura.suspended",
+                                estudio_id=assinatura.estudio_id,
+                                entidade="assinatura",
+                                entidade_id=str(assinatura.id),
+                                dados={
+                                    "motivo": pre_status,
+                                    "cobranca": str(cobranca.id),
+                                    "via": "preapproval",
+                                },
+                            )
 
             evento.processado = True
         except GatewayPagamentoError as exc:

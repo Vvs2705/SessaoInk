@@ -1,6 +1,7 @@
 """Testes de integração — Pagamentos (config, checkout gated, webhook idempotente)."""
 
 import uuid
+from datetime import UTC, datetime, timedelta
 
 from httpx import AsyncClient
 from sqlalchemy import select
@@ -21,6 +22,19 @@ async def _estudio_demo_id() -> uuid.UUID:
         est = await s.scalar(select(Estudio).where(Estudio.slug == "demo"))
         assert est is not None
         return est.id
+
+
+async def _set_assinatura(est_id: uuid.UUID, **campos) -> None:
+    """Ajusta a assinatura (única) do estúdio demo para o estado desejado.
+
+    Os testes de integração compartilham o mesmo banco, então cada teste fixa o
+    estado que precisa em vez de assumir o deixado por outro."""
+    async with async_session() as s:
+        ass = await s.scalar(select(Assinatura).where(Assinatura.estudio_id == est_id))
+        assert ass is not None
+        for campo, valor in campos.items():
+            setattr(ass, campo, valor)
+        await s.commit()
 
 
 class TestConfigECheckout:
@@ -344,3 +358,182 @@ class TestP006CobrancaLocal:
             cob = await s.scalar(select(Cobranca).where(Cobranca.external_reference == cob_ref))
             # Valor divergente → cobrança NÃO é marcada como paga.
             assert cob.status != StatusCobranca.PAGA
+
+
+class TestCancelamento:
+    """Cancelamento in-app: agenda o fim sem revogar o acesso na hora."""
+
+    async def test_cancelar_exige_auth(self, client: AsyncClient):
+        r = await client.post("/api/v1/pagamentos/cancelar")
+        assert r.status_code == 401
+
+    async def test_admin_cancela_preapproval_e_mantem_acesso(
+        self, autenticado, monkeypatch
+    ):
+        from app.api.v1.pagamentos import router as pr
+
+        est_id = await _estudio_demo_id()
+        await _set_assinatura(
+            est_id,
+            status=StatusAssinatura.ATIVA,
+            ciclo="mensal",
+            externo_id="preapp-cancel-1",
+            cancelar_no_fim=False,
+            periodo_fim=None,
+        )
+
+        chamadas: list[str] = []
+        fim_ciclo = (datetime.now(UTC) + timedelta(days=18)).replace(microsecond=0)
+
+        async def fake_obter(preapproval_id):
+            # O MP devolve o next_payment_date = fim do ciclo já pago.
+            return {"status": "authorized", "next_payment_date": fim_ciclo.isoformat()}
+
+        async def fake_cancelar(preapproval_id):
+            chamadas.append(preapproval_id)
+            return {"status": "cancelled", "id": preapproval_id}
+
+        monkeypatch.setattr(pr.gateway, "configurado", lambda: True)
+        monkeypatch.setattr(pr.gateway, "obter_preapproval", fake_obter)
+        monkeypatch.setattr(pr.gateway, "cancelar_preapproval", fake_cancelar)
+
+        r = await autenticado.post("/api/v1/pagamentos/cancelar")
+        assert r.status_code == 200, r.text
+        body = r.json()
+        assert body["cancelar_no_fim"] is True
+        # Padrão SaaS justo: acesso segue liberado até o fim do período.
+        assert body["acesso_liberado"] is True
+        # Recorrente mensal → cancelou o preapproval no MP.
+        assert chamadas == ["preapp-cancel-1"]
+
+        async with async_session() as s:
+            ass = await s.scalar(select(Assinatura).where(Assinatura.estudio_id == est_id))
+            assert ass.cancelar_no_fim is True
+            # Não revoga na hora: status continua ATIVA.
+            assert ass.status == StatusAssinatura.ATIVA
+            # Gravou o fim do ciclo pago → acesso lazy até lá (não some na hora).
+            # SQLite devolve datetime naive; comparamos sem tz.
+            assert ass.periodo_fim is not None
+            delta = ass.periodo_fim.replace(tzinfo=None) - fim_ciclo.replace(tzinfo=None)
+            assert abs(delta.total_seconds()) < 2
+
+        # Idempotente: 2ª chamada não explode e NÃO fala de novo com o gateway.
+        r2 = await autenticado.post("/api/v1/pagamentos/cancelar")
+        assert r2.status_code == 200, r2.text
+        assert r2.json()["cancelar_no_fim"] is True
+        assert chamadas == ["preapp-cancel-1"]
+
+    async def _cobranca_preapproval(self, est_id, preapproval_id: str, ref: str):
+        """Insere uma Cobrança mensal ligada a um preapproval (sem passar pelo
+        checkout — evita o reuso de cobrança pendente <24h entre testes)."""
+        async with async_session() as s:
+            s.add(
+                Cobranca(
+                    estudio_id=est_id,
+                    plano_slug="profissional",
+                    ciclo="mensal",
+                    valor_centavos=13500,
+                    status=StatusCobranca.ENVIADA_GATEWAY,
+                    gateway_preapproval_id=preapproval_id,
+                    external_reference=ref,
+                    idempotency_key=ref,
+                )
+            )
+            await s.commit()
+
+    async def test_webhook_cancelled_respeita_cancelamento_agendado(
+        self, client, monkeypatch
+    ):
+        """Webhook `preapproval cancelled` NÃO suspende quando o cancelamento foi
+        agendado pelo usuário (cancelar_no_fim=True) — o acesso segue até periodo_fim."""
+        from app.api.v1.pagamentos import router as pr
+
+        monkeypatch.setattr(pr.settings, "PAGAMENTOS_GO_LIVE", True)
+        monkeypatch.setattr(pr.gateway, "configurado", lambda: True)
+
+        est_id = await _estudio_demo_id()
+        await self._cobranca_preapproval(est_id, "preapp-cnf-1", "ref-cnf-1")
+        # Estado pós-/cancelar: agendado + fim do ciclo já gravado.
+        fim = datetime.now(UTC) + timedelta(days=10)
+        await _set_assinatura(
+            est_id, status=StatusAssinatura.ATIVA, cancelar_no_fim=True, periodo_fim=fim
+        )
+
+        async def fake_obter(_pid):
+            return {"status": "cancelled", "external_reference": "ref-cnf-1"}
+
+        monkeypatch.setattr(pr.gateway, "obter_preapproval", fake_obter)
+
+        w = await client.post(
+            "/api/v1/pagamentos/webhook",
+            json={"type": "preapproval", "data": {"id": "preapp-cnf-1"}},
+        )
+        assert w.status_code == 200
+        async with async_session() as s:
+            ass = await s.scalar(select(Assinatura).where(Assinatura.estudio_id == est_id))
+            # Cancelamento do usuário → NÃO suspende; segue ATIVA (acesso até periodo_fim).
+            assert ass.status == StatusAssinatura.ATIVA
+
+    async def test_webhook_cancelled_por_falha_suspende(self, client, monkeypatch):
+        """Regressão: sem cancelamento agendado (falha de cobrança), o webhook
+        `preapproval cancelled` continua SUSPENDENDO (proteção de receita)."""
+        from app.api.v1.pagamentos import router as pr
+
+        monkeypatch.setattr(pr.settings, "PAGAMENTOS_GO_LIVE", True)
+        monkeypatch.setattr(pr.gateway, "configurado", lambda: True)
+
+        est_id = await _estudio_demo_id()
+        await self._cobranca_preapproval(est_id, "preapp-fail-1", "ref-fail-1")
+        # ATIVA, SEM cancelamento agendado (falha de cobrança no MP).
+        await _set_assinatura(
+            est_id, status=StatusAssinatura.ATIVA, cancelar_no_fim=False, periodo_fim=None
+        )
+
+        async def fake_obter(_pid):
+            return {"status": "cancelled", "external_reference": "ref-fail-1"}
+
+        monkeypatch.setattr(pr.gateway, "obter_preapproval", fake_obter)
+
+        w = await client.post(
+            "/api/v1/pagamentos/webhook",
+            json={"type": "preapproval", "data": {"id": "preapp-fail-1"}},
+        )
+        assert w.status_code == 200
+        async with async_session() as s:
+            ass = await s.scalar(select(Assinatura).where(Assinatura.estudio_id == est_id))
+            assert ass.status == StatusAssinatura.SUSPENSA
+
+    async def test_avulso_sem_preapproval_marca_local_sem_chamar_mp(
+        self, autenticado, monkeypatch
+    ):
+        from app.api.v1.pagamentos import router as pr
+
+        est_id = await _estudio_demo_id()
+        await _set_assinatura(
+            est_id,
+            status=StatusAssinatura.ATIVA,
+            ciclo="anual",
+            externo_id=None,
+            cancelar_no_fim=False,
+            periodo_fim=datetime.now(UTC) + timedelta(days=200),
+        )
+
+        chamadas: list[str] = []
+
+        async def fake_cancelar(preapproval_id):
+            chamadas.append(preapproval_id)
+            return {}
+
+        monkeypatch.setattr(pr.gateway, "configurado", lambda: True)
+        monkeypatch.setattr(pr.gateway, "cancelar_preapproval", fake_cancelar)
+
+        r = await autenticado.post("/api/v1/pagamentos/cancelar")
+        assert r.status_code == 200, r.text
+        assert r.json()["cancelar_no_fim"] is True
+        # Avulso não tem recorrência no gateway → nada a cancelar no MP.
+        assert chamadas == []
+
+        async with async_session() as s:
+            ass = await s.scalar(select(Assinatura).where(Assinatura.estudio_id == est_id))
+            assert ass.cancelar_no_fim is True
+            assert ass.status == StatusAssinatura.ATIVA

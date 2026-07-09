@@ -107,6 +107,19 @@ class GatewayPagamento:
             )
         return resp.json()
 
+    async def _put(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
+        async with httpx.AsyncClient(base_url=MP_API_BASE, timeout=_HTTP_TIMEOUT) as client:
+            resp = await client.put(path, json=payload, headers=self._headers())
+        if resp.status_code >= 400:
+            logger.warning(
+                "mercadopago_erro",
+                extra={"extra": {"path": path, "status": resp.status_code}},
+            )
+            raise GatewayPagamentoError(
+                f"Mercado Pago retornou {resp.status_code} em {path}"
+            )
+        return resp.json()
+
     async def _get(self, path: str) -> dict[str, Any]:
         async with httpx.AsyncClient(base_url=MP_API_BASE, timeout=_HTTP_TIMEOUT) as client:
             resp = await client.get(path, headers=self._headers())
@@ -227,6 +240,11 @@ class GatewayPagamento:
         """Consulta o status de uma assinatura recorrente (preapproval) — usado
         pelo webhook para reconciliar o ciclo mensal."""
         return await self._get(f"/preapproval/{preapproval_id}")
+
+    async def cancelar_preapproval(self, preapproval_id: str) -> dict[str, Any]:
+        """Cancela a assinatura recorrente (preapproval) no Mercado Pago — não há
+        mais cobrança futura. PUT /preapproval/{id} com status=cancelled."""
+        return await self._put(f"/preapproval/{preapproval_id}", {"status": "cancelled"})
 
     async def buscar_pagamentos_por_referencia(self, external_reference: str) -> dict[str, Any]:
         """Busca pagamentos por external_reference — usado pela reconciliação ATIVA

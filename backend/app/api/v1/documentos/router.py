@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.auth.dependencies import get_usuario_atual
+from app.api.v1.auth.dependencies import exigir_assinatura_ativa, get_usuario_atual
 from app.core.config import settings
 from app.core.database import get_session
 from app.core.request_context import get_client_ip, get_user_agent
@@ -23,7 +23,13 @@ from app.services.tenant import (
     get_documento_do_estudio,
 )
 
-router = APIRouter(prefix="/documentos", tags=["documentos"])
+# Enforcement de assinatura: todo o módulo exige trial vigente ou assinatura
+# ativa (402 caso contrário) — rotas de pagamento/config/LGPD ficam isentas.
+router = APIRouter(
+    prefix="/documentos",
+    tags=["documentos"],
+    dependencies=[Depends(exigir_assinatura_ativa)],
+)
 
 
 class DocumentoCreate(BaseModel):

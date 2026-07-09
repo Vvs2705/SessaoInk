@@ -11,7 +11,11 @@ from pydantic import BaseModel
 from sqlalchemy import Date, String, and_, case, cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.auth.dependencies import get_usuario_atual, require_role
+from app.api.v1.auth.dependencies import (
+    exigir_assinatura_ativa,
+    get_usuario_atual,
+    require_role,
+)
 from app.core.database import get_session
 from app.models.financeiro import (
     FormaPagamentoFin,
@@ -29,7 +33,13 @@ from app.services.tenant import (
     get_usuario_do_estudio,
 )
 
-router = APIRouter(prefix="/financeiro", tags=["financeiro"])
+# Enforcement de assinatura: todo o módulo exige trial vigente ou assinatura
+# ativa (402 caso contrário) — rotas de pagamento/config/LGPD ficam isentas.
+router = APIRouter(
+    prefix="/financeiro",
+    tags=["financeiro"],
+    dependencies=[Depends(exigir_assinatura_ativa)],
+)
 
 
 # ---------------------------------------------------------------------------

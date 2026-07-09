@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { AssinaturaBanner } from "@/components/layout/AssinaturaBanner";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { MobileTopBar } from "@/components/layout/MobileTopBar";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -13,6 +14,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
       <div className="flex min-h-app min-w-0 flex-1 flex-col">
         <MobileTopBar />
+        <AssinaturaBanner />
 
         <main className="pb-mobile-nav flex-1 px-4 py-4 sm:px-5 lg:px-8 lg:py-8 lg:pb-8">
           <div className="mx-auto w-full max-w-7xl">{children}</div>

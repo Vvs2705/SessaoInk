@@ -7,14 +7,20 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.auth.dependencies import get_usuario_atual
+from app.api.v1.auth.dependencies import exigir_assinatura_ativa, get_usuario_atual
 from app.core.database import get_session
 from app.core.storage import montar_key, resposta_imagem
 from app.core.upload_security import processar_upload
 from app.models.portfolio import FlashArt, StatusFlash
 from app.models.usuario import TipoUsuario, Usuario
 
-router = APIRouter(prefix="/flash-arts", tags=["flash-arts"])
+# Enforcement de assinatura: todo o módulo exige trial vigente ou assinatura
+# ativa (402 caso contrário) — rotas de pagamento/config/LGPD ficam isentas.
+router = APIRouter(
+    prefix="/flash-arts",
+    tags=["flash-arts"],
+    dependencies=[Depends(exigir_assinatura_ativa)],
+)
 
 
 class FlashArtResponse(BaseModel):

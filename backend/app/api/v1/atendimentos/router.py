@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.auth.dependencies import get_usuario_atual
+from app.api.v1.auth.dependencies import exigir_assinatura_ativa, get_usuario_atual
 from app.core.database import get_session
 from app.core.storage import listar_objetos, montar_key, resposta_imagem
 from app.models.atendimento import Atendimento, StatusOperacional
@@ -25,7 +25,13 @@ from app.services.tenant import (
     get_usuario_do_estudio,
 )
 
-router = APIRouter(prefix="/atendimentos", tags=["atendimentos"])
+# Enforcement de assinatura: todo o módulo exige trial vigente ou assinatura
+# ativa (402 caso contrário) — rotas de pagamento/config/LGPD ficam isentas.
+router = APIRouter(
+    prefix="/atendimentos",
+    tags=["atendimentos"],
+    dependencies=[Depends(exigir_assinatura_ativa)],
+)
 
 
 async def _audit_atendimento(session, usuario, acao, atendimento_id, dados=None):

@@ -289,6 +289,12 @@ export default function ConfiguracoesPage() {
     const assinatura = searchParams.get("assinatura");
     const voltouDoCheckout = pagamento === "sucesso" || pagamento === "pendente" || assinatura === "ok";
 
+    // Vindo do bloqueio 402 (client HTTP) ou do banner: abre direto a aba
+    // de assinatura para o usuário regularizar.
+    if (assinatura === "1" || pagamento || assinatura === "ok") {
+      setAba("assinatura");
+    }
+
     if (pagamento === "sucesso" || assinatura === "ok") {
       showToast("sucesso", "Pagamento recebido! Confirmando a ativação…");
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -2218,6 +2224,20 @@ export default function ConfiguracoesPage() {
           )}
 
           {/* ---- ABA: ASSINATURA ---- */}
+          {/* Não-ADMIN pode cair aqui via ?assinatura=1 (redirect do 402):
+              orienta a acionar o administrador em vez de mostrar painel vazio. */}
+          {aba === "assinatura" && !isAdmin && (
+            <div className="bg-ink-bg border border-mist-line rounded-[18px] p-6">
+              <h2 className="text-base font-semibold text-porcelain-ink">
+                Assinatura do Estúdio
+              </h2>
+              <p className="text-sm text-text-subtle mt-2">
+                Apenas o administrador do estúdio pode gerenciar a assinatura.
+                Peça a ele para regularizar o plano em Configurações →
+                Assinatura.
+              </p>
+            </div>
+          )}
           {aba === "assinatura" && isAdmin && (
             <div className="space-y-6">
               <div className="bg-ink-bg border border-mist-line rounded-[18px] p-6 space-y-6">

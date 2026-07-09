@@ -37,7 +37,7 @@ from app.models.saas import (
     StatusPagamento,
 )
 from app.models.usuario import TipoUsuario, Usuario
-from app.services.assinatura import get_assinatura
+from app.services.assinatura import get_assinatura, periodo_para_ciclo
 from app.services.assinatura import resumo as resumo_assinatura
 from app.services.audit import log_event
 
@@ -261,6 +261,12 @@ async def _reconciliar_cobranca_via_mp(session: AsyncSession, cobranca: Cobranca
             ja_ativa = assinatura.status == StatusAssinatura.ATIVA
             assinatura.status = StatusAssinatura.ATIVA
             assinatura.gateway = "mercadopago"
+            # Período pago vigente (enforcement lazy): avulso ganha periodo_fim
+            # (+N meses + carência); mensal recorrente fica sem fim (o MP pausa
+            # o preapproval na falha de renovação e o webhook suspende).
+            assinatura.periodo_inicio, assinatura.periodo_fim = periodo_para_ciclo(
+                cobranca.ciclo
+            )
             if not ja_ativa:
                 await log_event(
                     session,
@@ -508,6 +514,11 @@ async def webhook_mercadopago(
                         ja_ativa = assinatura.status == StatusAssinatura.ATIVA
                         assinatura.status = StatusAssinatura.ATIVA
                         assinatura.gateway = "mercadopago"
+                        # Enforcement lazy: grava o período pago (avulso expira,
+                        # mensal recorrente fica sem fim — ver periodo_para_ciclo).
+                        assinatura.periodo_inicio, assinatura.periodo_fim = (
+                            periodo_para_ciclo(cobranca.ciclo)
+                        )
                         evento.assinatura_id = assinatura.id
                         if not ja_ativa:
                             await log_event(
@@ -598,6 +609,11 @@ async def webhook_mercadopago(
                             ja_ativa = assinatura.status == StatusAssinatura.ATIVA
                             assinatura.status = StatusAssinatura.ATIVA
                             assinatura.gateway = "mercadopago"
+                            # Recorrente: periodo_fim=None (o MP pausa na falha
+                            # de renovação; o webhook suspende o acesso).
+                            assinatura.periodo_inicio, assinatura.periodo_fim = (
+                                periodo_para_ciclo(cobranca.ciclo)
+                            )
                             evento.assinatura_id = assinatura.id
                             if not ja_ativa:
                                 await log_event(

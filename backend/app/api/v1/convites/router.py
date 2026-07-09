@@ -10,7 +10,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.auth.dependencies import require_role
+from app.api.v1.auth.dependencies import exigir_assinatura_ativa, require_role
 from app.core.config import settings
 from app.core.database import get_session
 from app.core.password_policy import validar_senha_forte
@@ -19,7 +19,10 @@ from app.models.convite import Convite, StatusConvite
 from app.models.usuario import Estudio, TipoUsuario, Usuario
 from app.services.audit import log_event
 
+# Enforcement de assinatura por endpoint (NÃO no router): /info/{token} e
+# /aceitar/{token} são públicos — o convidado ainda não tem sessão.
 router = APIRouter(prefix="/convites", tags=["convites"])
+_exige_assinatura = [Depends(exigir_assinatura_ativa)]
 
 # Convites expiram em 7 dias por padrão
 CONVITE_TTL_DIAS = 7
@@ -101,7 +104,12 @@ class AceitarConviteResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-@router.post("/", response_model=ConviteResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=ConviteResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=_exige_assinatura,
+)
 async def criar_convite(
     dados: ConviteCreate,
     background_tasks: BackgroundTasks,
@@ -187,7 +195,7 @@ async def criar_convite(
     return resp
 
 
-@router.get("/", response_model=list[ConviteResponse])
+@router.get("/", response_model=list[ConviteResponse], dependencies=_exige_assinatura)
 async def listar_convites(
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(require_role(TipoUsuario.ADMIN)),
@@ -201,7 +209,11 @@ async def listar_convites(
     return result.scalars().all()
 
 
-@router.delete("/{convite_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{convite_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=_exige_assinatura,
+)
 async def revogar_convite(
     convite_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),

@@ -14,6 +14,7 @@ from app.models.documento import Documento, TipoDocumento
 from app.models.financeiro import Lancamento, TipoLancamento
 from app.models.portfolio import FlashArt, Portfolio
 from app.models.usuario import Estudio, TipoUsuario, Usuario
+from app.services.assinatura import criar_trial
 
 INVASOR_EMAIL = "admin@invasor.dev"
 ARTISTA_EMAIL = "artista@sessaoink.dev"
@@ -49,6 +50,9 @@ async def seed_rbac_tenant_data():
         )
         session.add(estudio_invasor)
         await session.flush()
+
+        # Trial vigente — as rotas de negócio exigem assinatura (402 sem trial).
+        await criar_trial(session, estudio_invasor.id)
 
         # Criar admin invasor
         admin_invasor = Usuario(

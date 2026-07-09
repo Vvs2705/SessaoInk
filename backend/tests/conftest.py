@@ -34,6 +34,7 @@ from app.core.database import Base, engine
 from app.core.security import hash_senha
 from app.main import app
 from app.models.usuario import Estudio, TipoUsuario, Usuario
+from app.services.assinatura import criar_trial
 
 ADMIN_EMAIL = "admin@sessaoink.dev"
 ADMIN_SENHA = "admin123"
@@ -71,6 +72,10 @@ async def setup_test_database():
             tipo=TipoUsuario.ADMIN,
         )
         session.add(admin)
+
+        # Trial vigente para o estúdio demo — as rotas de negócio agora exigem
+        # assinatura (exigir_assinatura_ativa → 402 sem trial/assinatura).
+        await criar_trial(session, estudio.id)
         await session.commit()
 
 

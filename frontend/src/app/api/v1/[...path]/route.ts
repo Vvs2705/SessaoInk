@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { aplicarCookie, lerSetCookies } from "@/lib/proxy-cookies";
+import { originPermitido } from "@/lib/csrf-origin";
 
 const BACKEND = process.env.BACKEND_URL || "https://sessaoink-api.fly.dev";
 const PRODUCTION = process.env.NODE_ENV === "production";
@@ -31,16 +32,22 @@ async function proxy(
   const url = `${BACKEND}/api/v1/${pathStr}${needsSlash ? "/" : ""}${qs ? `?${qs}` : ""}`;
 
   // ── CSRF: verificar Origin em requisições mutáveis ──────────────────────
-  // Em produção, requests de origem diferente de APP_ORIGIN são bloqueados
-  // antes mesmo de chegar ao backend. Browser SEMPRE define Origin em
-  // requisições cross-origin — se estiver ausente é uma requisição same-origin
-  // (do próprio frontend) e pode passar.
+  // Em produção, requests cross-origin são bloqueados antes de chegar ao backend.
+  // Aceitamos DOIS casos seguros:
+  //   1. same-origin: o Origin bate com o host que está servindo esta rota
+  //      (o app é a própria origem — impossível ser CSRF). Isso faz o app
+  //      funcionar em QUALQUER domínio servido (www.sessaoink.com.br, o domínio
+  //      .vercel.app, previews) sem manter uma lista fixa.
+  //   2. APP_ORIGIN canônico (NEXT_PUBLIC_APP_URL), como reforço.
+  // Origin ausente = same-origin (o browser não envia Origin nesse caso) → passa.
   if (PRODUCTION && CSRF_METHODS.has(request.method)) {
     const isExempt = CSRF_EXEMPT.some((p) => rawPathname.startsWith(p));
     if (!isExempt) {
       const origin = request.headers.get("origin");
-      if (origin && origin !== APP_ORIGIN) {
-        console.warn(`[CSRF] Bloqueado: origin=${origin} method=${request.method} path=${rawPathname}`);
+      const host = request.headers.get("host");
+      const selfOrigin = host ? `https://${host}` : null;
+      if (!originPermitido(origin, APP_ORIGIN, selfOrigin)) {
+        console.warn(`[CSRF] Bloqueado: origin=${origin} host=${host} method=${request.method} path=${rawPathname}`);
         return NextResponse.json({ detail: "Origem não autorizada" }, { status: 403 });
       }
     }

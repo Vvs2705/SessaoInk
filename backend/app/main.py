@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -232,6 +233,32 @@ async def add_security_headers(request: Request, call_next):
             "script-src 'self'; style-src 'self' 'unsafe-inline'"
         )
     return response
+
+
+# Erro transitório de banco (protocolo asyncpg dessincronizado, conexão
+# derrubada pelo pooler Neon) ≠ bug da aplicação: responde 503 + Retry-After
+# em vez de 500, e loga estruturado sem PII.
+async def _db_transient_error_handler(request: Request, exc: Exception) -> JSONResponse:
+    if isinstance(exc, IntegrityError):
+        # Violação de constraint = erro da aplicação, não infra — mantém o 500.
+        raise exc
+    logger.warning(
+        "db_transient_error",
+        extra={
+            "path": request.url.path,
+            "method": request.method,
+            "error_type": type(exc).__name__,
+        },
+    )
+    return JSONResponse(
+        {"detail": "Serviço temporariamente indisponível, tente novamente."},
+        status_code=503,
+        headers={"Retry-After": "2"},
+    )
+
+
+# DBAPIError é a base de InterfaceError/OperationalError — cobre as três.
+app.add_exception_handler(DBAPIError, _db_transient_error_handler)
 
 
 # Routers

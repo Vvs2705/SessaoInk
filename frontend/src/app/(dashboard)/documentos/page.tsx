@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { FileText, Plus, Shield, CheckCircle, Clock, Trash2, Loader2, X, ChevronRight, Copy, Check } from "lucide-react";
+import { FileText, Plus, Shield, CheckCircle, Clock, Trash2, Loader2, X, ChevronRight, Copy, Check, AlertCircle } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
@@ -52,10 +52,12 @@ export default function DocumentosPage() {
   const [conteudo, setConteudo] = useState("");
   const [versao, setVersao] = useState("1.0");
 
-  const { data: estudio } = useQuery<any>({
-    queryKey: ["estudio"],
-    queryFn: () => api.get("/api/v1/estudio/"),
-  });
+  // Feedback visual (Toast)
+  const [toast, setToast] = useState<{ tipo: "sucesso" | "erro"; mensagem: string } | null>(null);
+  const showToast = (tipo: "sucesso" | "erro", mensagem: string) => {
+    setToast({ tipo, mensagem });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   const { data: docs = [], isLoading } = useQuery<Documento[]>({
     queryKey: ["documentos"],
@@ -181,7 +183,7 @@ export default function DocumentosPage() {
           </h2>
           <div className="space-y-2">
             {pendentes.map((doc) => (
-              <DocRow key={doc.id} doc={doc} slug={estudio?.slug || ""} onView={setViewDoc} onDelete={(id) => {
+              <DocRow key={doc.id} doc={doc} onToast={showToast} onView={setViewDoc} onDelete={(id) => {
                 if (confirm(`Excluir "${doc.titulo}"?`)) deleteMutation.mutate(id);
               }} />
             ))}
@@ -197,7 +199,7 @@ export default function DocumentosPage() {
           </h2>
           <div className="space-y-2">
             {assinados.map((doc) => (
-              <DocRow key={doc.id} doc={doc} slug={estudio?.slug || ""} onView={setViewDoc} onDelete={(id) => {
+              <DocRow key={doc.id} doc={doc} onToast={showToast} onView={setViewDoc} onDelete={(id) => {
                 if (confirm(`Excluir "${doc.titulo}"?`)) deleteMutation.mutate(id);
               }} />
             ))}
@@ -336,6 +338,22 @@ export default function DocumentosPage() {
           </div>
         </div>
       )}
+
+      {/* Toast */}
+      {toast && (
+        <div
+          className={cn(
+            "fixed bottom-6 right-6 flex items-center gap-3 px-4 py-3 rounded-[14px] border shadow-ink-lg z-50 animate-in slide-in-from-bottom-4",
+            toast.tipo === "sucesso" ? "bg-ink-bg border-teal-ink/40 text-teal-ink" : "bg-ink-bg border-error-red/40 text-error-red"
+          )}
+        >
+          {toast.tipo === "sucesso" ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+          <span className="text-sm font-medium text-porcelain-ink">{toast.mensagem}</span>
+          <button onClick={() => setToast(null)} className="ml-2 opacity-60 hover:opacity-100">
+            <X size={14} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -343,12 +361,12 @@ export default function DocumentosPage() {
 // Sub-componente para linha de documento
 function DocRow({
   doc,
-  slug,
+  onToast,
   onView,
   onDelete,
 }: {
   doc: Documento;
-  slug: string;
+  onToast: (tipo: "sucesso" | "erro", mensagem: string) => void;
   onView: (d: Documento) => void;
   onDelete: (id: string) => void;
 }) {
@@ -357,13 +375,31 @@ function DocRow({
     dateStr ? new Date(dateStr).toLocaleDateString("pt-BR", { timeZone: "UTC", day: "2-digit", month: "short" }) : "—";
 
   const [copied, setCopied] = useState(false);
+  const [gerandoLink, setGerandoLink] = useState(false);
 
-  const handleCopyLink = () => {
-    const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
-    const link = `${origin}/${slug}/documento/${doc.id}`;
-    navigator.clipboard.writeText(link);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopyLink = async () => {
+    if (gerandoLink) return;
+    setGerandoLink(true);
+    try {
+      // O link público é sempre gerado pelo backend (token de uso único com
+      // expiração) — nunca montado no cliente com o id do documento.
+      const { url } = await api.post<{ url: string }>(
+        `/api/v1/documentos/${doc.id}/gerar-link?acao=ASSINAR`
+      );
+      try {
+        await navigator.clipboard.writeText(url);
+      } catch {
+        // Fallback (ex.: clipboard bloqueado): expõe o link para cópia manual.
+        window.prompt("Copie o link de assinatura:", url);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+      onToast("sucesso", "Link de assinatura copiado! Válido por 72h e de uso único.");
+    } catch (err: any) {
+      onToast("erro", err?.detail ?? err?.message ?? "Erro ao gerar o link de assinatura.");
+    } finally {
+      setGerandoLink(false);
+    }
   };
 
   return (
@@ -394,13 +430,20 @@ function DocRow({
           </span>
         )}
         
-        {!doc.assinado && slug && (
+        {!doc.assinado && (
           <button
             onClick={handleCopyLink}
-            className="p-1.5 rounded-[8px] text-teal-ink hover:text-ink-gold hover:bg-teal-ink/10 transition-all"
+            disabled={gerandoLink}
+            className="p-1.5 rounded-[8px] text-teal-ink hover:text-ink-gold hover:bg-teal-ink/10 disabled:opacity-60 disabled:cursor-wait transition-all"
             title="Copiar link de assinatura"
           >
-            {copied ? <Check size={13} className="text-success" /> : <Copy size={13} />}
+            {gerandoLink ? (
+              <Loader2 size={13} className="animate-spin" />
+            ) : copied ? (
+              <Check size={13} className="text-success" />
+            ) : (
+              <Copy size={13} />
+            )}
           </button>
         )}
 

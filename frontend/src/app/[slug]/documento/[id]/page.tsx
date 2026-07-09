@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { CheckCircle, Shield, FileText, Loader2, AlertCircle } from "lucide-react";
 import { captureAppEvent } from "@/lib/posthog";
+import { buildAssinarFormBody, mensagemErroToken } from "@/lib/documento-assinatura";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
@@ -18,7 +19,8 @@ interface DocumentoPublico {
 
 export default function DocumentoAssinaturaPage() {
   const params = useParams();
-  const docId = params.id as string;
+  // O segmento [id] carrega o TOKEN de acesso de uso único, nunca o id do documento.
+  const token = params.id as string;
   const slug = params.slug as string;
 
   const [documento, setDocumento] = useState<DocumentoPublico | null>(null);
@@ -34,9 +36,13 @@ export default function DocumentoAssinaturaPage() {
   useEffect(() => {
     async function carregarDocumento() {
       try {
-        const res = await fetch(`${API_URL}/api/v1/public/documentos/${docId}`);
+        const res = await fetch(`${API_URL}/api/v1/public/documentos/token/${token}`);
         if (!res.ok) {
-          throw new Error("Não foi possível carregar o documento.");
+          let detail: string | null = null;
+          try {
+            detail = (await res.json())?.detail ?? null;
+          } catch {}
+          throw new Error(mensagemErroToken(res.status, detail));
         }
         const data = await res.json();
         setDocumento(data);
@@ -50,7 +56,7 @@ export default function DocumentoAssinaturaPage() {
       }
     }
     carregarDocumento();
-  }, [docId]);
+  }, [token]);
 
   const handleAssinar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,31 +66,19 @@ export default function DocumentoAssinaturaPage() {
     setErro(null);
 
     try {
-      // Obter IP do assinante de forma simples
-      let ip = "127.0.0.1";
-      try {
-        const ipRes = await fetch("https://api.ipify.org?format=json");
-        if (ipRes.ok) {
-          const ipData = await ipRes.json();
-          ip = ipData.ip;
-        }
-      } catch {}
-
-      const userAgent = navigator.userAgent;
-
-      const res = await fetch(`${API_URL}/api/v1/public/documentos/${docId}/assinar`, {
+      // FORM data (não JSON) — o backend espera Form(...) e captura IP/UA do
+      // próprio request no servidor (trilha de aceite LGPD).
+      const res = await fetch(`${API_URL}/api/v1/public/documentos/token/${token}/assinar`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ip,
-          user_agent: userAgent,
-          nome_assinante: nomeAssinante.trim(),
-        }),
+        body: buildAssinarFormBody(nomeAssinante),
       });
 
       if (!res.ok) {
-        const errJson = await res.json();
-        throw new Error(errJson?.detail ?? "Falha ao assinar documento.");
+        let detail: string | null = null;
+        try {
+          detail = (await res.json())?.detail ?? null;
+        } catch {}
+        throw new Error(mensagemErroToken(res.status, detail));
       }
 
       captureAppEvent("documento_publico_assinado", {
@@ -121,8 +115,11 @@ export default function DocumentoAssinaturaPage() {
           <div className="w-16 h-16 rounded-lg bg-ink-bg border border-mist-line mx-auto mb-5 flex items-center justify-center">
             <AlertCircle size={28} className="text-error-red" />
           </div>
-          <h1 className="text-xl font-bold text-porcelain-ink mb-2">Erro ao carregar termo</h1>
+          <h1 className="text-xl font-bold text-porcelain-ink mb-2">Não foi possível abrir o termo</h1>
           <p className="text-sm text-text-subtle mb-6">{erro}</p>
+          <p className="text-xs text-text-subtle/70">
+            Se você recebeu este link do estúdio @{slug}, solicite um novo link de assinatura.
+          </p>
         </div>
       </div>
     );

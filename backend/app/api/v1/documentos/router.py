@@ -5,7 +5,7 @@ import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,7 +15,7 @@ from app.core.config import settings
 from app.core.database import get_session
 from app.core.request_context import get_client_ip, get_user_agent
 from app.models.documento import AcaoLink, Documento, DocumentoLinkAcesso, TipoDocumento
-from app.models.usuario import Usuario
+from app.models.usuario import Estudio, Usuario
 from app.services.audit import log_event
 from app.services.tenant import (
     get_atendimento_do_estudio,
@@ -168,6 +168,10 @@ async def gerar_link_documento(
         detail="Documento não encontrado",
     )
 
+    estudio = await session.get(Estudio, usuario.estudio_id)
+    if estudio is None:  # pragma: no cover — FK garante estúdio do usuário autenticado
+        raise HTTPException(404, "Estúdio não encontrado")
+
     token_raw = secrets.token_urlsafe(32)
     token_hash = hashlib.sha256(token_raw.encode()).hexdigest()
     expira = datetime.now(UTC) + timedelta(hours=max(1, min(horas, 720)))
@@ -177,6 +181,7 @@ async def gerar_link_documento(
         token_hash=token_hash,
         acao=acao,
         expira_em=expira,
+        ip_geracao=get_client_ip(request),
     )
     session.add(link)
     await session.flush()
@@ -194,5 +199,6 @@ async def gerar_link_documento(
         dados={"acao_link": acao.value, "expira_em": expira.isoformat()},
     )
 
-    url = f"{settings.APP_URL}/documento/{token_raw}"
+    # URL pública casada com a rota do frontend: /{slug}/documento/{token}
+    url = f"{settings.APP_URL}/{estudio.slug}/documento/{token_raw}"
     return {"url": url, "expira_em": expira.isoformat(), "acao": acao}

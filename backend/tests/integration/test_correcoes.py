@@ -32,7 +32,10 @@ class TestDocumentosPublicos:
         # separado). O token é o último segmento da URL.
         url = link_resp.json()["url"]
         assert "token" not in link_resp.json()  # não vaza token em campo próprio
+        # URL casada com a rota pública do frontend: {APP_URL}/{slug}/documento/{token}
+        assert "/demo/documento/" in url, url
         token = url.rstrip("/").split("/")[-1]
+        assert f"/demo/documento/{token}" in url
 
         # 2. Obter documento publicamente via token sem auth
         pub_get = await client.get(f"/api/v1/public/documentos/token/{token}")
@@ -56,6 +59,13 @@ class TestDocumentosPublicos:
         assert pub_get_signed.status_code == 200
         assert pub_get_signed.json()["assinado"] is True
         assert pub_get_signed.json()["data_assinatura"] is not None
+
+        # 5. Token de assinatura é de uso único — reutilizar deve falhar com 404
+        reuso_resp = await client.post(
+            f"/api/v1/public/documentos/token/{token}/assinar",
+            data={"nome_assinante": "Maria Reuso"},
+        )
+        assert reuso_resp.status_code == 404, reuso_resp.text
 
 
 class TestAgendaConflitos:

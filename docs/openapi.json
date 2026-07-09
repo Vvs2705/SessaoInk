@@ -3033,6 +3033,54 @@
         }
       }
     },
+    "/api/v1/pagamentos/cancelar": {
+      "post": {
+        "tags": [
+          "pagamentos"
+        ],
+        "summary": "Cancelar Assinatura",
+        "description": "Cancelamento in-app da assinatura (ADMIN do estúdio).\n\nPadrão SaaS justo: NÃO revoga o acesso na hora — apenas agenda o fim\n(`cancelar_no_fim=True`), mantendo o acesso até o término do período/trial já\npago, e desliga a recorrência no gateway para não haver nova cobrança.\n\n- Mensal recorrente (preapproval): cancela o preapproval no Mercado Pago.\n- Avulso (trimestral/semestral/anual): não há recorrência no gateway — só\n  marca localmente (o período pago segue até `periodo_fim`).\n\nIdempotente: com o cancelamento já agendado, a 2ª chamada não repete o efeito\nnem fala de novo com o gateway. Reembolso (CDC 7 dias) segue manual pelo painel.",
+        "operationId": "cancelar_assinatura_api_v1_pagamentos_cancelar_post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/pagamentos/reconciliar": {
       "post": {
         "tags": [

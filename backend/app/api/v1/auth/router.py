@@ -3,7 +3,16 @@
 import secrets
 import uuid
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Cookie,
+    Depends,
+    HTTPException,
+    Request,
+    Response,
+    status,
+)
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,7 +37,11 @@ from app.api.v1.auth.schemas import (
 from app.core import mfa as mfa_core
 from app.core.config import settings
 from app.core.database import get_session
-from app.core.email import enviar_codigo_mfa, enviar_email_reset_senha
+from app.core.email import (
+    enviar_boas_vindas,
+    enviar_codigo_mfa,
+    enviar_email_reset_senha,
+)
 from app.core.password_policy import validar_senha_forte
 from app.core.redis import (
     MFA_OTP_MAX_ENVIOS,
@@ -176,6 +189,7 @@ async def registrar(
     dados: RegistroRequest,
     request: Request,
     response: Response,
+    background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
 ):
     """Cadastro self-serve: cria estúdio + usuário ADMIN + trial e já loga.
@@ -233,6 +247,17 @@ async def registrar(
     await session.refresh(usuario)
 
     await _emitir_sessao(response, usuario)
+
+    # E-mail de boas-vindas em background — não bloqueia a resposta e falha de
+    # envio nunca derruba o cadastro (a própria função é no-op sem Resend).
+    background_tasks.add_task(
+        enviar_boas_vindas,
+        destinatario_email=usuario.email,
+        nome=usuario.nome,
+        nome_estudio=estudio.nome,
+        slug=slug,
+    )
+
     return LoginResponse(message="Cadastro realizado com sucesso")
 
 

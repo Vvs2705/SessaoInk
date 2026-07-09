@@ -340,6 +340,95 @@ async def enviar_convite_equipe(
         return False
 
 
+async def enviar_boas_vindas(
+    destinatario_email: str,
+    nome: str,
+    nome_estudio: str,
+    slug: str,
+) -> None:
+    """E-mail acolhedor de boas-vindas após o cadastro self-serve.
+
+    Sem RESEND configurado, é um no-op silencioso (só log, sem PII) — o cadastro
+    não depende deste e-mail.
+    """
+    if not _resend_configurado():
+        logger.debug("RESEND_API_KEY não configurado — e-mail de boas-vindas ignorado.")
+        return
+
+    nome_html = nome.replace("<", "&lt;").replace(">", "&gt;")
+    estudio_html = nome_estudio.replace("<", "&lt;").replace(">", "&gt;")
+    portal_url = f"{settings.APP_URL}/{slug}"
+    painel_url = f"{settings.APP_URL}/atendimentos"
+
+    html = f"""
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#050B12;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <div style="max-width:560px;margin:40px auto;background:#0B171C;border:1px solid #243337;border-radius:18px;overflow:hidden;">
+    <div style="background:#2F9285;padding:24px 32px;">
+      <p style="margin:0;font-size:11px;color:#050B12;font-weight:700;letter-spacing:2px;text-transform:uppercase;">SessãoInk</p>
+      <h1 style="margin:8px 0 0;font-size:20px;color:#050B12;font-weight:800;">Bem-vindo(a) ao SessãoInk! 🎨</h1>
+    </div>
+    <div style="padding:28px 32px;">
+      <p style="margin:0 0 18px;font-size:14px;color:#87938F;line-height:1.6;">
+        Olá, <strong style="color:#F0EADD;">{nome_html}</strong>! O estúdio
+        <strong style="color:#F0EADD;">{estudio_html}</strong> já está no ar.
+        Seu <strong style="color:#2F9285;">trial de 14 dias</strong> começou agora — aproveite todos os recursos sem compromisso.
+      </p>
+
+      <p style="margin:0 0 12px;font-size:13px;color:#F0EADD;font-weight:700;">Seus 3 primeiros passos:</p>
+      <div style="background:#050B12;border:1px solid #243337;border-radius:14px;padding:8px 20px;margin-bottom:24px;">
+        <table style="width:100%;border-collapse:collapse;">
+          <tr>
+            <td style="padding:12px 0;font-size:16px;color:#2F9285;font-weight:800;width:32px;vertical-align:top;">1</td>
+            <td style="padding:12px 0;font-size:14px;color:#F0EADD;line-height:1.5;">
+              <strong>Cadastre seus clientes</strong><br>
+              <span style="color:#87938F;font-size:13px;">Centralize contatos e histórico em um só lugar.</span>
+            </td>
+          </tr>
+          <tr style="border-top:1px solid #1a2830;">
+            <td style="padding:12px 0;font-size:16px;color:#2F9285;font-weight:800;vertical-align:top;">2</td>
+            <td style="padding:12px 0;font-size:14px;color:#F0EADD;line-height:1.5;">
+              <strong>Configure seu portal público</strong><br>
+              <span style="color:#87938F;font-size:13px;">Ele já está no ar em <a href="{portal_url}" style="color:#2F9285;text-decoration:none;">{portal_url}</a> — personalize e divulgue.</span>
+            </td>
+          </tr>
+          <tr style="border-top:1px solid #1a2830;">
+            <td style="padding:12px 0;font-size:16px;color:#2F9285;font-weight:800;vertical-align:top;">3</td>
+            <td style="padding:12px 0;font-size:14px;color:#F0EADD;line-height:1.5;">
+              <strong>Crie seu primeiro orçamento</strong><br>
+              <span style="color:#87938F;font-size:13px;">Envie propostas profissionais em minutos.</span>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <a href="{painel_url}"
+         style="display:inline-block;background:#2F9285;color:#050B12;font-weight:700;font-size:14px;padding:13px 28px;border-radius:12px;text-decoration:none;">
+        Acessar o painel →
+      </a>
+
+      <p style="margin:24px 0 0;font-size:12px;color:#87938F;line-height:1.5;">
+        Precisa de ajuda? É só responder este e-mail. Boas tatuagens! 🖤
+      </p>
+    </div>
+    <div style="padding:16px 32px;border-top:1px solid #1a2830;text-align:center;">
+      <p style="margin:0;font-size:11px;color:#87938F;">SessãoInk · Gestão para tatuadores</p>
+    </div>
+  </div>
+</body></html>
+"""
+    try:
+        await asyncio.to_thread(
+            _enviar_sync,
+            destinatario_email,
+            "[SessãoInk] Bem-vindo(a)! Seu estúdio está no ar 🎨",
+            html,
+        )
+        logger.info("E-mail de boas-vindas enviado via Resend")
+    except Exception as exc:
+        logger.warning(f"Falha ao enviar e-mail de boas-vindas via Resend: {exc}")
+
+
 async def enviar_email_reset_senha(
     email_destino: str,
     nome: str,

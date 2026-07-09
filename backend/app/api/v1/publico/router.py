@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import re
 import uuid
 from datetime import UTC, date, datetime, timedelta
 
@@ -21,7 +22,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_session
-from app.core.redis import registrar_solicitacao_orcamento, verificar_limite_orcamento
+from app.core.redis import (
+    get_redis,
+    registrar_solicitacao_orcamento,
+    verificar_limite_orcamento,
+)
 from app.core.request_context import get_client_ip, get_user_agent
 from app.core.storage import montar_key, remover_objeto, resposta_imagem
 from app.core.upload_security import processar_upload
@@ -45,7 +50,49 @@ def _hash_lgpd(value: str | None) -> str | None:
         return None
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
-router = APIRouter(prefix="/public", tags=["portal-público"])
+
+_SLUG_RE = re.compile(r"^[a-z0-9-]{1,64}$")
+
+
+def validar_slug(slug: str) -> None:
+    """Slug malformado (ex.: ".env", caminhos de scanner) → 404 sem tocar o banco.
+
+    Slugs reais só contêm [a-z0-9-]; qualquer outra coisa é bot/scanner e não
+    merece uma query (nem uma conexão do pool).
+    """
+    if not _SLUG_RE.fullmatch(slug):
+        raise HTTPException(404, "Estúdio não encontrado")
+
+
+# Rate limit generoso por IP nos GETs públicos — barra varreduras de scanner
+# sem afetar visitantes legítimos (um portal com portfólio carrega ~35
+# requests por page view; 120/min ≈ 3 page views por minuto por IP).
+PUBLICO_GET_PREFIX = "publico_get:"
+PUBLICO_GET_MAX_POR_MINUTO = 120
+PUBLICO_GET_JANELA_SEGUNDOS = 60
+
+
+async def limitar_get_publico(request: Request) -> None:
+    """Dependency do router: limita GETs públicos por IP. POSTs têm limites próprios."""
+    if request.method != "GET":
+        return
+    ip = get_client_ip(request)
+    async with get_redis() as r:
+        chave = f"{PUBLICO_GET_PREFIX}{ip}"
+        total = await r.incr(chave)
+        if total == 1:
+            await r.expire(chave, PUBLICO_GET_JANELA_SEGUNDOS)
+    if total > PUBLICO_GET_MAX_POR_MINUTO:
+        raise HTTPException(
+            429, "Muitas requisições. Aguarde um instante e tente novamente."
+        )
+
+
+router = APIRouter(
+    prefix="/public",
+    tags=["portal-público"],
+    dependencies=[Depends(limitar_get_publico)],
+)
 
 
 class EstudioPublicoResponse(BaseModel):
@@ -296,6 +343,7 @@ async def disponibilidade_publica(
     Usada na etapa final do orçamento para o cliente sugerir datas dentro do
     horário de funcionamento do estúdio.
     """
+    validar_slug(slug)
     estudio = await session.scalar(
         select(Estudio).where(Estudio.slug == slug, Estudio.ativo)
     )
@@ -340,6 +388,7 @@ async def perfil_publico(
 ):
     from app.utils.endereco import como_chegar_url_estudio, endereco_completo_estudio
 
+    validar_slug(slug)
     result = await session.execute(
         select(Estudio).where(Estudio.slug == slug, Estudio.ativo)
     )
@@ -366,6 +415,7 @@ async def servir_logo_publica(
     session: AsyncSession = Depends(get_session),
 ):
     """Serve a logo do estúdio no portal público (same-origin via proxy)."""
+    validar_slug(slug)
     result = await session.execute(
         select(Estudio).where(Estudio.slug == slug, Estudio.ativo)
     )
@@ -383,6 +433,7 @@ async def servir_foto_publica(
     session: AsyncSession = Depends(get_session),
 ):
     """Serve a foto/avatar do estúdio no portal público (same-origin via proxy)."""
+    validar_slug(slug)
     result = await session.execute(
         select(Estudio).where(Estudio.slug == slug, Estudio.ativo)
     )
@@ -400,6 +451,7 @@ async def portfolio_publico(
     session: AsyncSession = Depends(get_session),
 ):
     """Retorna itens do portfólio com visibilidade PUBLICO e autorização — sem autenticação."""
+    validar_slug(slug)
     result = await session.execute(
         select(Estudio).where(Estudio.slug == slug, Estudio.ativo)
     )
@@ -440,6 +492,7 @@ async def imagem_portfolio_publico(
     """Serve a imagem pública do portfólio sem autenticação."""
     import uuid as _uuid
 
+    validar_slug(slug)
     try:
         pid = _uuid.UUID(portfolio_id)
     except ValueError:
@@ -485,6 +538,7 @@ async def flash_arts_publicas(
     session: AsyncSession = Depends(get_session),
 ):
     """Retorna flash arts disponíveis do estúdio — sem autenticação."""
+    validar_slug(slug)
     result = await session.execute(
         select(Estudio).where(Estudio.slug == slug, Estudio.ativo)
     )
@@ -521,6 +575,8 @@ async def imagem_flash_art_publica(
 ):
     """Serve imagem pública de flash art — sem autenticação."""
     import uuid as _uuid
+
+    validar_slug(slug)
     try:
         fid = _uuid.UUID(flash_id)
     except ValueError:
@@ -611,6 +667,9 @@ async def solicitar_orcamento(
     imagens: list[UploadFile] | None = File(None),
     session: AsyncSession = Depends(get_session),
 ):
+    # 0. Slug malformado → 404 imediato, sem tocar Redis nem banco.
+    validar_slug(slug)
+
     # 1. Rate Limiting — usa o IP real do cliente (X-Forwarded-For validado), não
     # o do proxy Vercel/Fly; senão o limite vira um bucket global compartilhado.
     ip = get_client_ip(request)

@@ -119,7 +119,13 @@ jobs:
         # P1-01: bloqueante. Estado verificado limpo (sem CVE conhecido no
         # requirements.lock). Se um CVE novo aparecer, o merge trava até triagem
         # (atualizar dep ou justificar com --ignore-vuln documentado).
-        run: pip install pip-audit && pip-audit -r backend/requirements.lock
+        #
+        # PYSEC-2026-1325 (ecdsa 0.19.2, transitiva do python-jose): triado em
+        # 2026-07-09 — SEM fix version publicada; side-channel em assinatura
+        # ECDSA. Nosso JWT é HS256 (core/security.py) → o código ECDSA nunca
+        # executa no caminho de auth; risco efetivo nulo. Revisar quando sair
+        # fix do ecdsa OU na migração python-jose→PyJWT (backlog).
+        run: pip install pip-audit && pip-audit -r backend/requirements.lock --ignore-vuln PYSEC-2026-1325
       - name: OSV-Scanner (lockfiles) — advisory
         # Advisory na 1ª fase: o OSV não tem corte por severidade e pega as vulns
         # moderate pré-existentes do frontend; promover a bloqueante após triá-las.

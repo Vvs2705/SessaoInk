@@ -47,6 +47,38 @@ describe("CSRF headers", () => {
     expect(headers.get("X-CSRF-Token")).toBe("upload-token");
   });
 
+  it("redirects to the assinatura tab on 402 and surfaces the mensagem", async () => {
+    const location = { pathname: "/clientes", href: "" };
+    vi.stubGlobal("window", { location });
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>(async () =>
+      new Response(
+        JSON.stringify({
+          detail: { motivo: "trial_expirado", mensagem: "Seu período de teste terminou." },
+        }),
+        { status: 402 }
+      )
+    ));
+
+    await expect(api.get("/api/v1/clientes/")).rejects.toMatchObject({
+      status: 402,
+      detail: "Seu período de teste terminou.",
+    });
+    expect(location.href).toBe("/configuracoes?assinatura=1");
+  });
+
+  it("does not redirect on 402 when already on /configuracoes", async () => {
+    const location = { pathname: "/configuracoes", href: "" };
+    vi.stubGlobal("window", { location });
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>(async () =>
+      new Response(JSON.stringify({ detail: { motivo: "suspensa", mensagem: "x" } }), {
+        status: 402,
+      })
+    ));
+
+    await expect(api.get("/api/v1/clientes/")).rejects.toMatchObject({ status: 402 });
+    expect(location.href).toBe("");
+  });
+
   it("sends X-CSRF-Token on JSON mutations", async () => {
     setDocumentCookie("csrf_token=mutation-token");
     const fetchMock = vi.fn<typeof fetch>(async () =>

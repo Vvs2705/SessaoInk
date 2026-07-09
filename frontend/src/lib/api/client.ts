@@ -23,8 +23,21 @@ async function handleResponse<T>(res: Response): Promise<T> {
   let detail = `Erro ${res.status}`;
   try {
     const body = await res.json();
-    detail = body?.detail ?? detail;
+    const d = body?.detail;
+    // O 402 de assinatura devolve detail estruturado {motivo, mensagem}.
+    detail = (typeof d === "string" ? d : d?.mensagem) ?? detail;
   } catch {}
+
+  // 402 = assinatura exigida (trial expirado/assinatura vencida). Leva o usuário
+  // direto à aba de assinatura — exceto se já está lá (evita loop de reload).
+  if (
+    res.status === 402 &&
+    typeof window !== "undefined" &&
+    !window.location.pathname.startsWith("/configuracoes")
+  ) {
+    window.location.href = "/configuracoes?assinatura=1";
+  }
+
   throw new ApiError(res.status, detail);
 }
 

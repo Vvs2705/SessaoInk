@@ -7,13 +7,19 @@ from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.auth.dependencies import require_role
+from app.api.v1.auth.dependencies import exigir_assinatura_ativa, require_role
 from app.core.database import get_session
 from app.models.atendimento import Atendimento, StatusOperacional
 from app.models.financeiro import Lancamento, StatusLancamento, TipoLancamento
 from app.models.usuario import TipoUsuario, Usuario
 
-router = APIRouter(prefix="/relatorios", tags=["relatorios"])
+# Enforcement de assinatura: todo o módulo exige trial vigente ou assinatura
+# ativa (402 caso contrário) — rotas de pagamento/config/LGPD ficam isentas.
+router = APIRouter(
+    prefix="/relatorios",
+    tags=["relatorios"],
+    dependencies=[Depends(exigir_assinatura_ativa)],
+)
 
 
 # ---------------------------------------------------------------------------

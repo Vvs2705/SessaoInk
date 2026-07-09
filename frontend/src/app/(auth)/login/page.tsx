@@ -507,15 +507,26 @@ export default function LoginPage() {
             )}
 
             {!mfaRequired && (
-              <p className="mt-5 text-center text-sm text-text-subtle">
-                Não tem conta?{" "}
-                <Link
-                  href="/cadastro"
-                  className="font-semibold text-teal-ink hover:text-ink-gold"
-                >
-                  Criar conta grátis
-                </Link>
-              </p>
+              <>
+                <p className="mt-5 text-center text-sm text-text-subtle">
+                  Não tem conta?{" "}
+                  <Link
+                    href="/cadastro"
+                    className="font-semibold text-teal-ink hover:text-ink-gold"
+                  >
+                    Criar conta grátis
+                  </Link>
+                </p>
+                <p className="mt-2 text-center text-xs text-text-subtle">
+                  Ainda avaliando?{" "}
+                  <Link
+                    href="/precos"
+                    className="font-semibold text-teal-ink hover:text-ink-gold"
+                  >
+                    Conheça os planos
+                  </Link>
+                </p>
+              </>
             )}
 
             <p className="mt-6 text-center text-xs text-text-subtle">

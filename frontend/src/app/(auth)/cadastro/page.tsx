@@ -184,6 +184,12 @@ export default function CadastroPage() {
               Entrar
             </Link>
           </p>
+
+          <p className="mt-2 text-center text-xs text-text-subtle">
+            <Link href="/precos" className="text-teal-ink font-semibold hover:underline">
+              Ver planos e preços
+            </Link>
+          </p>
         </div>
 
         <p className="mt-4 text-center text-[11px] text-text-subtle leading-relaxed">

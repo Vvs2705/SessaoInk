@@ -1,6 +1,7 @@
 """Testes de integração — Pagamentos (config, checkout gated, webhook idempotente)."""
 
 import uuid
+from datetime import UTC, datetime, timedelta
 
 from httpx import AsyncClient
 from sqlalchemy import select
@@ -21,6 +22,19 @@ async def _estudio_demo_id() -> uuid.UUID:
         est = await s.scalar(select(Estudio).where(Estudio.slug == "demo"))
         assert est is not None
         return est.id
+
+
+async def _set_assinatura(est_id: uuid.UUID, **campos) -> None:
+    """Ajusta a assinatura (única) do estúdio demo para o estado desejado.
+
+    Os testes de integração compartilham o mesmo banco, então cada teste fixa o
+    estado que precisa em vez de assumir o deixado por outro."""
+    async with async_session() as s:
+        ass = await s.scalar(select(Assinatura).where(Assinatura.estudio_id == est_id))
+        assert ass is not None
+        for campo, valor in campos.items():
+            setattr(ass, campo, valor)
+        await s.commit()
 
 
 class TestConfigECheckout:
@@ -344,3 +358,91 @@ class TestP006CobrancaLocal:
             cob = await s.scalar(select(Cobranca).where(Cobranca.external_reference == cob_ref))
             # Valor divergente → cobrança NÃO é marcada como paga.
             assert cob.status != StatusCobranca.PAGA
+
+
+class TestCancelamento:
+    """Cancelamento in-app: agenda o fim sem revogar o acesso na hora."""
+
+    async def test_cancelar_exige_auth(self, client: AsyncClient):
+        r = await client.post("/api/v1/pagamentos/cancelar")
+        assert r.status_code == 401
+
+    async def test_admin_cancela_preapproval_e_mantem_acesso(
+        self, autenticado, monkeypatch
+    ):
+        from app.api.v1.pagamentos import router as pr
+
+        est_id = await _estudio_demo_id()
+        await _set_assinatura(
+            est_id,
+            status=StatusAssinatura.ATIVA,
+            ciclo="mensal",
+            externo_id="preapp-cancel-1",
+            cancelar_no_fim=False,
+            periodo_fim=None,
+        )
+
+        chamadas: list[str] = []
+
+        async def fake_cancelar(preapproval_id):
+            chamadas.append(preapproval_id)
+            return {"status": "cancelled", "id": preapproval_id}
+
+        monkeypatch.setattr(pr.gateway, "configurado", lambda: True)
+        monkeypatch.setattr(pr.gateway, "cancelar_preapproval", fake_cancelar)
+
+        r = await autenticado.post("/api/v1/pagamentos/cancelar")
+        assert r.status_code == 200, r.text
+        body = r.json()
+        assert body["cancelar_no_fim"] is True
+        # Padrão SaaS justo: acesso segue liberado até o fim do período.
+        assert body["acesso_liberado"] is True
+        # Recorrente mensal → cancelou o preapproval no MP.
+        assert chamadas == ["preapp-cancel-1"]
+
+        async with async_session() as s:
+            ass = await s.scalar(select(Assinatura).where(Assinatura.estudio_id == est_id))
+            assert ass.cancelar_no_fim is True
+            # Não revoga na hora: status continua ATIVA.
+            assert ass.status == StatusAssinatura.ATIVA
+
+        # Idempotente: 2ª chamada não explode e NÃO fala de novo com o gateway.
+        r2 = await autenticado.post("/api/v1/pagamentos/cancelar")
+        assert r2.status_code == 200, r2.text
+        assert r2.json()["cancelar_no_fim"] is True
+        assert chamadas == ["preapp-cancel-1"]
+
+    async def test_avulso_sem_preapproval_marca_local_sem_chamar_mp(
+        self, autenticado, monkeypatch
+    ):
+        from app.api.v1.pagamentos import router as pr
+
+        est_id = await _estudio_demo_id()
+        await _set_assinatura(
+            est_id,
+            status=StatusAssinatura.ATIVA,
+            ciclo="anual",
+            externo_id=None,
+            cancelar_no_fim=False,
+            periodo_fim=datetime.now(UTC) + timedelta(days=200),
+        )
+
+        chamadas: list[str] = []
+
+        async def fake_cancelar(preapproval_id):
+            chamadas.append(preapproval_id)
+            return {}
+
+        monkeypatch.setattr(pr.gateway, "configurado", lambda: True)
+        monkeypatch.setattr(pr.gateway, "cancelar_preapproval", fake_cancelar)
+
+        r = await autenticado.post("/api/v1/pagamentos/cancelar")
+        assert r.status_code == 200, r.text
+        assert r.json()["cancelar_no_fim"] is True
+        # Avulso não tem recorrência no gateway → nada a cancelar no MP.
+        assert chamadas == []
+
+        async with async_session() as s:
+            ass = await s.scalar(select(Assinatura).where(Assinatura.estudio_id == est_id))
+            assert ass.cancelar_no_fim is True
+            assert ass.status == StatusAssinatura.ATIVA

@@ -252,6 +252,7 @@ export default function ConfiguracoesPage() {
   const [selectedPlanSlug, setSelectedPlanSlug] = useState<string>("profissional");
   const [selectedCycle, setSelectedCycle] = useState<string>("mensal");
   const [checkoutPending, setCheckoutPending] = useState(false);
+  const [showCancelarModal, setShowCancelarModal] = useState(false);
 
   const showToast = (tipo: "sucesso" | "erro", mensagem: string) => {
     setToast({ tipo, mensagem });
@@ -360,6 +361,7 @@ export default function ConfiguracoesPage() {
         dias_restantes_trial: number | null;
         trial_expira_em?: string | null;
         precisa_assinar: boolean;
+        cancelar_no_fim?: boolean;
       }>("/api/v1/pagamentos/assinatura"),
     enabled: isAdmin,
   });
@@ -868,6 +870,25 @@ export default function ConfiguracoesPage() {
       setCheckoutPending(false);
     }
   };
+
+  // Cancelamento in-app: agenda o fim (mantém acesso até o término do período já
+  // pago) e desliga a recorrência no gateway. Não revoga na hora.
+  const cancelarAssinatura = useMutation({
+    mutationFn: () => api.post("/api/v1/pagamentos/cancelar"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["assinatura-resumo"] });
+      setShowCancelarModal(false);
+      showToast(
+        "sucesso",
+        "Cancelamento agendado. Você mantém o acesso até o fim do período.",
+      );
+    },
+    onError: (e: unknown) =>
+      showToast(
+        "erro",
+        e instanceof ApiError ? e.detail : "Não foi possível cancelar agora.",
+      ),
+  });
 
   const val = (campo: keyof Estudio) =>
     formEstudio[campo] !== undefined
@@ -2343,6 +2364,44 @@ export default function ConfiguracoesPage() {
                       })()
                     ) : null}
 
+                    {/* Cancelamento in-app — só faz sentido com assinatura ativa
+                        (ou já agendada). Mantém o acesso até o fim do período. */}
+                    {assinaturaResumo &&
+                      (assinaturaResumo.status === "ATIVA" || assinaturaResumo.cancelar_no_fim) &&
+                      (assinaturaResumo.cancelar_no_fim ? (
+                        <div className="p-4 rounded-[14px] border border-copper-needle/25 bg-copper-needle/10 flex items-start gap-3">
+                          <CalendarDays size={18} className="shrink-0 mt-0.5 text-copper-needle" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-porcelain-ink">
+                              Cancelamento agendado
+                            </p>
+                            <p className="text-xs text-text-subtle mt-0.5">
+                              Sua assinatura não será renovada e não haverá nova cobrança. Você
+                              mantém o acesso a todos os recursos até o fim do período já pago.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-4 rounded-[14px] border border-mist-line bg-ink-night flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-porcelain-ink">
+                              Cancelar assinatura
+                            </p>
+                            <p className="text-xs text-text-subtle mt-0.5">
+                              Você mantém o acesso até o fim do período já pago e não haverá nova
+                              cobrança.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setShowCancelarModal(true)}
+                            className="shrink-0 h-9 px-4 rounded-[10px] border border-error-red/40 text-error-red text-xs font-semibold hover:bg-error-red hover:text-white transition-all"
+                          >
+                            Cancelar assinatura
+                          </button>
+                        </div>
+                      ))}
+
                     {/* Status do Gateway */}
                     {gatewayConfig && !gatewayConfig.go_live && (
                       <div className="p-3 bg-copper-needle/10 border border-copper-needle/20 text-copper-needle text-xs rounded-[10px] flex items-start gap-2.5">
@@ -2849,6 +2908,58 @@ export default function ConfiguracoesPage() {
                 >
                   {atualizarSlug.isPending && <Loader2 size={14} className="animate-spin" />}
                   Confirmar e Mudar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmação de cancelamento da assinatura */}
+      {showCancelarModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-ink-bg border border-mist-line w-full max-w-md rounded-[18px] shadow-popover overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-mist-line">
+              <div className="flex items-center gap-2">
+                <AlertCircle size={18} className="text-copper-needle" />
+                <h2 className="text-porcelain-ink font-bold text-sm">
+                  Cancelar assinatura?
+                </h2>
+              </div>
+              <button
+                onClick={() => setShowCancelarModal(false)}
+                className="text-text-subtle hover:text-porcelain-ink"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-sm text-text-subtle leading-relaxed">
+                Ao cancelar, sua assinatura <strong className="text-porcelain-ink">não
+                será renovada</strong> e não haverá nova cobrança. Você continua com
+                acesso a todos os recursos até o <strong className="text-porcelain-ink">fim
+                do período já pago</strong>.
+              </p>
+              <div className="p-3 bg-surface-raised border border-mist-line text-text-subtle text-xs rounded-[10px]">
+                Precisa de reembolso? Fale com o suporte — os primeiros 7 dias seguem
+                o direito de arrependimento (CDC).
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowCancelarModal(false)}
+                  className="flex-1 h-10 rounded-[12px] border border-mist-line hover:bg-surface-raised text-porcelain-ink font-semibold text-sm transition-all"
+                >
+                  Manter assinatura
+                </button>
+                <button
+                  type="button"
+                  disabled={cancelarAssinatura.isPending}
+                  onClick={() => cancelarAssinatura.mutate()}
+                  className="flex-1 h-10 rounded-[12px] bg-error-red hover:bg-error-hover disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm transition-all flex items-center justify-center gap-2"
+                >
+                  {cancelarAssinatura.isPending && <Loader2 size={14} className="animate-spin" />}
+                  Confirmar cancelamento
                 </button>
               </div>
             </div>

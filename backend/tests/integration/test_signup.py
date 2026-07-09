@@ -1,8 +1,20 @@
 """Testes de integração — cadastro self-serve + status de assinatura (trial)."""
 
 import uuid
+from unittest.mock import AsyncMock
 
 from httpx import AsyncClient
+
+from app.core.config import settings
+from app.core.redis import MockRedis
+
+
+async def _zerar_signup_limit() -> None:
+    """MockRedis não expira TTL — zera o contador de signup por IP entre testes."""
+    mock = MockRedis()
+    chaves = await mock.keys("signup_limit:*")
+    if chaves:
+        await mock.delete(*chaves)
 
 
 def _dados(**over):
@@ -78,6 +90,42 @@ class TestCadastro:
         r2 = await client.post("/api/v1/auth/registrar", json=_dados(nome_estudio=nome))
         assert r1.status_code == 201, r1.text
         assert r2.status_code == 201, r2.text
+
+
+class TestEmailBoasVindas:
+    async def test_cadastro_agenda_email_boas_vindas(
+        self, client: AsyncClient, monkeypatch
+    ):
+        """O cadastro dispara o agendamento do e-mail de boas-vindas (background)."""
+        await _zerar_signup_limit()
+        spy = AsyncMock()
+        monkeypatch.setattr("app.api.v1.auth.router.enviar_boas_vindas", spy)
+
+        dados = _dados()
+        r = await client.post("/api/v1/auth/registrar", json=dados)
+        assert r.status_code == 201, r.text
+
+        spy.assert_awaited_once()
+        kwargs = spy.await_args.kwargs
+        assert kwargs["destinatario_email"] == dados["email"].lower()
+        assert kwargs["nome"] == dados["nome"]
+        assert kwargs["nome_estudio"] == dados["nome_estudio"]
+        assert kwargs["slug"]
+
+    async def test_falha_no_envio_nao_quebra_cadastro(
+        self, client: AsyncClient, monkeypatch
+    ):
+        """Resend indisponível/erro no envio não pode derrubar o cadastro (segue 201)."""
+        await _zerar_signup_limit()
+        # Força o caminho de envio real (Resend "configurado") e faz o send explodir.
+        monkeypatch.setattr(settings, "RESEND_API_KEY", "re_test_key")
+        monkeypatch.setattr(
+            "app.core.email._enviar_sync",
+            lambda *a, **k: (_ for _ in ()).throw(RuntimeError("resend caiu")),
+        )
+
+        r = await client.post("/api/v1/auth/registrar", json=_dados())
+        assert r.status_code == 201, r.text
 
 
 class TestStatusAssinatura:

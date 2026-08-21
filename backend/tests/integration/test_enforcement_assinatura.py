@@ -33,7 +33,20 @@ async def _novo_estudio(assinatura_campos: dict | None) -> str:
     """Cria estúdio + ADMIN (+ assinatura, se campos dados); retorna o e-mail."""
     sufixo = uuid.uuid4().hex[:8]
     async with async_session() as session:
-        estudio = Estudio(nome=f"Enforcement {sufixo}", slug=f"enf-{sufixo}")
+        estudio = Estudio(
+            nome=f"Enforcement {sufixo}",
+            slug=f"enf-{sufixo}",
+            # O checkout exige dados fiscais completos (NFS-e); sem eles a
+            # criação de cobrança responde 422 antes de chegar ao gateway.
+            documento="40204602000185",
+            razao_social=f"Enforcement {sufixo} LTDA",
+            endereco_cep="07749220",
+            endereco_logradouro="Rua Vicente Lisa",
+            endereco_numero="6281",
+            endereco_bairro="Vila Rosina",
+            endereco_cidade="Caieiras",
+            endereco_uf="SP",
+        )
         session.add(estudio)
         await session.flush()
         admin = Usuario(

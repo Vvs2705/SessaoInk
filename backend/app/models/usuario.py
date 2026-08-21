@@ -39,6 +39,12 @@ class Estudio(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     # Token do feed iCalendar da agenda (assinável no Google Agenda/Apple/Outlook).
     agenda_ics_token: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
 
+    # Dados fiscais do contratante — exigidos para emitir a NFS-e da assinatura
+    # (CPF/CNPJ e endereço do tomador são obrigatórios no padrão nacional e em
+    # Caieiras/SP). Guardado sem máscara; 14 chars cobre CNPJ alfanumérico.
+    documento: Mapped[str | None] = mapped_column(String(14), nullable=True)
+    razao_social: Mapped[str | None] = mapped_column(String(200), nullable=True)
+
     endereco_cep: Mapped[str | None] = mapped_column(String(12), nullable=True)
     endereco_logradouro: Mapped[str | None] = mapped_column(String(180), nullable=True)
     endereco_numero: Mapped[str | None] = mapped_column(String(30), nullable=True)

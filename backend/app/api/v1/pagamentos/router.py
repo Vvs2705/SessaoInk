@@ -8,16 +8,29 @@ mas NÃO cobra ninguém até o go-live explícito.
 import logging
 import uuid
 from datetime import UTC, datetime, timedelta
+from typing import Any, cast
+from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    Header,
+    HTTPException,
+    Request,
+    status,
+)
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import CursorResult, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.auth.dependencies import get_usuario_atual, require_role
 from app.core.config import settings
 from app.core.database import get_session
+from app.core.documento_fiscal import campos_fiscais_faltando
+from app.core.documento_fiscal import formatar as formatar_documento
+from app.core.email import enviar_comprovante_pagamento
 from app.core.pagamentos import (
     GatewayNaoConfiguradoError,
     GatewayPagamentoError,
@@ -36,7 +49,7 @@ from app.models.saas import (
     StatusCobranca,
     StatusPagamento,
 )
-from app.models.usuario import TipoUsuario, Usuario
+from app.models.usuario import Estudio, TipoUsuario, Usuario
 from app.services.assinatura import get_assinatura, periodo_para_ciclo
 from app.services.assinatura import resumo as resumo_assinatura
 from app.services.audit import log_event
@@ -63,6 +76,144 @@ _MAP_STATUS_PAGAMENTO = {
 
 def _map_status_pagamento(mp_status: str | None) -> StatusPagamento:
     return _MAP_STATUS_PAGAMENTO.get((mp_status or "").lower(), StatusPagamento.PENDING)
+
+
+# Meio de pagamento do MP → texto do comprovante.
+_MEIO_PAGAMENTO = {
+    "credit_card": "Cartão de crédito",
+    "debit_card": "Cartão de débito",
+    "bank_transfer": "Pix",
+    "ticket": "Boleto",
+    "account_money": "Saldo em conta",
+}
+
+TZ_BR = ZoneInfo("America/Sao_Paulo")
+
+
+def _nome_plano(slug: str) -> str:
+    plano = get_plano(slug)
+    return plano["nome"] if plano else slug
+
+
+def _fmt_brl(centavos: int) -> str:
+    return f"R$ {centavos / 100:_.2f}".replace(".", ",").replace("_", ".")
+
+
+def _fmt_data_br(quando: datetime | None) -> str:
+    quando = quando or datetime.now(UTC)
+    if quando.tzinfo is None:
+        quando = quando.replace(tzinfo=UTC)
+    return quando.astimezone(TZ_BR).strftime("%d/%m/%Y às %H:%M")
+
+
+async def _reservar_comprovante(session: AsyncSession, cobranca: Cobranca) -> bool:
+    """Reserva o envio do comprovante desta cobrança. True = ganhou a corrida.
+
+    A aprovação chega por 3 caminhos que podem rodar ao mesmo tempo (webhook de
+    payment, webhook de preapproval e /reconciliar). O UPDATE condicional trava
+    a linha no Postgres, então apenas uma transação vê rowcount 1 — as demais
+    saem sem enviar nada. Sem isso o cliente receberia comprovante duplicado.
+    """
+    resultado = cast(
+        "CursorResult[Any]",
+        await session.execute(
+            update(Cobranca)
+            .where(
+                Cobranca.id == cobranca.id,
+                Cobranca.comprovante_enviado_em.is_(None),
+            )
+            .values(comprovante_enviado_em=datetime.now(UTC))
+            # O objeto em memória não é usado depois deste ponto; sincronizar
+            # custaria um SELECT extra dentro do webhook.
+            .execution_options(synchronize_session=False)
+        ),
+    )
+    return (resultado.rowcount or 0) == 1
+
+
+async def _agendar_comprovante(
+    session: AsyncSession,
+    background: BackgroundTasks | None,
+    cobranca: Cobranca,
+    pagamento: Pagamento | None,
+    via: str,
+) -> None:
+    """Agenda o comprovante de pagamento — no máximo um por cobrança.
+
+    Falhar aqui nunca pode derrubar a confirmação do pagamento: o dinheiro já
+    entrou e a assinatura já foi ativada. Por isso tudo roda dentro de try/except
+    e o envio real acontece em background, fora da resposta ao gateway.
+    """
+    if background is None:
+        return
+    try:
+        if not await _reservar_comprovante(session, cobranca):
+            return
+
+        estudio = await session.get(Estudio, cobranca.estudio_id)
+        destino = None
+        if cobranca.created_by_usuario_id:
+            destino = await session.get(Usuario, cobranca.created_by_usuario_id)
+        if destino is None:
+            destino = await session.scalar(
+                select(Usuario)
+                .where(
+                    Usuario.estudio_id == cobranca.estudio_id,
+                    Usuario.tipo == TipoUsuario.ADMIN,
+                    Usuario.ativo.is_(True),
+                )
+                .order_by(Usuario.criado_em)
+                .limit(1)
+            )
+        if destino is None or estudio is None:
+            logger.warning(
+                "comprovante_sem_destinatario",
+                extra={"extra": {"cobranca": str(cobranca.id)}},
+            )
+            return
+
+        assinatura = await session.scalar(
+            select(Assinatura).where(Assinatura.estudio_id == cobranca.estudio_id)
+        )
+        periodo = None
+        if assinatura and assinatura.periodo_inicio and assinatura.periodo_fim:
+            periodo = (
+                f"{assinatura.periodo_inicio.astimezone(TZ_BR):%d/%m/%Y}"
+                f" a {assinatura.periodo_fim.astimezone(TZ_BR):%d/%m/%Y}"
+            )
+
+        background.add_task(
+            enviar_comprovante_pagamento,
+            destinatario_email=destino.email,
+            nome_estudio=estudio.nome,
+            razao_social=estudio.razao_social,
+            documento_formatado=formatar_documento(estudio.documento) or None,
+            plano_nome=_nome_plano(cobranca.plano_slug),
+            ciclo=cobranca.ciclo,
+            valor_formatado=_fmt_brl(cobranca.valor_centavos),
+            data_formatada=_fmt_data_br(pagamento.pago_em if pagamento else None),
+            meio_pagamento=_MEIO_PAGAMENTO.get(pagamento.payment_type or "") if pagamento else None,
+            referencia=cobranca.external_reference,
+            periodo_texto=periodo,
+        )
+        logger.info(
+            "comprovante_agendado",
+            extra={"extra": {"cobranca": str(cobranca.id), "via": via}},
+        )
+    except Exception as exc:  # nunca derruba a confirmação do pagamento
+        # A reserva já foi carimbada; sem liberá-la o comprovante nunca mais
+        # sairia (a reconciliação seguinte veria "já enviado").
+        try:
+            await session.execute(
+                update(Cobranca)
+                .where(Cobranca.id == cobranca.id)
+                .values(comprovante_enviado_em=None)
+                .execution_options(synchronize_session=False)
+            )
+        except Exception:
+            logger.warning("comprovante_reserva_nao_liberada", extra={"extra": {
+                "cobranca": str(cobranca.id)}})
+        logger.warning(f"Falha ao agendar comprovante de pagamento: {exc}")
 
 
 class CheckoutRequest(BaseModel):
@@ -126,6 +277,18 @@ async def criar_checkout(
     plano = get_plano(dados.plano_slug)
     if not plano:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Plano inexistente: {dados.plano_slug}")
+
+    # Nota fiscal exige CPF/CNPJ e endereço do tomador. Cobrar antes do checkout
+    # evita a alternativa ruim: descobrir o dado faltando só na hora de emitir,
+    # com o dinheiro já recebido. O frontend abre o modal de dados fiscais e
+    # repete o checkout.
+    estudio = await session.get(Estudio, usuario.estudio_id)
+    faltando = campos_fiscais_faltando(estudio)
+    if faltando:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"codigo": "dados_fiscais_incompletos", "campos": faltando},
+        )
 
     email = dados.email or usuario.email
     agora = datetime.now(UTC)
@@ -264,6 +427,46 @@ async def status_assinatura(
     return _resumo_com_cancelamento(assinatura)
 
 
+class PagamentoHistoricoItem(BaseModel):
+    id: uuid.UUID
+    data: datetime
+    valor_centavos: int
+    plano_nome: str
+    ciclo: str
+    status: str
+    meio_pagamento: str | None = None
+
+
+@router.get("/historico", response_model=list[PagamentoHistoricoItem])
+async def historico_pagamentos(
+    session: AsyncSession = Depends(get_session),
+    usuario: Usuario = Depends(require_role(TipoUsuario.ADMIN)),
+):
+    """Pagamentos já reconciliados do estúdio — base dos comprovantes/notas."""
+    linhas = (
+        await session.execute(
+            select(Pagamento, Cobranca)
+            .join(Cobranca, Pagamento.cobranca_id == Cobranca.id)
+            .where(Pagamento.estudio_id == usuario.estudio_id)
+            .order_by(Pagamento.pago_em.desc().nullslast(), Pagamento.criado_em.desc())
+            .limit(60)
+        )
+    ).all()
+
+    return [
+        PagamentoHistoricoItem(
+            id=pagamento.id,
+            data=pagamento.pago_em or pagamento.criado_em,
+            valor_centavos=pagamento.valor_centavos,
+            plano_nome=_nome_plano(cobranca.plano_slug),
+            ciclo=cobranca.ciclo,
+            status=pagamento.status.value,
+            meio_pagamento=_MEIO_PAGAMENTO.get(pagamento.payment_type or ""),
+        )
+        for pagamento, cobranca in linhas
+    ]
+
+
 @router.post("/cancelar")
 async def cancelar_assinatura(
     session: AsyncSession = Depends(get_session),
@@ -333,7 +536,11 @@ async def cancelar_assinatura(
     return _resumo_com_cancelamento(assinatura)
 
 
-async def _reconciliar_cobranca_via_mp(session: AsyncSession, cobranca: Cobranca) -> str:
+async def _reconciliar_cobranca_via_mp(
+    session: AsyncSession,
+    cobranca: Cobranca,
+    background: BackgroundTasks | None = None,
+) -> str:
     """Reconciliação ATIVA (sem depender de webhook): consulta o Mercado Pago pelo
     pagamento/assinatura da cobrança e ativa se aprovado. Idempotente — rede de
     segurança para o caso de um webhook se perder. Mesma regra anti-fraude do
@@ -345,7 +552,7 @@ async def _reconciliar_cobranca_via_mp(session: AsyncSession, cobranca: Cobranca
         select(Assinatura).where(Assinatura.estudio_id == cobranca.estudio_id)
     )
 
-    async def _ativar() -> None:
+    async def _ativar(pagamento: Pagamento | None = None) -> None:
         cobranca.status = StatusCobranca.PAGA
         if assinatura:
             ja_ativa = assinatura.status == StatusAssinatura.ATIVA
@@ -370,6 +577,9 @@ async def _reconciliar_cobranca_via_mp(session: AsyncSession, cobranca: Cobranca
                         "via": "reconcile_ativo",
                     },
                 )
+        await _agendar_comprovante(
+            session, background, cobranca, pagamento, via="reconcile_ativo"
+        )
 
     # Mensal → assinatura recorrente (preapproval)
     if cobranca.ciclo == "mensal" and cobranca.gateway_preapproval_id:
@@ -414,12 +624,13 @@ async def _reconciliar_cobranca_via_mp(session: AsyncSession, cobranca: Cobranca
         await session.flush()
     pagamento.reconciliado_em = datetime.now(UTC)
     pagamento.pago_em = datetime.now(UTC)
-    await _ativar()
+    await _ativar(pagamento)
     return "ativada"
 
 
 @router.post("/reconciliar")
 async def reconciliar_pendentes(
+    background: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
     usuario: Usuario = Depends(require_role(TipoUsuario.ADMIN)),
 ):
@@ -443,7 +654,7 @@ async def reconciliar_pendentes(
     ativada = False
     for cob in cobrancas:
         try:
-            if await _reconciliar_cobranca_via_mp(session, cob) == "ativada":
+            if await _reconciliar_cobranca_via_mp(session, cob, background) == "ativada":
                 ativada = True
         except GatewayPagamentoError as exc:
             logger.warning("reconciliacao_ativa_falhou", extra={"extra": {"erro": str(exc)}})
@@ -456,6 +667,7 @@ async def reconciliar_pendentes(
 @router.post("/webhook", status_code=200)
 async def webhook_mercadopago(
     request: Request,
+    background: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
     x_signature: str | None = Header(default=None),
     x_request_id: str | None = Header(default=None),
@@ -619,6 +831,9 @@ async def webhook_mercadopago(
                                 entidade_id=str(assinatura.id),
                                 dados={"gateway": "mercadopago", "cobranca": str(cobranca.id)},
                             )
+                    await _agendar_comprovante(
+                        session, background, cobranca, pagamento, via="webhook_payment"
+                    )
 
             # Estorno/chargeback → suspende a assinatura (proteção de receita).
             elif cobranca and mp_status in ("refunded", "charged_back"):
@@ -718,6 +933,9 @@ async def webhook_mercadopago(
                                         "via": "preapproval",
                                     },
                                 )
+                        await _agendar_comprovante(
+                            session, background, cobranca, None, via="webhook_preapproval"
+                        )
 
                 # Assinatura recorrente cancelada/pausada. Duas origens distintas:
                 #  - Cancelamento AGENDADO pelo usuário (in-app, cancelar_no_fim=True):

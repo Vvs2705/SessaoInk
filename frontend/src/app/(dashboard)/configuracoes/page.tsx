@@ -32,7 +32,9 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { api, ApiError, withCsrfHeaders } from "@/lib/api/client";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
+import { isDocumentoValido, maskDocumento, unmaskDocumento } from "@/lib/documento";
+import DadosFiscaisModal from "@/components/assinatura/DadosFiscaisModal";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -52,6 +54,9 @@ interface Estudio {
   agenda_ics_url: string | null;
   has_logo: boolean;
   has_foto: boolean;
+
+  documento: string | null;
+  razao_social: string | null;
 
   endereco_cep: string | null;
   endereco_logradouro: string | null;
@@ -107,6 +112,21 @@ const CONVITE_STATUS_LABEL: Record<string, string> = {
   ACEITO: "Aceito",
   EXPIRADO: "Expirado",
   REVOGADO: "Revogado",
+};
+
+interface PagamentoHistorico {
+  id: string;
+  data: string;
+  valor_centavos: number;
+  plano_nome: string;
+  ciclo: string;
+  status: string;
+  meio_pagamento: "pix" | "credit_card" | null;
+}
+
+const MEIO_PAGAMENTO_LABEL: Record<string, string> = {
+  pix: "Pix",
+  credit_card: "Cartão de crédito",
 };
 
 type AbaAtiva = "perfil" | "portal" | "equipe" | "seguranca" | "assinatura";
@@ -253,6 +273,7 @@ export default function ConfiguracoesPage() {
   const [selectedCycle, setSelectedCycle] = useState<string>("mensal");
   const [checkoutPending, setCheckoutPending] = useState(false);
   const [showCancelarModal, setShowCancelarModal] = useState(false);
+  const [showDadosFiscaisModal, setShowDadosFiscaisModal] = useState(false);
 
   const showToast = (tipo: "sucesso" | "erro", mensagem: string) => {
     setToast({ tipo, mensagem });
@@ -364,6 +385,14 @@ export default function ConfiguracoesPage() {
         cancelar_no_fim?: boolean;
       }>("/api/v1/pagamentos/assinatura"),
     enabled: isAdmin,
+  });
+
+  // Histórico de cobranças. Rota nova: se falhar, a seção simplesmente some.
+  const { data: historicoPagamentos } = useQuery({
+    queryKey: ["pagamentos-historico"],
+    queryFn: () => api.get<PagamentoHistorico[]>("/api/v1/pagamentos/historico"),
+    enabled: isAdmin,
+    retry: false,
   });
 
   const selectedPlan = planosData?.planos?.find((p: any) => p.slug === selectedPlanSlug);
@@ -706,7 +735,12 @@ export default function ConfiguracoesPage() {
 
   const handleSalvarEstudio = () => {
     if (!formEditado || Object.keys(formEstudio).length === 0) return;
-    atualizarEstudio.mutate(formEstudio);
+    // O backend espera o documento sem máscara.
+    const dados =
+      formEstudio.documento !== undefined
+        ? { ...formEstudio, documento: unmaskDocumento(formEstudio.documento ?? "") }
+        : formEstudio;
+    atualizarEstudio.mutate(dados);
   };
 
   const handleAlterarSenha = () => {
@@ -861,7 +895,15 @@ export default function ConfiguracoesPage() {
         showToast("erro", "Init point de faturamento não retornado.");
       }
     } catch (e: any) {
-      if (e instanceof ApiError && e.status === 503) {
+      // 422 = faltam CPF/CNPJ ou endereço para a NFS-e: coleta no modal e
+      // repete o checkout sozinho, em vez de mostrar um erro sem saída.
+      const detail = (e instanceof ApiError ? (e.body as { detail?: unknown })?.detail : null) as
+        | { codigo?: string }
+        | null
+        | undefined;
+      if (e instanceof ApiError && e.status === 422 && detail?.codigo === "dados_fiscais_incompletos") {
+        setShowDadosFiscaisModal(true);
+      } else if (e instanceof ApiError && e.status === 503) {
         showToast("erro", "Pagamentos em configuração — cobrança ainda não habilitada.");
       } else {
         showToast("erro", e.detail || "Erro ao iniciar processo de pagamento.");
@@ -869,6 +911,12 @@ export default function ConfiguracoesPage() {
     } finally {
       setCheckoutPending(false);
     }
+  };
+
+  const handleDadosFiscaisSalvos = () => {
+    setShowDadosFiscaisModal(false);
+    queryClient.invalidateQueries({ queryKey: ["estudio"] });
+    handleCheckout();
   };
 
   // Cancelamento in-app: agenda o fim (mantém acesso até o término do período já
@@ -1243,6 +1291,67 @@ export default function ConfiguracoesPage() {
                           {atualizarEstudio.isPending ? "Salvando..." : "Salvar alterações"}
                         </button>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Dados fiscais (nota fiscal) */}
+                  <div className="rounded-[18px] border border-mist-line bg-ink-bg p-6 space-y-6">
+                    <div>
+                      <h2 className="text-base font-semibold text-porcelain-ink">
+                        Dados fiscais (nota fiscal)
+                      </h2>
+                      <p className="text-xs text-text-subtle">
+                        Usados para emitir a nota fiscal (NFS-e) da sua assinatura. Não aparecem
+                        no portal público.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="text-xs font-medium text-text-subtle mb-1.5 block">
+                          CPF ou CNPJ
+                        </label>
+                        <input
+                          value={maskDocumento(val("documento"))}
+                          onChange={(event) =>
+                            handleCampoEstudio("documento", maskDocumento(event.target.value))
+                          }
+                          className="w-full bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors"
+                          placeholder="000.000.000-00"
+                        />
+                        {val("documento") !== "" && !isDocumentoValido(val("documento")) && (
+                          <p className="text-[10px] text-error-red mt-1">CPF/CNPJ inválido.</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-text-subtle mb-1.5 block">
+                          Razão social / Nome completo
+                        </label>
+                        <input
+                          value={val("razao_social")}
+                          onChange={(event) => handleCampoEstudio("razao_social", event.target.value)}
+                          className="w-full bg-ink-night border border-mist-line rounded-[10px] px-3 py-2.5 text-sm text-porcelain-ink focus:outline-none focus:border-teal-ink/50 transition-colors"
+                          placeholder="Estúdio Exemplo LTDA"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end pt-2">
+                      <button
+                        type="button"
+                        onClick={handleSalvarEstudio}
+                        disabled={!formEditado || atualizarEstudio.isPending}
+                        className={cn(
+                          "flex items-center gap-2 px-4 py-2 rounded-[10px] text-sm font-medium transition-all",
+                          formEditado
+                            ? "bg-teal-ink text-ink-night hover:bg-teal-ink/90"
+                            : "bg-mist-line text-text-subtle cursor-not-allowed"
+                        )}
+                      >
+                        <Save size={14} />
+                        {atualizarEstudio.isPending ? "Salvando..." : "Salvar alterações"}
+                      </button>
                     </div>
                   </div>
 
@@ -2364,6 +2473,40 @@ export default function ConfiguracoesPage() {
                       })()
                     ) : null}
 
+                    {/* Histórico de cobranças — sem card vazio: some quando não há nada. */}
+                    {historicoPagamentos && historicoPagamentos.length > 0 && (
+                      <div className="rounded-[14px] border border-mist-line bg-ink-night overflow-hidden">
+                        <div className="px-4 py-3 border-b border-mist-line">
+                          <p className="text-sm font-semibold text-porcelain-ink">
+                            Histórico de pagamentos
+                          </p>
+                        </div>
+                        <ul className="divide-y divide-mist-line">
+                          {historicoPagamentos.map((pgto) => (
+                            <li
+                              key={pgto.id}
+                              className="px-4 py-3 flex items-center justify-between gap-3"
+                            >
+                              <div className="min-w-0">
+                                <p className="text-sm text-porcelain-ink truncate">
+                                  {pgto.plano_nome} · {pgto.ciclo}
+                                </p>
+                                <p className="text-xs text-text-subtle mt-0.5">
+                                  {new Date(pgto.data).toLocaleDateString("pt-BR")}
+                                  {pgto.meio_pagamento
+                                    ? ` · ${MEIO_PAGAMENTO_LABEL[pgto.meio_pagamento] ?? pgto.meio_pagamento}`
+                                    : ""}
+                                </p>
+                              </div>
+                              <span className="shrink-0 text-sm font-semibold text-porcelain-ink">
+                                {formatCurrency(pgto.valor_centavos / 100)}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
                     {/* Cancelamento in-app — só faz sentido com assinatura ativa
                         (ou já agendada). Mantém o acesso até o fim do período. */}
                     {assinaturaResumo &&
@@ -2914,6 +3057,14 @@ export default function ConfiguracoesPage() {
           </div>
         </div>
       )}
+
+      {/* Coleta de dados fiscais antes do checkout (NFS-e) */}
+      <DadosFiscaisModal
+        aberto={showDadosFiscaisModal}
+        onFechar={() => setShowDadosFiscaisModal(false)}
+        estudio={estudio}
+        onSalvo={handleDadosFiscaisSalvos}
+      />
 
       {/* Modal de confirmação de cancelamento da assinatura */}
       {showCancelarModal && (

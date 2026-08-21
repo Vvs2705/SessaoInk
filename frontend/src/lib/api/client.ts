@@ -8,7 +8,9 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     public detail: string,
-    message?: string
+    message?: string,
+    /** Corpo JSON bruto do erro — para `detail` estruturado (ex.: 422 fiscal). */
+    public body?: unknown
   ) {
     super(message ?? detail);
     this.name = "ApiError";
@@ -21,11 +23,13 @@ async function handleResponse<T>(res: Response): Promise<T> {
     return res.json();
   }
   let detail = `Erro ${res.status}`;
+  let body: unknown;
   try {
-    const body = await res.json();
-    const d = body?.detail;
+    body = await res.json();
+    const d = (body as { detail?: unknown } | null)?.detail;
     // O 402 de assinatura devolve detail estruturado {motivo, mensagem}.
-    detail = (typeof d === "string" ? d : d?.mensagem) ?? detail;
+    detail =
+      (typeof d === "string" ? d : (d as { mensagem?: string } | null)?.mensagem) ?? detail;
   } catch {}
 
   // 402 = assinatura exigida (trial expirado/assinatura vencida). Leva o usuário
@@ -38,7 +42,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
     window.location.href = "/configuracoes?assinatura=1";
   }
 
-  throw new ApiError(res.status, detail);
+  throw new ApiError(res.status, detail, undefined, body);
 }
 
 async function tryRefresh(): Promise<boolean> {

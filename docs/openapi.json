@@ -3033,6 +3033,60 @@
         }
       }
     },
+    "/api/v1/pagamentos/historico": {
+      "get": {
+        "tags": [
+          "pagamentos"
+        ],
+        "summary": "Historico Pagamentos",
+        "description": "Pagamentos já reconciliados do estúdio — base dos comprovantes/notas.",
+        "operationId": "historico_pagamentos_api_v1_pagamentos_historico_get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PagamentoHistoricoItem"
+                  },
+                  "title": "Response Historico Pagamentos Api V1 Pagamentos Historico Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/pagamentos/cancelar": {
       "post": {
         "tags": [
@@ -9025,6 +9079,28 @@
             ],
             "title": "Horario Funcionamento"
           },
+          "documento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documento"
+          },
+          "razao_social": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Razao Social"
+          },
           "endereco_cep": {
             "anyOf": [
               {
@@ -9361,6 +9437,28 @@
             "type": "boolean",
             "title": "Has Foto",
             "default": false
+          },
+          "documento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documento"
+          },
+          "razao_social": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Razao Social"
           },
           "endereco_cep": {
             "anyOf": [
@@ -10882,6 +10980,57 @@
           "go_live"
         ],
         "title": "PagamentoConfigResponse"
+      },
+      "PagamentoHistoricoItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "data": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Data"
+          },
+          "valor_centavos": {
+            "type": "integer",
+            "title": "Valor Centavos"
+          },
+          "plano_nome": {
+            "type": "string",
+            "title": "Plano Nome"
+          },
+          "ciclo": {
+            "type": "string",
+            "title": "Ciclo"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "meio_pagamento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meio Pagamento"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "data",
+          "valor_centavos",
+          "plano_nome",
+          "ciclo",
+          "status"
+        ],
+        "title": "PagamentoHistoricoItem"
       },
       "PortfolioPublicoItem": {
         "properties": {

@@ -39,10 +39,13 @@
     "autoprefixer": "^10.0.0",
     "eslint": "^9.39.0",
     "eslint-config-next": "^16.2.6",
-    "postcss": "^8.5.15",
+    "postcss": "^8.5.26",
     "tailwindcss": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.0.0",
     "vitest": "^4.1.8"
+  },
+  "overrides": {
+    "postcss": "$postcss"
   }
 }

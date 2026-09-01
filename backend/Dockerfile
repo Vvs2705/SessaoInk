@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Dependências Python (layer separado para cache)
 COPY requirements.lock .
-RUN pip install --no-cache-dir --upgrade pip \
+RUN pip install --no-cache-dir --upgrade pip "setuptools>=78.1.1" \
     && pip install --no-cache-dir -r requirements.lock
 
 # Código da aplicação

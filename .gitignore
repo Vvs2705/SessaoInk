@@ -108,5 +108,7 @@ TODO_*.md
 CONTEXTO_*.md
 PROMPT_*.md
 
-# CLAUDE.md — guia de agente: apenas local, nunca no repo (decisao do dono)
-CLAUDE.md
+# CLAUDE.md — passa a ser VERSIONADO: carrega a regra permanente do projeto
+# (pasta central, main por fast-forward, sem pastas novas). Decisao de 01/09/2026,
+# substitui a regra anterior de manter o arquivo so' local.
+!CLAUDE.md

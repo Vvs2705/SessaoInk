@@ -6,6 +6,7 @@ Caso contrário, a operação é silenciosa (no-op).
 
 import asyncio
 import logging
+from html import escape
 
 from app.core.config import settings
 
@@ -16,18 +17,31 @@ def _resend_configurado() -> bool:
     return bool(settings.RESEND_API_KEY)
 
 
-def _enviar_sync(destinatario: str, assunto: str, html: str) -> None:
-    """Envia email via Resend de forma síncrona — executado em thread separada."""
+def _enviar_sync(
+    destinatario: str,
+    assunto: str,
+    html: str,
+    anexos: list[dict] | None = None,
+) -> None:
+    """Envia email via Resend de forma síncrona — executado em thread separada.
+
+    `anexos`: lista no formato do Resend — {"filename": str, "content": <base64>}.
+    Usado para anexar o PDF da nota fiscal (DANFSe) ao comprovante.
+    """
     import resend  # type: ignore[import-untyped]  # lazy: módulo importável sem o pacote
 
     resend.api_key = settings.RESEND_API_KEY
 
-    resend.Emails.send({
+    payload: dict = {
         "from": settings.RESEND_FROM,
         "to": [destinatario],
         "subject": assunto,
         "html": html,
-    })
+    }
+    if anexos:
+        payload["attachments"] = anexos
+
+    resend.Emails.send(payload)
 
 
 async def enviar_notificacao_orcamento(
@@ -473,3 +487,107 @@ async def enviar_email_reset_senha(
     except Exception as exc:
         logger.warning(f"Falha ao enviar email de reset: {exc}")
         return False
+
+
+def _linha_comprovante(rotulo: str, valor: str, destaque: bool = False) -> str:
+    cor = "#2F9285" if destaque else "#F0EADD"
+    peso = "800" if destaque else "600"
+    return f"""
+          <tr style="border-top:1px solid #1a2830;">
+            <td style="padding:11px 0;font-size:13px;color:#87938F;">{escape(rotulo)}</td>
+            <td style="padding:11px 0;font-size:13px;color:{cor};font-weight:{peso};text-align:right;">{escape(valor)}</td>
+          </tr>"""
+
+
+async def enviar_comprovante_pagamento(
+    destinatario_email: str,
+    nome_estudio: str,
+    razao_social: str | None,
+    documento_formatado: str | None,
+    plano_nome: str,
+    ciclo: str,
+    valor_formatado: str,
+    data_formatada: str,
+    meio_pagamento: str | None,
+    referencia: str,
+    periodo_texto: str | None = None,
+    anexos: list[dict] | None = None,
+) -> None:
+    """Comprovante de pagamento da assinatura, enviado após aprovação.
+
+    `anexos` recebe o PDF da NFS-e (DANFSe) quando a emissão automática estiver
+    ligada; até lá o comprovante vai sozinho. Ver docs/fiscal-nfse.md.
+    """
+    if not _resend_configurado():
+        logger.debug("RESEND_API_KEY não configurado — comprovante ignorado.")
+        return
+
+    linhas = _linha_comprovante("Plano", f"{plano_nome} · {ciclo.capitalize()}")
+    if periodo_texto:
+        linhas += _linha_comprovante("Período", periodo_texto)
+    linhas += _linha_comprovante("Data do pagamento", data_formatada)
+    if meio_pagamento:
+        linhas += _linha_comprovante("Forma de pagamento", meio_pagamento)
+    if razao_social:
+        linhas += _linha_comprovante("Contratante", razao_social)
+    if documento_formatado:
+        linhas += _linha_comprovante("CPF/CNPJ", documento_formatado)
+    linhas += _linha_comprovante("Valor pago", valor_formatado, destaque=True)
+
+    nota = (
+        "A nota fiscal segue anexa a este e-mail."
+        if anexos
+        else "A nota fiscal referente a este pagamento será enviada em seguida."
+    )
+    painel_url = f"{settings.APP_URL}/configuracoes?assinatura=1"
+
+    html = f"""
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#050B12;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <div style="max-width:560px;margin:40px auto;background:#0B171C;border:1px solid #243337;border-radius:18px;overflow:hidden;">
+    <div style="background:#2F9285;padding:24px 32px;">
+      <p style="margin:0;font-size:11px;color:#050B12;font-weight:700;letter-spacing:2px;text-transform:uppercase;">SessãoInk</p>
+      <h1 style="margin:8px 0 0;font-size:20px;color:#050B12;font-weight:800;">Pagamento confirmado</h1>
+    </div>
+    <div style="padding:28px 32px;">
+      <p style="margin:0 0 20px;font-size:14px;color:#87938F;line-height:1.6;">
+        Recebemos o pagamento da assinatura de
+        <strong style="color:#F0EADD;">{escape(nome_estudio)}</strong>. Obrigado!
+      </p>
+
+      <div style="background:#050B12;border:1px solid #243337;border-radius:14px;padding:4px 20px;margin-bottom:22px;">
+        <table style="width:100%;border-collapse:collapse;">{linhas}
+        </table>
+      </div>
+
+      <p style="margin:0 0 20px;font-size:12px;color:#87938F;line-height:1.6;">
+        {nota}<br>
+        Referência da transação: <span style="color:#F0EADD;">{escape(referencia)}</span>
+      </p>
+
+      <a href="{painel_url}"
+         style="display:inline-block;background:#2F9285;color:#050B12;font-weight:700;font-size:14px;padding:13px 28px;border-radius:12px;text-decoration:none;">
+        Ver minha assinatura →
+      </a>
+
+      <p style="margin:24px 0 0;font-size:12px;color:#87938F;line-height:1.5;">
+        Dúvidas sobre a cobrança? É só responder este e-mail.
+      </p>
+    </div>
+    <div style="padding:16px 32px;border-top:1px solid #1a2830;text-align:center;">
+      <p style="margin:0;font-size:11px;color:#87938F;">SessãoInk · Gestão para tatuadores</p>
+    </div>
+  </div>
+</body></html>
+"""
+    try:
+        await asyncio.to_thread(
+            _enviar_sync,
+            destinatario_email,
+            f"[SessãoInk] Comprovante de pagamento — {valor_formatado}",
+            html,
+            anexos,
+        )
+        logger.info("comprovante_pagamento_enviado", extra={"extra": {"ref": referencia}})
+    except Exception as exc:
+        logger.warning(f"Falha ao enviar comprovante de pagamento: {exc}")

@@ -162,6 +162,13 @@ class Cobranca(Base, UUIDMixin, TimestampMixin):
     created_by_usuario_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid(as_uuid=True), nullable=True
     )
+    # Guarda de entrega única do comprovante. A aprovação chega por 3 caminhos
+    # (webhook payment, webhook preapproval e /reconciliar) que podem correr em
+    # paralelo; o UPDATE condicional em `marcar_comprovante_enviado` garante que
+    # só um deles envia o e-mail — e, futuramente, emite a nota fiscal.
+    comprovante_enviado_em: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
 
 class Pagamento(Base, UUIDMixin, TimestampMixin):

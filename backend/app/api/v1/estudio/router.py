@@ -40,6 +40,9 @@ class EstudioResponse(BaseModel):
     has_logo: bool = False
     has_foto: bool = False
 
+    documento: str | None = None
+    razao_social: str | None = None
+
     endereco_cep: str | None = None
     endereco_logradouro: str | None = None
     endereco_numero: str | None = None
@@ -79,6 +82,8 @@ class EstudioResponse(BaseModel):
             ),
             has_logo=bool(estudio.logo_path),
             has_foto=bool(estudio.foto_path),
+            documento=estudio.documento,
+            razao_social=estudio.razao_social,
             endereco_cep=estudio.endereco_cep,
             endereco_logradouro=estudio.endereco_logradouro,
             endereco_numero=estudio.endereco_numero,
@@ -104,6 +109,9 @@ class EstudioAtualizarRequest(BaseModel):
     instagram: str | None = None
     email_notificacao: str | None = None
     horario_funcionamento: dict | None = None
+
+    documento: str | None = None
+    razao_social: str | None = None
 
     endereco_cep: str | None = None
     endereco_logradouro: str | None = None
@@ -206,6 +214,8 @@ async def atualizar_estudio(
     usuario: Usuario = Depends(require_role(TipoUsuario.ADMIN)),
 ):
     """Atualiza dados do estúdio. Apenas ADMIN."""
+    from app.core.documento_fiscal import documento_valido
+    from app.core.documento_fiscal import limpar as limpar_documento
     from app.utils.endereco import validar_google_url
 
     estudio = await _carregar_estudio(session, usuario.estudio_id)
@@ -219,6 +229,17 @@ async def atualizar_estudio(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail=str(exc),
             ) from exc
+
+    if "documento" in campos:
+        # Grava sem máscara. Documento inválido iria falhar só na emissão da
+        # nota fiscal, semanas depois — melhor recusar aqui.
+        limpo = limpar_documento(campos["documento"])
+        if limpo and not documento_valido(limpo):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="CPF/CNPJ inválido.",
+            )
+        campos["documento"] = limpo or None
 
     if "endereco_uf" in campos and campos["endereco_uf"]:
         campos["endereco_uf"] = campos["endereco_uf"].upper()[:2]

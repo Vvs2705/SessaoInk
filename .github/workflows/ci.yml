@@ -26,7 +26,7 @@ jobs:
       DATABASE_URL: postgresql+asyncpg://user:pass@localhost/db
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -74,7 +74,7 @@ jobs:
       DATABASE_URL: postgresql+asyncpg://ci:ci@localhost:5432/sessaoink_ci
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -112,7 +112,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: pip-audit (backend) — bloqueante

@@ -8,8 +8,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-import { AuthMarketingPanel } from "@/components/auth/AuthMarketingPanel";
-import { DailyTattooLoginAnimation } from "@/components/auth/DailyTattooLoginAnimation";
+import { LoginArt } from "@/components/auth/LoginArt";
 import { BrandLogo } from "@/components/BrandLogo";
 import { api, ApiError } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
@@ -20,6 +19,14 @@ const loginSchema = z.object({
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
+
+// Classes compartilhadas dos campos e botões (só tokens semânticos).
+const labelCls = "mb-1.5 block text-sm font-medium text-foreground";
+const inputCls =
+  "h-12 w-full rounded-md border border-border bg-secondary px-4 text-base text-foreground outline-none transition placeholder:text-text-subtle focus:border-primary focus:ring-2 focus:ring-primary/20 aria-[invalid=true]:border-destructive";
+const primaryBtn =
+  "flex h-12 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60";
+const linkCls = "font-medium text-primary underline-offset-4 hover:underline";
 
 type LoginApiResponse = {
   message?: string;
@@ -225,315 +232,303 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="grid min-h-app lg:grid-cols-[minmax(0,1.05fr)_minmax(420px,0.95fr)]">
-      <AuthMarketingPanel />
+    <div className="grid min-h-app bg-ink-night lg:grid-cols-[minmax(0,1.1fr)_minmax(26rem,0.9fr)]">
+      <LoginArt variant="panel" />
 
-      <section className="relative flex min-h-app items-center justify-center overflow-hidden px-4 py-8 sm:px-6 lg:px-10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(47,146,133,0.18),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(195,107,63,0.12),transparent_34%)]" />
+      <section className="flex min-h-app flex-col justify-center px-5 py-8 sm:px-10 lg:px-14">
+        <div className="mx-auto w-full max-w-sm space-y-6">
+          <BrandLogo layout="wide" size="md" scaling={false} />
 
-        <div className="relative z-10 w-full max-w-md">
-          <div className="mb-6 flex flex-col items-center text-center lg:hidden">
-            <BrandLogo layout="wide" size="lg" scaling={false} />
-            <p className="mt-4 text-sm leading-6 text-text-subtle">
-              Gestão para tatuadores organizarem agenda, clientes, financeiro,
-              portfólio e atendimentos em um só lugar.
+          <LoginArt variant="compact" />
+
+          <header className="space-y-2">
+            <h1 className="text-3xl leading-tight text-foreground">
+              {mfaRequired ? "Confirme que é você" : "Entre no seu estúdio"}
+            </h1>
+            <p className="text-sm leading-6 text-muted-foreground">
+              {mfaRequired
+                ? "Escolha o método e informe o código de segurança."
+                : "Veja a agenda de hoje e o que está esperando por você."}
             </p>
-          </div>
+          </header>
 
-          <div className="relative">
-            <DailyTattooLoginAnimation />
-
-            <div className="relative overflow-hidden rounded-[2rem] border border-mist-line bg-ink-bg/90 p-6 shadow-popover backdrop-blur-xl sm:p-8">
-            <div className="mb-7 hidden justify-center lg:flex">
-              <BrandLogo layout="wide" size="lg" scaling={false} />
-            </div>
-
-            <div className="mb-6 text-center">
-              <h1 className="text-2xl font-black tracking-tight text-porcelain-ink">
-                {mfaRequired ? "Confirme sua identidade" : "Acesse seu estúdio"}
-              </h1>
-              <p className="mt-2 text-sm leading-6 text-text-subtle">
-                {mfaRequired
-                  ? "Selecione o método e informe o código de segurança."
-                  : "Entre para gerenciar seus atendimentos, clientes e agenda."}
-              </p>
-            </div>
-
-            {mfaRequired ? (
-              <form onSubmit={handleVerifyMfa} className="space-y-4">
-                {mfaMetodos.includes("totp") && mfaMetodos.includes("email") && (
-                  <div className="flex rounded-xl border border-mist-line bg-ink-night p-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedMetodo("totp");
-                        setMfaError(null);
-                      }}
-                      className={cn(
-                        "flex-1 rounded-[10px] py-2 text-xs font-semibold transition-all",
-                        selectedMetodo === "totp"
-                          ? "bg-teal-ink text-ink-night"
-                          : "text-text-subtle hover:text-porcelain-ink",
-                      )}
-                    >
-                      App autenticador
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedMetodo("email");
-                        setMfaError(null);
-                      }}
-                      className={cn(
-                        "flex-1 rounded-[10px] py-2 text-xs font-semibold transition-all",
-                        selectedMetodo === "email"
-                          ? "bg-teal-ink text-ink-night"
-                          : "text-text-subtle hover:text-porcelain-ink",
-                      )}
-                    >
-                      Código por e-mail
-                    </button>
-                  </div>
-                )}
-
-                {selectedMetodo === "totp" && (
-                  <div>
-                    <label
-                      htmlFor="mfa-totp"
-                      className="mb-2 block text-xs font-semibold uppercase tracking-wide text-text-subtle"
-                    >
-                      Código do app
-                    </label>
-                    <input
-                      id="mfa-totp"
-                      ref={mfaCodigoInputRef}
-                      inputMode="numeric"
-                      autoComplete="one-time-code"
-                      maxLength={6}
-                      value={mfaCodigo}
-                      onChange={(event) =>
-                        setMfaCodigo(event.target.value.replace(/\D/g, ""))
-                      }
-                      className="h-12 w-full rounded-lg border border-mist-line bg-surface-raised px-4 text-center font-mono text-base tracking-[0.5em] text-porcelain-ink outline-none transition focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
-                      required
-                    />
-                  </div>
-                )}
-
-                {selectedMetodo === "email" && (
-                  <div className="space-y-4">
-                    {!emailEnviado ? (
-                      <div className="rounded-lg border border-mist-line bg-ink-night p-4">
-                        <p className="text-sm leading-6 text-text-subtle">
-                          Enviaremos um código de uso único para o e-mail cadastrado.
-                        </p>
-
-                        <button
-                          type="button"
-                          onClick={handleSolicitarEmailOtp}
-                          disabled={mfaSubmitting}
-                          aria-busy={mfaSubmitting}
-                          className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-teal-ink px-4 text-sm font-bold text-ink-night transition hover:bg-ink-gold disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {mfaSubmitting && (
-                            <Loader2 size={17} className="animate-spin" />
-                          )}
-                          Solicitar código
-                        </button>
-                      </div>
-                    ) : (
-                      <div>
-                        <label
-                          htmlFor="mfa-email"
-                          className="mb-2 block text-xs font-semibold uppercase tracking-wide text-text-subtle"
-                        >
-                          Código recebido por e-mail
-                        </label>
-                        <input
-                          id="mfa-email"
-                          ref={mfaCodigoInputRef}
-                          inputMode="numeric"
-                          autoComplete="one-time-code"
-                          maxLength={6}
-                          value={mfaCodigo}
-                          onChange={(event) =>
-                            setMfaCodigo(event.target.value.replace(/\D/g, ""))
-                          }
-                          className="h-12 w-full rounded-lg border border-mist-line bg-surface-raised px-4 text-center font-mono text-base tracking-[0.5em] text-porcelain-ink outline-none transition focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
-                          required
-                        />
-
-                        <button
-                          type="button"
-                          onClick={handleSolicitarEmailOtp}
-                          disabled={mfaSubmitting}
-                          aria-busy={mfaSubmitting}
-                          className="mt-3 text-xs font-semibold text-teal-ink hover:text-ink-gold disabled:opacity-60"
-                        >
-                          Reenviar código por e-mail
-                        </button>
-                      </div>
+          {mfaRequired ? (
+            <form onSubmit={handleVerifyMfa} className="space-y-4">
+              {mfaMetodos.includes("totp") && mfaMetodos.includes("email") && (
+                <div
+                  role="group"
+                  aria-label="Método de verificação"
+                  className="flex rounded-md border border-border bg-ink-bg p-1"
+                >
+                  <button
+                    type="button"
+                    aria-pressed={selectedMetodo === "totp"}
+                    onClick={() => {
+                      setSelectedMetodo("totp");
+                      setMfaError(null);
+                    }}
+                    className={cn(
+                      "min-h-10 flex-1 rounded-sm px-2 text-sm font-medium transition-colors",
+                      selectedMetodo === "totp"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground",
                     )}
-                  </div>
-                )}
-
-                {mfaError && (
-                  <p
-                    role="alert"
-                    aria-live="polite"
-                    className="rounded-lg border border-error-red/30 bg-error-red/10 p-3 text-sm text-error-red"
                   >
+                    App autenticador
+                  </button>
+
+                  <button
+                    type="button"
+                    aria-pressed={selectedMetodo === "email"}
+                    onClick={() => {
+                      setSelectedMetodo("email");
+                      setMfaError(null);
+                    }}
+                    className={cn(
+                      "min-h-10 flex-1 rounded-sm px-2 text-sm font-medium transition-colors",
+                      selectedMetodo === "email"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    Código por e-mail
+                  </button>
+                </div>
+              )}
+
+              {selectedMetodo === "totp" && (
+                <div>
+                  <label htmlFor="mfa-totp" className={labelCls}>
+                    Código do app
+                  </label>
+                  <input
+                    id="mfa-totp"
+                    ref={mfaCodigoInputRef}
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    value={mfaCodigo}
+                    onChange={(event) =>
+                      setMfaCodigo(event.target.value.replace(/\D/g, ""))
+                    }
+                    className={cn(inputCls, "text-center font-mono tracking-[0.5em]")}
+                    required
+                  />
+                </div>
+              )}
+
+              {selectedMetodo === "email" && (
+                <div className="space-y-4">
+                  {!emailEnviado ? (
+                    <div className="rounded-md border border-border bg-ink-bg p-4">
+                      <p className="text-sm leading-6 text-muted-foreground">
+                        Enviaremos um código de uso único para o e-mail
+                        cadastrado.
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={handleSolicitarEmailOtp}
+                        disabled={mfaSubmitting}
+                        aria-busy={mfaSubmitting}
+                        className={cn(primaryBtn, "mt-4 h-11")}
+                      >
+                        {mfaSubmitting && (
+                          <Loader2 size={17} className="animate-spin" aria-hidden="true" />
+                        )}
+                        Solicitar código
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <label htmlFor="mfa-email" className={labelCls}>
+                        Código recebido por e-mail
+                      </label>
+                      <input
+                        id="mfa-email"
+                        ref={mfaCodigoInputRef}
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={6}
+                        value={mfaCodigo}
+                        onChange={(event) =>
+                          setMfaCodigo(event.target.value.replace(/\D/g, ""))
+                        }
+                        className={cn(
+                          inputCls,
+                          "text-center font-mono tracking-[0.5em]",
+                        )}
+                        required
+                      />
+
+                      <button
+                        type="button"
+                        onClick={handleSolicitarEmailOtp}
+                        disabled={mfaSubmitting}
+                        aria-busy={mfaSubmitting}
+                        className={cn(linkCls, "mt-3 inline-block text-sm disabled:opacity-60")}
+                      >
+                        Reenviar código por e-mail
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div aria-live="assertive" role="status">
+                {mfaError && (
+                  <p className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
                     {mfaError}
                   </p>
                 )}
+              </div>
 
-                {(selectedMetodo === "totp" || emailEnviado) && (
+              {(selectedMetodo === "totp" || emailEnviado) && (
+                <button
+                  type="submit"
+                  disabled={mfaSubmitting}
+                  aria-busy={mfaSubmitting}
+                  className={primaryBtn}
+                >
+                  {mfaSubmitting ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" aria-hidden="true" />
+                      Verificando...
+                    </>
+                  ) : (
+                    "Confirmar e entrar"
+                  )}
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={handleBackToCredentials}
+                className="h-11 w-full rounded-md border border-border text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Voltar para o login
+              </button>
+            </form>
+          ) : (
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="space-y-4"
+             
+            >
+              <div>
+                <label htmlFor="email" className={labelCls}>
+                  E-mail
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  aria-invalid={errors.email ? true : undefined}
+                  aria-describedby={errors.email ? "email-erro" : undefined}
+                  {...register("email")}
+                  className={inputCls}
+                  placeholder="voce@email.com"
+                />
+                {errors.email && (
+                  <p id="email-erro" className="mt-1.5 text-sm text-destructive">
+                    {errors.email.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="senha" className={labelCls}>
+                  Senha
+                </label>
+
+                <div className="relative">
+                  <input
+                    id="senha"
+                    type={showPass ? "text" : "password"}
+                    autoComplete="current-password"
+                    aria-invalid={errors.senha ? true : undefined}
+                    aria-describedby={errors.senha ? "senha-erro" : undefined}
+                    {...register("senha")}
+                    className={cn(inputCls, "pr-12")}
+                    placeholder="Sua senha"
+                  />
+
                   <button
-                    type="submit"
-                    disabled={mfaSubmitting}
-                    aria-busy={mfaSubmitting}
-                    className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-teal-ink px-4 font-bold text-ink-night transition hover:bg-ink-gold disabled:cursor-not-allowed disabled:opacity-60"
+                    type="button"
+                    onClick={() => setShowPass((value) => !value)}
+                    aria-pressed={showPass}
+                    className="absolute right-1 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-sm text-muted-foreground transition-colors hover:text-foreground"
+                    aria-label={showPass ? "Ocultar senha" : "Mostrar senha"}
                   >
-                    {mfaSubmitting ? (
-                      <>
-                        <Loader2 size={18} className="animate-spin" />
-                        Verificando...
-                      </>
+                    {showPass ? (
+                      <EyeOff size={19} aria-hidden="true" />
                     ) : (
-                      "Confirmar e entrar"
+                      <Eye size={19} aria-hidden="true" />
                     )}
                   </button>
+                </div>
+
+                {errors.senha && (
+                  <p id="senha-erro" className="mt-1.5 text-sm text-destructive">
+                    {errors.senha.message}
+                  </p>
                 )}
+              </div>
 
-                <button
-                  type="button"
-                  onClick={handleBackToCredentials}
-                  className="h-11 w-full rounded-xl border border-mist-line text-sm font-semibold text-text-subtle transition hover:text-porcelain-ink"
-                >
-                  Voltar para o login
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="mb-2 block text-xs font-semibold uppercase tracking-wide text-text-subtle"
-                  >
-                    E-mail
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    {...register("email")}
-                    className="h-12 w-full rounded-lg border border-mist-line bg-surface-raised px-4 text-base text-porcelain-ink outline-none transition placeholder:text-text-subtle focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
-                    placeholder="voce@email.com"
-                  />
-                  {errors.email && (
-                    <p className="mt-2 text-xs text-error-red">
-                      {errors.email.message}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="senha"
-                    className="mb-2 block text-xs font-semibold uppercase tracking-wide text-text-subtle"
-                  >
-                    Senha
-                  </label>
-
-                  <div className="relative">
-                    <input
-                      id="senha"
-                      type={showPass ? "text" : "password"}
-                      autoComplete="current-password"
-                      {...register("senha")}
-                      className="h-12 w-full rounded-lg border border-mist-line bg-surface-raised px-4 pr-12 text-base text-porcelain-ink outline-none transition placeholder:text-text-subtle focus:border-teal-ink focus:ring-2 focus:ring-teal-ink/20"
-                      placeholder="Sua senha"
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() => setShowPass((value) => !value)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-subtle transition-colors hover:text-smoke-text"
-                      aria-label={showPass ? "Ocultar senha" : "Mostrar senha"}
-                    >
-                      {showPass ? <EyeOff size={19} /> : <Eye size={19} />}
-                    </button>
-                  </div>
-
-                  {errors.senha && (
-                    <p className="mt-2 text-xs text-error-red">
-                      {errors.senha.message}
-                    </p>
-                  )}
-
-                  <div className="mt-2 flex justify-end">
-                    <Link
-                      href="/esqueci-senha"
-                      className="text-xs font-semibold text-teal-ink hover:text-ink-gold"
-                    >
-                      Esqueceu a senha?
-                    </Link>
-                  </div>
-                </div>
-
+              <div aria-live="assertive" role="status">
                 {apiError && (
-                  <p className="rounded-lg border border-error-red/30 bg-error-red/10 p-3 text-sm text-error-red">
+                  <p className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
                     {apiError}
                   </p>
                 )}
+              </div>
 
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  aria-busy={isSubmitting}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-teal-ink px-4 font-bold text-ink-night transition hover:bg-ink-gold disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 size={18} className="animate-spin" />
-                      Entrando...
-                    </>
-                  ) : (
-                    "Entrar"
-                  )}
-                </button>
-              </form>
-            )}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                aria-busy={isSubmitting}
+                className={primaryBtn}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" aria-hidden="true" />
+                    Entrando...
+                  </>
+                ) : (
+                  "Entrar"
+                )}
+              </button>
 
-            {!mfaRequired && (
-              <>
-                <p className="mt-5 text-center text-sm text-text-subtle">
-                  Não tem conta?{" "}
-                  <Link
-                    href="/cadastro"
-                    className="font-semibold text-teal-ink hover:text-ink-gold"
-                  >
-                    Criar conta grátis
-                  </Link>
-                </p>
-                <p className="mt-2 text-center text-xs text-text-subtle">
-                  Ainda avaliando?{" "}
-                  <Link
-                    href="/precos"
-                    className="font-semibold text-teal-ink hover:text-ink-gold"
-                  >
-                    Conheça os planos
-                  </Link>
-                </p>
-              </>
-            )}
+              <p className="text-center text-sm">
+                <Link href="/esqueci-senha" className={linkCls}>
+                  Esqueci a senha
+                </Link>
+              </p>
+            </form>
+          )}
 
-            <p className="mt-6 text-center text-xs text-text-subtle">
-              Ambiente seguro — seus dados ficam protegidos no SessãoInk.
+          {!mfaRequired && (
+            <p className="border-t border-border pt-5 text-center text-sm text-muted-foreground">
+              Ainda não tem conta?{" "}
+              <Link href="/cadastro" className={linkCls}>
+                Criar conta grátis
+              </Link>
             </p>
-            </div>
-          </div>
+          )}
+
+          <footer className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            <Link href="/politica-de-privacidade" className="hover:text-foreground">
+              Privacidade
+            </Link>
+            <Link href="/termos-de-uso" className="hover:text-foreground">
+              Termos de uso
+            </Link>
+            {!mfaRequired && (
+              <Link href="/precos" className="hover:text-foreground">
+                Planos
+              </Link>
+            )}
+          </footer>
         </div>
       </section>
     </div>

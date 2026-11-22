@@ -18,7 +18,12 @@ async function login(page: Page) {
   // waitForURL por predicado de pathname (independe de host/porta/baseURL).
   await page.waitForURL((url) => url.pathname === "/", { timeout: 45000 });
   // Espera o dashboard sair do skeleton (h1 real visível).
-  await expect(page.locator("h1:has-text('Painel Inicial')")).toBeVisible({
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: /^(Bom dia|Boa tarde|Boa noite)/,
+    }),
+  ).toBeVisible({
     timeout: 30000,
   });
 }

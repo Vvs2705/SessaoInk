@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Calendar, ChevronLeft, ChevronRight, Clock, Plus, X, Loader2 } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
+import { StatusChip } from "@/components/StatusChip";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -57,14 +58,6 @@ function formatHora(iso: string) {
 function formatData(iso: string) {
   return new Date(iso).toLocaleDateString("pt-BR", { weekday: "short", day: "numeric", month: "short" });
 }
-
-const STATUS_COR: Record<string, string> = {
-  CONFIRMADO: "text-teal-ink bg-teal-ink/10",
-  EM_ATENDIMENTO: "text-teal-ink bg-teal-ink/10",
-  SOLICITADO: "text-copper-needle bg-copper-needle/10",
-  AGUARDANDO_SINAL: "text-copper-needle bg-copper-needle/10",
-  FINALIZADO: "text-text-subtle bg-text-subtle/10",
-};
 
 // ---------------------------------------------------------------------------
 // Modal: Agendar Sessão
@@ -368,9 +361,7 @@ export default function AgendaPage() {
                 <div key={s.id} className="p-3 bg-ink-night border border-mist-line rounded-[10px]">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-medium text-porcelain-ink">{formatHora(s.data_sessao)}</span>
-                    <span className={cn("text-[10px] px-1.5 py-0.5 rounded-[4px]", STATUS_COR[s.status_operacional] ?? "text-text-subtle bg-text-subtle/10")}>
-                      {s.status_operacional.replace("_", " ")}
-                    </span>
+                    <StatusChip statusOperacional={s.status_operacional} />
                   </div>
                   <p className="text-xs text-text-subtle truncate">{s.descricao ?? s.tipo}</p>
                   {s.duracao_minutos && (

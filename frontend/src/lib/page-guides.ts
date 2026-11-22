@@ -20,16 +20,19 @@ export interface PageGuide {
  */
 export const PAGE_GUIDES: Record<string, PageGuide> = {
   "/": {
-    titulo: "Início (Painel)",
+    titulo: "Hoje",
     oQueFaz:
-      "Mostra um resumo do seu estúdio: próximos atendimentos, indicadores do período e atalhos para as áreas mais usadas.",
+      "Responde \"o que eu faço agora?\": mostra a próxima sessão, a fila do que está esperando por você (responder pedidos, cobrar sinal, confirmar) e a agenda do dia. Os números do período ficam por último.",
     comoUsar: [
-      "Confira os cards de resumo no topo para ter a visão geral do dia.",
-      "Use os atalhos para ir direto a Agenda, Clientes ou Financeiro.",
-      "Acompanhe os próximos atendimentos para se organizar.",
+      "Comece pela próxima sessão: veja cliente, horário, estado do sinal e abra o atendimento.",
+      "Resolva a fila \"Precisa de você\": cada item leva ao atendimento ou abre o WhatsApp com a mensagem pronta.",
+      "Confira a agenda de hoje e, por último, os números do período.",
     ],
     paraQueServe:
-      "Ter, em segundos, a fotografia do estúdio e decidir o que fazer a seguir.",
+      "Ter, em segundos, a fotografia do dia e decidir o que fazer a seguir.",
+    dicas: [
+      "Os status aparecem em 5 estados: Pendente, Confirmado, Em sessão, Concluído e Cancelado. Passe o mouse no chip para ver o status detalhado.",
+    ],
   },
   "/agenda": {
     titulo: "Agenda",

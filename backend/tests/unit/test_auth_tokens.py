@@ -26,9 +26,29 @@ def test_access_token_contem_claims_de_seguranca():
     assert payload["exp"]
 
 
-def test_token_sem_issuer_aud_eh_rejeitado():
+# Os casos negativos partem de claims COMPLETAS e mudam uma só coisa: assim cada
+# teste exercita a checagem que nomeia (e não cai antes por falta de `exp`).
+
+
+def test_token_sem_issuer_eh_rejeitado():
+    claims = _claims_validas()
+    del claims["iss"]
+    bad = jwt.encode(claims, settings.SECRET_KEY, algorithm="HS256")
+    with pytest.raises(ValueError):
+        decodificar_token(bad)
+
+
+def test_token_sem_aud_eh_rejeitado():
+    claims = _claims_validas()
+    del claims["aud"]
+    bad = jwt.encode(claims, settings.SECRET_KEY, algorithm="HS256")
+    with pytest.raises(ValueError):
+        decodificar_token(bad)
+
+
+def test_token_com_aud_errado_eh_rejeitado():
     bad = jwt.encode(
-        {"sub": "x", "type": "access"}, settings.SECRET_KEY, algorithm="HS256"
+        _claims_validas(aud="outro-servico"), settings.SECRET_KEY, algorithm="HS256"
     )
     with pytest.raises(ValueError):
         decodificar_token(bad)
@@ -36,14 +56,7 @@ def test_token_sem_issuer_aud_eh_rejeitado():
 
 def test_token_com_issuer_errado_eh_rejeitado():
     bad = jwt.encode(
-        {
-            "sub": "x",
-            "type": "access",
-            "iss": "atacante",
-            "aud": settings.JWT_AUDIENCE,
-        },
-        settings.SECRET_KEY,
-        algorithm="HS256",
+        _claims_validas(iss="atacante"), settings.SECRET_KEY, algorithm="HS256"
     )
     with pytest.raises(ValueError):
         decodificar_token(bad)
@@ -51,17 +64,24 @@ def test_token_com_issuer_errado_eh_rejeitado():
 
 def test_token_tipo_diferente_de_access_eh_rejeitado():
     bad = jwt.encode(
-        {
-            "sub": "x",
-            "type": "refresh",
-            "iss": settings.JWT_ISSUER,
-            "aud": settings.JWT_AUDIENCE,
-        },
-        settings.SECRET_KEY,
-        algorithm="HS256",
+        _claims_validas(type="refresh"), settings.SECRET_KEY, algorithm="HS256"
     )
     with pytest.raises(ValueError):
         decodificar_token(bad)
+
+
+def test_token_sem_sub_eh_rejeitado():
+    claims = _claims_validas()
+    del claims["sub"]
+    bad = jwt.encode(claims, settings.SECRET_KEY, algorithm="HS256")
+    with pytest.raises(ValueError):
+        decodificar_token(bad)
+
+
+def test_token_com_claims_validas_eh_aceito():
+    # Controle positivo dos casos acima: as mesmas claims, sem alteração, passam.
+    token = jwt.encode(_claims_validas(), settings.SECRET_KEY, algorithm="HS256")
+    assert decodificar_token(token)["sub"] == "x"
 
 
 def test_refresh_token_alta_entropia_e_unico():

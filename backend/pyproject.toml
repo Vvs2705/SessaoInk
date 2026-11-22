@@ -23,7 +23,7 @@ dependencies = [
     "pydantic-settings>=2.6.0",
     # Auth / Segurança
     "bcrypt>=4.0.0",
-    "python-jose[cryptography]>=3.3.0",
+    "PyJWT>=2.10.0",
     "python-multipart>=0.0.12",
     # Cache
     "redis>=5.2.0",

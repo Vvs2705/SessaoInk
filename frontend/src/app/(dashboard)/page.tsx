@@ -27,6 +27,7 @@ import { StatusChip } from "@/components/StatusChip";
 import {
   acoesDoDia,
   contagemRegressiva,
+  formatDuracao,
   linkWhatsApp,
   primeiroNome,
   proximaSessao,
@@ -245,7 +246,7 @@ function ProximaSessaoCard({
             {hoje ? "Hoje" : formatDia(sessao.data_sessao)} às{" "}
             {formatHora(sessao.data_sessao)}
             {sessao.duracao_minutos
-              ? ` · ${Math.round(sessao.duracao_minutos / 60)} h previstas`
+              ? ` · ${formatDuracao(sessao.duracao_minutos)} previstas`
               : ""}
           </p>
         </div>

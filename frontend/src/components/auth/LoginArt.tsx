@@ -195,6 +195,10 @@ export function LoginArt({ variant }: { variant: "panel" | "compact" }) {
           data-ink-card
           className="font-mono text-xs uppercase leading-relaxed tracking-wide text-muted-foreground"
         >
+          <span className="mb-1 inline-block rounded-pill border border-border px-2 py-0.5 normal-case tracking-normal">
+            Exemplo
+          </span>
+          <br />
           {RESUMO_EXEMPLO}
         </p>
       </section>

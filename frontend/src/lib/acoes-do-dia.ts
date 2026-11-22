@@ -183,11 +183,20 @@ export function linkWhatsApp(
   mensagem: string,
 ): string | null {
   if (!telefone) return null;
-  let digitos = telefone.replace(/\D/g, "");
+  // "011 9..." (0 de operadora/tronco na frente) vira DDD + número.
+  let digitos = telefone.replace(/\D/g, "").replace(/^0+/, "");
   if (digitos.length < 10) return null;
   // Número nacional (DDD + número): assume Brasil.
   if (digitos.length <= 11) digitos = `55${digitos}`;
   return `https://wa.me/${digitos}?text=${encodeURIComponent(mensagem)}`;
+}
+
+/** Duração prevista: "20 min", "1 h", "1 h 30 min". */
+export function formatDuracao(minutos: number): string {
+  const h = Math.floor(minutos / 60);
+  const min = Math.round(minutos % 60);
+  if (h === 0) return `${min} min`;
+  return min === 0 ? `${h} h` : `${h} h ${min} min`;
 }
 
 /** "42 min", "2 h 10 min", "3 dias". Passado ou menos de 1 min: "agora". */

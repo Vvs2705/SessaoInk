@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   acoesDoDia,
   contagemRegressiva,
+  formatDuracao,
   linkWhatsApp,
   primeiroNome,
   proximaSessao,
@@ -207,5 +208,19 @@ describe("saudacao e primeiroNome", () => {
   it("extrai o primeiro nome", () => {
     expect(primeiroNome("Lia Monteiro")).toBe("Lia");
     expect(primeiroNome(undefined)).toBe("");
+  });
+});
+
+describe("formatDuracao", () => {
+  it("não arredonda sessão curta para 0 h nem 90 min para 2 h", () => {
+    expect(formatDuracao(20)).toBe("20 min");
+    expect(formatDuracao(60)).toBe("1 h");
+    expect(formatDuracao(90)).toBe("1 h 30 min");
+  });
+});
+
+describe("linkWhatsApp com zero na frente", () => {
+  it("tira o 0 inicial e assume Brasil", () => {
+    expect(linkWhatsApp("011 99999-0000", "Oi")).toBe("https://wa.me/5511999990000?text=Oi");
   });
 });

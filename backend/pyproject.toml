@@ -23,14 +23,14 @@ dependencies = [
     "pydantic-settings>=2.6.0",
     # Auth / Segurança
     "bcrypt>=4.0.0",
-    "python-jose[cryptography]>=3.3.0",
+    "PyJWT>=2.10.0",
     "python-multipart>=0.0.12",
     # Cache
     "redis>=5.2.0",
     # Observabilidade / Email / Imagem
     "sentry-sdk[fastapi]>=2.0.0",
     "resend>=2.0.0",
-    "Pillow>=11.0.0",
+    "Pillow>=13.0.0",
 ]
 
 [project.optional-dependencies]

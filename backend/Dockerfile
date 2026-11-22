@@ -6,18 +6,26 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PORT=8000
 
-# Dependências do sistema (mínimo necessário)
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Dependências do sistema (mínimo necessário). `apt-get upgrade` aplica os
+# patches de segurança do Debian que a imagem base ainda não trouxe
+# (ex.: zlib1g CVE-2026-85091, corrigido em +deb13u1).
+RUN apt-get update && apt-get upgrade -y --no-install-recommends \
+    && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Dependências Python (layer separado para cache)
+# Dependências Python (layer separado para cache).
+# Depois de instalar, o pip sai da imagem: nada roda pip em runtime
+# (release_command = alembic) e o pip embute um pkg_resources do setuptools
+# 70.3.0 que o Trivy acusa (CVE-2025-47273). Menos superfície no container.
 COPY requirements.lock .
 RUN pip install --no-cache-dir --upgrade pip "setuptools>=78.1.1" \
-    && pip install --no-cache-dir -r requirements.lock
+    && pip install --no-cache-dir -r requirements.lock \
+    && python -m pip uninstall -y pip \
+    && rm -rf /usr/local/lib/python3.12/ensurepip/_bundled
 
 # Código da aplicação
 COPY . .

@@ -67,8 +67,12 @@ export function proximaSessao(
   lista: AtendimentoHoje[],
   agora: Date,
 ): AtendimentoHoje | null {
+  // Só vale "em sessão agora" para sessão de hoje (ou sem data): uma esquecida
+  // nesse status em outro dia não pode ocupar o destaque para sempre.
   const emSessao = lista.find(
-    (a) => grupoDoStatus(a.status_operacional) === "em_sessao",
+    (a) =>
+      grupoDoStatus(a.status_operacional) === "em_sessao" &&
+      (!a.data_sessao || mesmoDiaLocal(new Date(a.data_sessao), agora)),
   );
   if (emSessao) return emSessao;
 
@@ -189,6 +193,23 @@ export function linkWhatsApp(
   // Número nacional (DDD + número): assume Brasil.
   if (digitos.length <= 11) digitos = `55${digitos}`;
   return `https://wa.me/${digitos}?text=${encodeURIComponent(mensagem)}`;
+}
+
+/**
+ * Alertas do backend que a fila "Precisa de você" já cobre a partir dos
+ * atendimentos. SINAL_PENDENTE fica de fora de propósito: ele vem dos
+ * lançamentos do financeiro (sinal vencido de sessão já confirmada ou sem
+ * atendimento vinculado), que a fila não enxerga.
+ */
+const ALERTAS_DERIVADOS = new Set(["ORCAMENTO_PARADO"]);
+
+/** Alertas a mostrar. Se a lista de atendimentos falhou, mostra todos. */
+export function alertasVisiveis<T extends { tipo: string }>(
+  alertas: T[],
+  temAtendimentos: boolean,
+): T[] {
+  if (!temAtendimentos) return alertas;
+  return alertas.filter((a) => !ALERTAS_DERIVADOS.has(a.tipo));
 }
 
 /** Duração prevista: "20 min", "1 h", "1 h 30 min". */

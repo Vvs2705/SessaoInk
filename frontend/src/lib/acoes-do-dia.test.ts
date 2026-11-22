@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   acoesDoDia,
+  alertasVisiveis,
   contagemRegressiva,
   formatDuracao,
   linkWhatsApp,
@@ -222,5 +223,27 @@ describe("formatDuracao", () => {
 describe("linkWhatsApp com zero na frente", () => {
   it("tira o 0 inicial e assume Brasil", () => {
     expect(linkWhatsApp("011 99999-0000", "Oi")).toBe("https://wa.me/5511999990000?text=Oi");
+  });
+});
+
+describe("alertasVisiveis", () => {
+  const alertas = [{ tipo: "ORCAMENTO_PARADO" }, { tipo: "SINAL_PENDENTE" }, { tipo: "ESTOQUE_BAIXO" }];
+
+  it("mantém o sinal vencido do financeiro mesmo com a fila carregada", () => {
+    expect(alertasVisiveis(alertas, true).map((a) => a.tipo)).toEqual(["SINAL_PENDENTE", "ESTOQUE_BAIXO"]);
+  });
+
+  it("mostra todos se a lista de atendimentos falhou", () => {
+    expect(alertasVisiveis(alertas, false)).toHaveLength(3);
+  });
+});
+
+describe("proximaSessao com sessão esquecida", () => {
+  it("não destaca EM_ATENDIMENTO de outro dia", () => {
+    const lista = [
+      atend({ id: "esquecida", data_sessao: iso(14, 13), status_operacional: "EM_ATENDIMENTO" }),
+      atend({ id: "futura", data_sessao: iso(21, 18) }),
+    ];
+    expect(proximaSessao(lista, AGORA)?.id).toBe("futura");
   });
 });

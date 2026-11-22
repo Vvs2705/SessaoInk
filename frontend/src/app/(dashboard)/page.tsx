@@ -26,6 +26,7 @@ import { CountUp } from "@/components/CountUp";
 import { StatusChip } from "@/components/StatusChip";
 import {
   acoesDoDia,
+  alertasVisiveis,
   contagemRegressiva,
   formatDuracao,
   linkWhatsApp,
@@ -97,9 +98,6 @@ const BTN_GHOST =
   "inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border bg-transparent px-4 text-sm font-medium text-foreground transition-colors hover:bg-secondary";
 const BTN_SMALL =
   "inline-flex min-h-9 items-center justify-center gap-1.5 rounded-sm border border-border px-3 text-xs font-medium text-foreground transition-colors hover:bg-secondary";
-
-// Alertas do backend que a fila "Precisa de você" já deriva dos atendimentos.
-const ALERTAS_DERIVADOS = new Set(["ORCAMENTO_PARADO", "SINAL_PENDENTE"]);
 
 function formatHora(iso: string): string {
   return new Date(iso).toLocaleTimeString("pt-BR", {
@@ -815,9 +813,7 @@ export default function DashboardPage() {
     : null;
 
   // Se a lista de atendimentos falhou, os alertas do backend cobrem o buraco.
-  const alertas = (dashboard?.alertas ?? []).filter(
-    (a) => !atendimentos || !ALERTAS_DERIVADOS.has(a.tipo),
-  );
+  const alertas = alertasVisiveis(dashboard?.alertas ?? [], Boolean(atendimentos));
   const totalAcoes = acoes.length + alertas.length;
 
   const dataExtenso = agora.toLocaleDateString("pt-BR", {

@@ -11,10 +11,12 @@ import {
 } from "./navigation";
 import { cn } from "@/lib/utils";
 import { useRole } from "@/lib/auth/useRole";
+import { useContagemAcoes } from "@/lib/useAtendimentos";
 
 export function BottomNav() {
   const pathname = usePathname();
   const { tipo } = useRole();
+  const acoesPendentes = useContagemAcoes();
 
   const tabItems = filterNavByRole(MOBILE_TAB_ITEMS, tipo);
   const moreItems = filterNavByRole(MOBILE_MORE_ITEMS, tipo);
@@ -56,13 +58,23 @@ export function BottomNav() {
               href={href}
               className={cn(
                 "relative flex flex-col items-center justify-center gap-1",
-                "text-[11px] font-medium transition-colors",
+                "text-xs font-medium transition-colors",
                 "active:scale-[0.97]",
                 active ? "text-teal-ink" : "text-text-subtle",
               )}
               aria-current={active ? "page" : undefined}
             >
-              <Icon size={21} strokeWidth={active ? 2.6 : 2} />
+              <span className="relative">
+                <Icon size={21} strokeWidth={active ? 2.6 : 2} aria-hidden="true" />
+                {href === "/atendimentos" && acoesPendentes > 0 && (
+                  <span
+                    className="absolute -right-2.5 -top-1.5 min-w-4 rounded-pill bg-primary px-1 text-center font-mono text-xs font-medium leading-4 text-primary-foreground"
+                    aria-label={`${acoesPendentes} ${acoesPendentes === 1 ? "item" : "itens"} esperando por você`}
+                  >
+                    {acoesPendentes}
+                  </span>
+                )}
+              </span>
               <span className="leading-none">{shortLabel}</span>
 
               {active && (

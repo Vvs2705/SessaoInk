@@ -7,6 +7,7 @@ import { ClipboardList, Plus, Search, X } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { cn, formatCurrency } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/empty-state";
+import { StatusChip } from "@/components/StatusChip";
 import { CurrencyInput } from "@/components/ui/CurrencyInput";
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
@@ -395,7 +396,6 @@ export default function AtendimentosPage() {
       {!isLoading && filtrado.length > 0 && view === "lista" && (
         <div className="space-y-2">
           {filtrado.map(a => {
-            const st = STATUS_CONFIG[a.status_operacional] ?? { label: a.status_operacional, cls: "" };
             const fin = FIN_CONFIG[a.status_financeiro] ?? { label: a.status_financeiro, cls: "text-text-subtle" };
             return (
               <div
@@ -414,9 +414,7 @@ export default function AtendimentosPage() {
                       {a.parte_corpo && <span className="text-xs text-text-subtle">• {a.parte_corpo}</span>}
                     </div>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <span className={cn("text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border", st.cls)}>
-                        {st.label}
-                      </span>
+                      <StatusChip statusOperacional={a.status_operacional} />
                       <span className={cn("text-[10px] font-medium", fin.cls)}>
                         {fin.label}
                       </span>

@@ -8,6 +8,7 @@ import {
   MoreHorizontal,
   Package,
   Settings,
+  Sun,
   Users,
   Wallet,
   Zap,
@@ -15,12 +16,28 @@ import {
 
 import type { TipoUsuario } from "@/lib/auth/useRole";
 
+/**
+ * Grupos do menu lateral, na ordem de uso no dia a dia do tatuador:
+ * operação (o que acontece hoje), vitrine (o que o cliente vê) e gestão
+ * (o que se consulta de vez em quando).
+ */
+export type NavGroup = "operacao" | "vitrine" | "gestao";
+
+export const NAV_GROUP_LABEL: Record<NavGroup, string> = {
+  operacao: "Operação",
+  vitrine: "Vitrine",
+  gestao: "Gestão",
+};
+
+export const NAV_GROUP_ORDER: NavGroup[] = ["operacao", "vitrine", "gestao"];
+
 export type AppNavItem = {
   href: string;
   label: string;
   shortLabel: string;
   icon: LucideIcon;
   mobile: "tab" | "more" | "hidden";
+  group: NavGroup;
   badge?: string;
   /**
    * Papéis que podem ver este item (espelha o RBAC do backend). Ausente =
@@ -29,13 +46,19 @@ export type AppNavItem = {
   roles?: TipoUsuario[];
 };
 
+/**
+ * Ordenado por frequência de uso: Hoje, Agenda, Atendimentos e Clientes são
+ * consultados todo dia (e são as abas do celular); Financeiro vem logo depois;
+ * vitrine e gestão ficam mais abaixo.
+ */
 export const APP_NAV_ITEMS: AppNavItem[] = [
   {
     href: "/",
-    label: "Início",
-    shortLabel: "Início",
-    icon: BarChart2,
+    label: "Hoje",
+    shortLabel: "Hoje",
+    icon: Sun,
     mobile: "tab",
+    group: "operacao",
   },
   {
     href: "/agenda",
@@ -43,6 +66,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     shortLabel: "Agenda",
     icon: Calendar,
     mobile: "tab",
+    group: "operacao",
   },
   {
     href: "/atendimentos",
@@ -50,6 +74,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     shortLabel: "Atend.",
     icon: ClipboardList,
     mobile: "tab",
+    group: "operacao",
   },
   {
     href: "/clientes",
@@ -57,20 +82,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     shortLabel: "Clientes",
     icon: Users,
     mobile: "tab",
-  },
-  {
-    href: "/portfolio",
-    label: "Portfólio",
-    shortLabel: "Portfólio",
-    icon: Image,
-    mobile: "more",
-  },
-  {
-    href: "/flash-arts",
-    label: "Flash Arts",
-    shortLabel: "Flash",
-    icon: Zap,
-    mobile: "more",
+    group: "operacao",
   },
   {
     href: "/financeiro",
@@ -78,14 +90,24 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     shortLabel: "Finanças",
     icon: Wallet,
     mobile: "more",
+    group: "operacao",
     roles: ["ADMIN"],
   },
   {
-    href: "/estoque",
-    label: "Estoque",
-    shortLabel: "Estoque",
-    icon: Package,
+    href: "/portfolio",
+    label: "Portfólio",
+    shortLabel: "Portfólio",
+    icon: Image,
     mobile: "more",
+    group: "vitrine",
+  },
+  {
+    href: "/flash-arts",
+    label: "Flash Arts",
+    shortLabel: "Flash",
+    icon: Zap,
+    mobile: "more",
+    group: "vitrine",
   },
   {
     href: "/documentos",
@@ -93,6 +115,15 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     shortLabel: "Docs",
     icon: FileText,
     mobile: "more",
+    group: "gestao",
+  },
+  {
+    href: "/estoque",
+    label: "Estoque",
+    shortLabel: "Estoque",
+    icon: Package,
+    mobile: "more",
+    group: "gestao",
   },
   {
     href: "/relatorios",
@@ -100,6 +131,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     shortLabel: "Relatórios",
     icon: BarChart2,
     mobile: "more",
+    group: "gestao",
     roles: ["ADMIN"],
   },
   {
@@ -108,6 +140,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     shortLabel: "Config.",
     icon: Settings,
     mobile: "more",
+    group: "gestao",
   },
 ];
 
@@ -129,6 +162,7 @@ export const MOBILE_MORE_TAB_ITEM: AppNavItem = {
   shortLabel: "Mais",
   icon: MoreHorizontal,
   mobile: "tab",
+  group: "gestao",
 };
 
 /**

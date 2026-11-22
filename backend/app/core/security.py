@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import bcrypt as _bcrypt
-from jose import JWTError, jwt
+import jwt
 
 from app.core.config import settings
 
@@ -81,6 +81,8 @@ def decodificar_token(token: str) -> dict[str, Any]:
     """Decodifica e valida access token. Lança ValueError se inválido.
 
     Valida assinatura, expiração, `iss`, `aud` e `type == "access"`.
+    `algorithms` fixo em HS256 (bloqueia `none` e confusão de algoritmo) e as
+    claims abaixo são obrigatórias — token sem elas é rejeitado.
     """
     try:
         payload = jwt.decode(
@@ -89,8 +91,9 @@ def decodificar_token(token: str) -> dict[str, Any]:
             algorithms=["HS256"],
             audience=settings.JWT_AUDIENCE,
             issuer=settings.JWT_ISSUER,
+            options={"require": ["exp", "iat", "iss", "aud", "sub"]},
         )
-    except JWTError as e:
+    except jwt.InvalidTokenError as e:
         raise ValueError(f"Token inválido: {e}") from e
 
     if payload.get("type") != "access":
